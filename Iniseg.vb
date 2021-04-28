@@ -1,13 +1,19 @@
 Option Explicit
 
+Sub uiInisegConversionLibro()
+    ConversionLibro ActiveDocument, False
+End Sub
+
+Sub uiInisegConversionStory()
+    ConversionStory ActiveDocument
+End Sub
+    
 Sub Iniseg1Limpieza()
-' Iniseg1Pre1Limpieza Macro
-'
 ' Crea copia de seguridad del archivo original.
 ' Ejecuta limpieza (espacios, estilos innecesarios, etc.)
 ' Crea y deja abierto el archivo en formato libro para comenzar a darle los estilos
 '
-    Dim dcOriginalFile As Document, dcLibro As Document, stFileName As String, iDeleteAnswer As Integer
+    Dim dcOriginalFile As Document, dcLibro As Document, stFileName As String, iDeleteAnswer As Integer, lEstilosBorrados As Long
 
     Set dcOriginalFile = ActiveDocument
     stFileName = dcOriginalFile.FullName
@@ -15,24 +21,24 @@ Sub Iniseg1Limpieza()
 	' Borrar contenido innecesario
     iDeleteAnswer = MsgBox("¿Borrar contenido hasta el punto seleccionado?", vbYesNoCancel, "Borrar contenido")
     If iDeleteAnswer = vbYes Then
-        RaMacros.CopiaSeguridad dcOriginalFile, "0-", ""
+        RaMacros.CopySecurity dcOriginalFile, "0-", ""
         Selection.HomeKey Unit:=wdStory, Extend:=wdExtend
         Selection.Delete
     ElseIf iDeleteAnswer = vbCancel Then
         Exit Sub
     Else
-        RaMacros.CopiaSeguridad dcOriginalFile, "0-", ""
+        RaMacros.CopySecurity dcOriginalFile, "0-", ""
     End If
 
 	' Limpieza y creación de archivo nuevo
     If dcOriginalFile.CompatibilityMode < 15 Then dcOriginalFile.Convert
     Set dcLibro = Documents.Add("C:\Users\Ra\Documents\Plantillas personalizadas de Office\iniseg.dotm")
-	Iniseg.InisegHeaderCopy dcOriginalFile, dcLibro, 1
-    Iniseg.InisegAutoFormateo dcOriginalFile
+	Iniseg.HeaderCopy dcOriginalFile, dcLibro, 1
+    Iniseg.AutoFormateo dcOriginalFile
     RaMacros.HyperlinksOnlyDomain dcOriginalFile
-    RaMacros.LimpiarEspacios dcOriginalFile
-    RaMacros.RemoveHeadAndFoot dcOriginalFile
-    RaMacros.DeleteUnusedStyles dcOriginalFile
+    RaMacros.CleanSpaces dcOriginalFile
+    RaMacros.HeadersFootersRemove dcOriginalFile
+    lEstilosBorrados = RaMacros.StylesDeleteUnused(dcOriginalFile, False)
 
 	' Copia de seguridad limpia
     RaMacros.SaveAsNewFile dcOriginalFile, "01-", "", True
@@ -44,7 +50,7 @@ Sub Iniseg1Limpieza()
     dcLibro.Activate
 
     Beep
-    MsgBox "Corregir numeración de notas al pie, aplicar estilos y ejecutar Iniseg2"
+    MsgBox lEstilosBorrados & " Estilos borrados" & vbCrLf & "Revisar numeración de notas al pie, aplicar estilos y ejecutar Iniseg2"
 End Sub
 
 
@@ -52,23 +58,107 @@ End Sub
 
 
 Sub Iniseg2LibroYStory()
-' Iniseg2LibroYStory Macro
-'
-' Llama a las macros de InisegLibro e InisegStory y da un aviso para seguir trabajando
+' Llama a las macros de ConversionLibro e ConversionStory y da un aviso para seguir trabajando
     ' Organizado de esta forma las macros de libro y story se pueden llamar por separado
 '
     Dim dcLibro As Document, dcStory As Document
 
-    Set dcLibro = InisegLibro(ActiveDocument, True)
+    Set dcLibro = Iniseg.ConversionLibro(ActiveDocument, True)
 	dcLibro.Save
 
-    Set dcStory = InisegStory(dcLibro)
-    dcStory.Close wdSaveChanges
+    Iniseg.ConversionStory dcLibro
 
     dcLibro.Activate
 
     Beep
-    MsgBox "Revisar formato libro (viudas/huérfanas y tamaño de imágenes tablas) y exportar el material necesario"
+    MsgBox "Revisar formato libro (viudas/huérfanas, tamaño de imágenes o tablas...), exportar material necesario y ejecutar iniseg 3"
+End Sub
+
+
+
+
+
+
+
+Sub Iniseg3PáginasBlancasVisibles()
+	' Esta macro es una mala práctica y solo está para evitar confusiones por
+		' falta de uniformidad en el uso de plantillas y estilos
+    RaMacros.SectionsFillBlankPages ActiveDocument
+End Sub
+
+
+
+
+
+
+
+
+
+Function ConversionLibro(dcLibro As Document, Optional bCompleto As Boolean = False)
+' Realiza la limpieza necesaria y formatea correctamente
+'
+	RaMacros.SaveAsNewFile dcLibro, "1-", "", True
+    RaMacros.CleanBasic dcLibro
+    
+	RaMacros.HeadingsNoPunctuation dcLibro
+    RaMacros.HeadingsNoNumeration dcLibro
+	' Títulos con mayúsculas tipo título
+	dcLibro.Styles(wdstyleheading1).Font.AllCaps = False
+	RaMacros.HeadingsChangeCase dcLibro, 0, 4
+	dcLibro.Styles(wdstyleheading1).Font.AllCaps = True
+    
+	RaMacros.HyperlinksFormatting dcLibro
+    Iniseg.ComillasFormato dcLibro
+    RaMacros.StylesNoDirectFormatting dcLibro
+    
+	Iniseg.ImagenesLibro dcLibro
+    
+	Iniseg.InterlineadoCorregido dcLibro
+    RaMacros.CleanBasic dcLibro
+    
+	Iniseg.ParrafosSeparacionLibro dcLibro
+	RaMacros.SectionBreakBeforeHeading dcLibro, False, 4, 1
+
+    If Not bCompleto Then
+        Beep
+        MsgBox "Revisar formato libro (viudas/huérfanas, tamaño de imágenes/tablas), activar Iniseg3 y exportar el material necesario"
+    End If
+    
+    Set ConversionLibro = dcLibro
+End Function
+
+
+
+
+
+
+
+
+
+
+Sub ConversionStory(dcLibro As Document)
+' Da el tamaño correcto a párrafos, imágenes y formatea marcas de pie de página
+'
+    Dim dcStory As Document
+
+    Set dcStory = RaMacros.SaveAsNewFile(dcLibro, "2-", "", False)
+    Iniseg.InterlineadoCorregido dcStory
+    RaMacros.ListsToText dcStory
+    Iniseg.ParrafosConversionStory dcStory
+    Iniseg.TitulosConTresEspacios dcStory
+    Iniseg.ImagenesStory dcStory
+    Iniseg.InterlineadoCorregido dcStory
+
+    Beep
+    If MsgBox("¿Procesar notas al pie de página?", vbYesNo, "Notas al pie") = vbYes Then
+		Iniseg.NotasPieMarcadores dcStory
+    End If
+    
+	If dcStory.Sections.Count > 1 Then
+		RaMacros.SectionsExportEachToFiles dcStory,, "-tema_"
+	End If
+
+    dcStory.Close wdSaveChanges
 End Sub
 
 
@@ -80,77 +170,10 @@ End Sub
 
 
 
-Function InisegLibro(dcLibro As Document, Optional bCompleto As Boolean = False)
-' InisegLibro Function
-'
-' Realiza la limpieza necesaria y formatea correctamente
-'
-    RaMacros.LimpiezaBasica dcLibro
-    RaMacros.TitulosNoPuntuacionFinal dcLibro
-    RaMacros.TitulosQuitarNumeracion dcLibro
-    RaMacros.HyperlinksFormatting dcLibro
-    Iniseg.InisegComillas dcLibro
-    RaMacros.DirectFormattingToStyles dcLibro
-    Iniseg.InisegImagenes dcLibro
-    Iniseg.InisegInterlineado dcLibro
-    RaMacros.LimpiezaBasica dcLibro
-    RaMacros.LimpiarFindAndReplaceParameters dcLibro
-    Iniseg.InisegParrafosSeparacion dcLibro
 
-    If Not bCompleto Then
-        Beep
-        MsgBox "Revisar formato libro (viudas/huérfanas, tamaño de imágenes/tablas) y exportar el material necesario"
-    End If
-    
-    Set InisegLibro = dcLibro
-End Function
-
-
-
-
-
-
-
-
-
-
-Function InisegStory(dcLibro As Document)
-' InisegStory Function
-'
-' Da el tamaño correcto a párrafos, imágenes y formatea marcas de pie de página
-'
-    Dim dcStory As Document
-
-    Set dcStory = RaMacros.SaveAsNewFile(dcLibro, "2-", "", False)
-    Iniseg.InisegInterlineado dcStory
-    RaMacros.ListasATexto dcStory
-    Iniseg.ConversionParrafos dcStory
-    Iniseg.TitulosConTresEspacios dcStory
-    ImagenesGrandes dcStory
-    Iniseg.InisegInterlineado dcStory
-
-    Beep
-    If MsgBox("¿Procesar notas al pie de página?", vbYesNo, "Notas al pie") = vbYes Then
-		Iniseg.InisegNotasPie dcStory
-    End If
-    
-    Set InisegStory = dcStory
-End Function
-
-
-
-
-
-
-
-
-
-
-
-Sub InisegHeaderCopy(dcOriginalDocument As Document, _
-                        dcObjectiveDocument As Document, _
-                        Optional iHeaderSelection As Integer = 3)
-' InisegHeaderCopy Sub
+Sub HeaderCopy(dcOriginalDocument As Document, _
+                dcObjectiveDocument As Document, _
+                Optional iHeaderSelection As Integer = 3)
 ' Copia los encabezados de un archivo a otro según la opción que se le pase:
     ' iHeaderSelection = 1 => copia el encabezado de pág. impar en todos los encabezados
     ' iHeaderSelection = 2 => copia los de pág. impar y par
@@ -204,9 +227,7 @@ End Sub
 
 
 
-Sub InisegAutoFormateo(dcArgumentDocument As Document)
-'
-' InisegAutoFormateo Sub
+Sub AutoFormateo(dcArgumentDocument As Document)
     ' Convierte las URL de texto plano a hiperenlaces
     ' Da viñeta a las listas que no tienen
     ' Da estilo de lista a las listas
@@ -279,18 +300,15 @@ End Sub
 
 
 
-Sub InisegComillas(dcArgumentDocument As Document)
+Sub ComillasFormato(dcArgumentDocument As Document)
+' Quita la negrita y cursiva de las comillas y las pasa a curvadas
 '
-' InisegComillas Sub
-'
-' Quita la negrita y cursiva de las comillas
-'
-' Basada en RaMacros.ComillasRectasAInglesas
+' Basada en RaMacros.QuotesStraightToCurly
 '
     Dim bSmtQt As Boolean
     bSmtQt = Options.AutoFormatAsYouTypeReplaceQuotes
     Options.AutoFormatAsYouTypeReplaceQuotes = True
-    RaMacros.LimpiarFindAndReplaceParameters dcArgumentDocument
+    RaMacros.FindAndReplaceClearParameters
     
     With dcArgumentDocument.Range.Find
         .ClearFormatting
@@ -315,7 +333,7 @@ Sub InisegComillas(dcArgumentDocument As Document)
     End With
     
     Options.AutoFormatAsYouTypeReplaceQuotes = bSmtQt
-    RaMacros.LimpiarFindAndReplaceParameters dcArgumentDocument
+    RaMacros.FindAndReplaceClearParameters
 
 End Sub
 
@@ -323,9 +341,7 @@ End Sub
 
 
 
-Sub InisegImagenes(dcArgumentDocument As Document)
-'
-' InisegImagenes Sub
+Sub ImagenesLibro(dcArgumentDocument As Document)
 ' Formatea más cómodamente las imágenes
     ' Las convierte de flotantes a inline (de shapes a inlineshapes)
     ' Impide que aparezcan deformadas (mismo % relativo al tamaño original en alto y ancho)
@@ -436,10 +452,22 @@ End Sub
 
 
 
-Sub InisegInterlineado(dcArgumentDocument As Document)
+Sub ImagenesStory(dcArgumentDocument As Document)
+' Hace que todas las imágenes sean enormes, para meterlas en el story
 '
-' InterlineadoSinEspaciado Macro
-'
+    Dim inlShape As InlineShape
+        
+    For Each inlShape In dcArgumentDocument.InlineShapes
+        If inlShape.Type = wdInlineShapePicture Then inlShape.Width = CentimetersToPoints(29)
+    Next inlShape
+
+End Sub
+
+
+
+
+
+Sub InterlineadoCorregido(dcArgumentDocument As Document)
 ' Interlineado de 1,15 sin espaciado entre párrafos
     ' Eliminar los espaciados verticales entre párrafos y aplica el interlineado correcto
 
@@ -454,7 +482,7 @@ Sub InisegInterlineado(dcArgumentDocument As Document)
         .LineUnitAfter = 0
     End With
     
-    RaMacros.LimpiarFindAndReplaceParameters dcArgumentDocument
+    RaMacros.FindAndReplaceClearParameters
 
 End Sub
 
@@ -462,13 +490,58 @@ End Sub
 
 
 
-Sub InisegParrafosSeparacion(dcArgumentDocument As Document)
-'
-' ParrafosSeparacion Macro
-'
+Sub ParrafosSeparacionLibro(dcArgumentDocument As Document)
 ' TODO
     ' Refactorizar con variables y recolocando el código
 '
+	' Mete dos saltos de línea manuales en los Heading 1, entre "Tema N" y el nombre del tema
+    With dcArgumentDocument.Range.Find
+		.ClearFormatting
+		.Replacement.ClearFormatting
+		.Forward = True
+		.Wrap = wdFindContinue
+		.Format = False
+		.MatchCase = False
+		.MatchWholeWord = False
+		.MatchWildcards = True
+		.MatchSoundsLike = False
+		.MatchAllWordForms = False
+
+		' Elimina saltos manuales de página (innecesarios con los saltos de sección y revisión posteriores)
+		.Text = "^m"
+		.Replacement.Text = ""
+		.Execute Replace:=wdReplaceAll
+
+		.Format = True
+		.style = wdstyleheading1
+		.Text = "([tT][eE][mM][aA] [0-9]{1;2})"
+		.Replacement.Text = "\1^l^l"
+		.Execute Replace:=wdReplaceAll
+    End With
+
+		' Formatea los saltos de línea y les da tamaño 10
+	RaMacros.CleanSpaces dcArgumentDocument
+    With dcArgumentDocument.Range.Find
+       .ClearFormatting
+       .Replacement.ClearFormatting
+       .Forward = True
+       .Wrap = wdFindContinue
+       .Format = True
+       .MatchCase = False
+       .MatchWholeWord = False
+       .MatchWildcards = True
+       .MatchSoundsLike = False
+       .MatchAllWordForms = False
+	   .style = wdstyleheading1
+       .Replacement.ClearFormatting
+       .Replacement.Font.Size = 10
+       .Text = "[^13^l]{2;}"
+       .Replacement.Text = "^l^l"
+	   .Execute Replace:=wdReplaceAll
+	End With
+
+
+	' Párrafos de separación generales
     With dcArgumentDocument.Range.Find
         .ClearFormatting
         .Replacement.ClearFormatting
@@ -481,125 +554,156 @@ Sub InisegParrafosSeparacion(dcArgumentDocument As Document)
         .MatchSoundsLike = False
         .MatchWildcards = True
 
-
-
-
+		' Marcas para los títulos
         .Text = "(*)^13"
 
-        .Style = wdStyleHeading1
+        .Style = wdstyleheading1
+        .Replacement.Text = "\1^13SEP_11^13"
+        .Execute Replace:=wdReplaceAll
+
+        .Style = wdstyleheading2
         .Replacement.Text = "SEP_11^13\1^13SEP_11^13"
         .Execute Replace:=wdReplaceAll
 
         .ClearFormatting
         .Replacement.ClearFormatting
-        .Style = wdStyleHeading2
+        .Style = wdstyleheading3
         .Replacement.Text = "SEP_8^13\1^13SEP_8^13"
         .Execute Replace:=wdReplaceAll
 
         .ClearFormatting
         .Replacement.ClearFormatting
-        .Style = wdStyleHeading3
+        .Style = wdstyleheading4
         .Replacement.Text = "SEP_8^13\1^13SEP_8^13"
         .Execute Replace:=wdReplaceAll
 
         .ClearFormatting
         .Replacement.ClearFormatting
-        .Style = wdStyleHeading4
+        .Style = wdStyleHeading5
         .Replacement.Text = "SEP_6^13\1^13SEP_6^13"
         .Execute Replace:=wdReplaceAll
 
 
 
-
-        .Text = "(^13)"
+		' Marcas del resto de estilos
 
         .ClearFormatting
         .Replacement.ClearFormatting
         .Style = wdStyleNormal
-        .Replacement.Text = "\1SEP_5^13"
+        .Replacement.Text = "SEP_5^13\1^13SEP_5^13"
         .Execute Replace:=wdReplaceAll
 
         .ClearFormatting
         .Replacement.ClearFormatting
         .Style = wdStyleCaption
-        .Replacement.Text = "\1SEP_5^13"
+        .Replacement.Text = "SEP_5^13\1^13SEP_5^13"
         .Execute Replace:=wdReplaceAll
 
         .ClearFormatting
         .Replacement.ClearFormatting
         .Style = wdStyleQuote
-        .Replacement.Text = "\1SEP_5^13"
+        .Replacement.Text = "SEP_5^13\1^13SEP_5^13"
         .Execute Replace:=wdReplaceAll
 
         .ClearFormatting
         .Replacement.ClearFormatting
         .Style = wdStyleList
-        .Replacement.Text = "\1SEP_4^13"
+        .Replacement.Text = "SEP_4^13\1^13SEP_4^13"
         .Execute Replace:=wdReplaceAll
 
         .ClearFormatting
         .Replacement.ClearFormatting
         .Style = wdStyleList2
-        .Replacement.Text = "\1SEP_4^13"
+        .Replacement.Text = "SEP_4^13\1^13SEP_4^13"
         .Execute Replace:=wdReplaceAll
 
         .ClearFormatting
         .Replacement.ClearFormatting
         .Style = wdStyleList3
-        .Replacement.Text = "\1SEP_4^13"
+        .Replacement.Text = "SEP_4^13\1^13SEP_4^13"
         .Execute Replace:=wdReplaceAll
 
         .ClearFormatting
         .Replacement.ClearFormatting
         .Style = wdStyleListBullet
-        .Replacement.Text = "\1SEP_4^13"
+        .Replacement.Text = "SEP_4^13\1^13SEP_4^13"
         .Execute Replace:=wdReplaceAll
 
         .ClearFormatting
         .Replacement.ClearFormatting
         .Style = wdStyleListBullet2
-        .Replacement.Text = "\1SEP_4^13"
+        .Replacement.Text = "SEP_4^13\1^13SEP_4^13"
         .Execute Replace:=wdReplaceAll
 
         .ClearFormatting
         .Replacement.ClearFormatting
         .Style = wdStyleListBullet3
-        .Replacement.Text = "\1SEP_4^13"
+        .Replacement.Text = "SEP_4^13\1^13SEP_4^13"
         .Execute Replace:=wdReplaceAll
 
         .ClearFormatting
         .Replacement.ClearFormatting
         .Style = wdStyleListBullet4
-        .Replacement.Text = "\1SEP_4^13"
+        .Replacement.Text = "SEP_4^13\1^13SEP_4^13"
         .Execute Replace:=wdReplaceAll
 
         .ClearFormatting
         .Replacement.ClearFormatting
         .Style = wdStyleListBullet5
-        .Replacement.Text = "\1SEP_4^13"
+        .Replacement.Text = "SEP_4^13\1^13SEP_4^13"
+        .Execute Replace:=wdReplaceAll
+
+        .ClearFormatting
+        .Replacement.ClearFormatting
+        .Style = wdStyleListContinue
+        .Replacement.Text = "SEP_4^13\1^13SEP_4^13"
+        .Execute Replace:=wdReplaceAll
+
+        .ClearFormatting
+        .Replacement.ClearFormatting
+        .Style = wdStyleListContinue2
+        .Replacement.Text = "SEP_4^13\1^13SEP_4^13"
+        .Execute Replace:=wdReplaceAll
+
+        .ClearFormatting
+        .Replacement.ClearFormatting
+        .Style = wdStyleListContinue3
+        .Replacement.Text = "SEP_4^13\1^13SEP_4^13"
+        .Execute Replace:=wdReplaceAll
+
+        .ClearFormatting
+        .Replacement.ClearFormatting
+        .Style = wdStyleListContinue4
+        .Replacement.Text = "SEP_4^13\1^13SEP_4^13"
+        .Execute Replace:=wdReplaceAll
+
+        .ClearFormatting
+        .Replacement.ClearFormatting
+        .Style = wdStyleListContinue5
+        .Replacement.Text = "SEP_4^13\1^13SEP_4^13"
         .Execute Replace:=wdReplaceAll
 
         .ClearFormatting
         .Replacement.ClearFormatting
         .Style = wdStyleListNumber
-        .Replacement.Text = "\1SEP_4^13"
+        .Replacement.Text = "SEP_4^13\1^13SEP_4^13"
         .Execute Replace:=wdReplaceAll
 
         .ClearFormatting
         .Replacement.ClearFormatting
         .Style = wdStyleListNumber2
-        .Replacement.Text = "\1SEP_4^13"
+        .Replacement.Text = "SEP_4^13\1^13SEP_4^13"
         .Execute Replace:=wdReplaceAll
 
         .ClearFormatting
         .Replacement.ClearFormatting
         .Style = wdStyleListNumber3
-        .Replacement.Text = "\1SEP_4^13"
+        .Replacement.Text = "SEP_4^13\1^13SEP_4^13"
         .Execute Replace:=wdReplaceAll
 
 
 
-
+		' Convertir marcas a estilo Normal
         .ClearFormatting
         .Replacement.ClearFormatting
         .Text = "(SEP_[0-9]{1;2}^13)"
@@ -609,10 +713,16 @@ Sub InisegParrafosSeparacion(dcArgumentDocument As Document)
 
 
 
-
+		' Seleccionar la marca de mayor tamaño, cuando coinciden 2
         .ClearFormatting
         .Replacement.ClearFormatting
         .Format = False
+
+		' Prevalece la segunda
+        .Text = "(SEP_4^13)(SEP_4^13)"
+        .Replacement.Text = "\2"
+        .Execute Replace:=wdReplaceAll
+
         .Text = "(SEP_4^13)(SEP_5^13)"
         .Replacement.Text = "\2"
         .Execute Replace:=wdReplaceAll
@@ -626,6 +736,10 @@ Sub InisegParrafosSeparacion(dcArgumentDocument As Document)
         .Execute Replace:=wdReplaceAll
 
         .Text = "(SEP_4^13)(SEP_11^13)"
+        .Replacement.Text = "\2"
+        .Execute Replace:=wdReplaceAll
+
+        .Text = "(SEP_5^13)(SEP_5^13)"
         .Replacement.Text = "\2"
         .Execute Replace:=wdReplaceAll
 
@@ -665,6 +779,8 @@ Sub InisegParrafosSeparacion(dcArgumentDocument As Document)
         .Replacement.Text = "\2"
         .Execute Replace:=wdReplaceAll
 
+
+		' Prevalece la primera
         .Text = "(SEP_11^13)(SEP_8^13)"
         .Replacement.Text = "\1"
         .Execute Replace:=wdReplaceAll
@@ -673,13 +789,41 @@ Sub InisegParrafosSeparacion(dcArgumentDocument As Document)
         .Replacement.Text = "\1"
         .Execute Replace:=wdReplaceAll
 
+        .Text = "(SEP_11^13)(SEP_5^13)"
+        .Replacement.Text = "\1"
+        .Execute Replace:=wdReplaceAll
+
+        .Text = "(SEP_11^13)(SEP_4^13)"
+        .Replacement.Text = "\1"
+        .Execute Replace:=wdReplaceAll
+
         .Text = "(SEP_8^13)(SEP_6^13)"
+        .Replacement.Text = "\1"
+        .Execute Replace:=wdReplaceAll
+
+        .Text = "(SEP_8^13)(SEP_5^13)"
+        .Replacement.Text = "\1"
+        .Execute Replace:=wdReplaceAll
+
+        .Text = "(SEP_8^13)(SEP_4^13)"
+        .Replacement.Text = "\1"
+        .Execute Replace:=wdReplaceAll
+
+        .Text = "(SEP_6^13)(SEP_5^13)"
+        .Replacement.Text = "\1"
+        .Execute Replace:=wdReplaceAll
+
+        .Text = "(SEP_6^13)(SEP_4^13)"
+        .Replacement.Text = "\1"
+        .Execute Replace:=wdReplaceAll
+
+        .Text = "(SEP_5^13)(SEP_4^13)"
         .Replacement.Text = "\1"
         .Execute Replace:=wdReplaceAll
 
 
 
-
+		' Redimensionado de párrafo y borrado de marca
         .ClearFormatting
         .Replacement.ClearFormatting
         .Format = True
@@ -716,25 +860,23 @@ Sub InisegParrafosSeparacion(dcArgumentDocument As Document)
         .Replacement.Text = "\1"
         .Execute Replace:=wdReplaceAll
     End With
-    
-    RaMacros.LimpiarFindAndReplaceParameters dcArgumentDocument
-
+    RaMacros.FindAndReplaceClearParameters
 End Sub
 
 
 
 
 
-Sub ConversionParrafos(dcArgumentDocument As Document)
-'
-' Iniseg4ConversionParrafos Macro
+Sub ParrafosConversionStory(dcArgumentDocument As Document)
 ' Conversion de Word impreso a formato para Storyline
 '
-    ' Cambio del tamaño de Titulo 1 de 16 a 17
-    
-    RaMacros.LimpiarFindAndReplaceParameters dcArgumentDocument
-    
-    With dcArgumentDocument.Styles(wdStyleHeading1).Font
+    RaMacros.FindAndReplaceClearParameters
+
+	' Títulos 1 en minúsculas (para copiarlos más cómodamente a la primera diapositiva)
+	dcArgumentDocument.Styles(wdstyleheading1).Font.AllCaps = False
+
+    ' Cambio del tamaño de Titulo 2 de 16 a 17
+    With dcArgumentDocument.Styles(wdstyleheading2).Font
         .Name = "Swis721 Lt BT"
         .Size = 17
         .Bold = False
@@ -763,9 +905,9 @@ Sub ConversionParrafos(dcArgumentDocument As Document)
         .ContextualAlternates = 0
     End With
 
-    ' Eliminar ALLCAPS de los títulos 2 y 3
-    dcArgumentDocument.Styles(wdStyleHeading2).Font.AllCaps = False
-    dcArgumentDocument.Styles(wdStyleHeading3).Font.AllCaps = False
+    ' Eliminar ALLCAPS de los títulos 3 y 4
+    dcArgumentDocument.Styles(wdstyleheading3).Font.AllCaps = False
+    dcArgumentDocument.Styles(wdstyleheading4).Font.AllCaps = False
 
     ' Poner el estilo quote centrado y sin espacio a derecha ni izquierda
     With dcArgumentDocument.Styles(wdStyleQuote).ParagraphFormat
@@ -774,8 +916,9 @@ Sub ConversionParrafos(dcArgumentDocument As Document)
         .Alignment = wdAlignParagraphCenter
     End With
 
-' Cambio de tamaño de parrafos de separacion
 
+
+' Cambio de tamaño de parrafos de separacion
     ' Listas: 4 a 2
     With dcArgumentDocument.Range.Find
         .ClearFormatting
@@ -814,7 +957,7 @@ Sub ConversionParrafos(dcArgumentDocument As Document)
         .Execute Replace:=wdReplaceAll
     End With
 
-    ' Titulos 2, 3 y 4: 8 a 6.
+    ' Titulos 3, 4 y 5: 8 a 6.
     With dcArgumentDocument.Range.Find
         .ClearFormatting
         .Font.Size = 8
@@ -833,12 +976,13 @@ Sub ConversionParrafos(dcArgumentDocument As Document)
         .Execute Replace:=wdReplaceAll
     End With
 
-' Titulos 1: 11 a 8
 
-    ' Dar tamaño 8 a todos los párrafos tras los Heading 1
+
+' Titulos 2: 11 a 8
+    ' Dar tamaño 8 a todos los párrafos tras los Heading 2
     With dcArgumentDocument.Range.Find
         .ClearFormatting
-        .Style = wdStyleHeading1
+        .Style = wdstyleheading2
         .Replacement.ClearFormatting
         .Forward = True
         .Wrap = wdFindContinue
@@ -859,41 +1003,7 @@ Sub ConversionParrafos(dcArgumentDocument As Document)
         .Execute Replace:=wdReplaceAll
     End With
 
-    ' Meter salto de página antes de cada Heading 1 y Title
-    Dim prParrafoActual As Paragraph, index As Integer
-
-    For index = 1 To dcArgumentDocument.Paragraphs.Count - 1
-        With dcArgumentDocument.Paragraphs(index).Range
-            If .Next(Unit:=wdParagraph, Count:=1).Paragraphs(1).OutlineLevel = 1 Then
-                If .Previous(Unit:=wdParagraph, Count:=2).Style <> wdStyleTitle Then
-                    '.Collapse Direction:=wdCollapseEnd
-                    dcArgumentDocument.Paragraphs(index).Range.InsertBreak Type:=wdPageBreak
-                    'index = index + 1
-                End If
-            End If
-        End With
-    Next index
-
-    RaMacros.LimpiarFindAndReplaceParameters dcArgumentDocument
-    
-End Sub
-
-
-
-
-
-Sub ImagenesGrandes(dcArgumentDocument As Document)
-'
-' ImagenesGrandes Sub
-'
-' Hace que todas las imágenes sean enormes, para meterlas en el story
-'
-    Dim inlShape As InlineShape
-        
-    For Each inlShape In dcArgumentDocument.InlineShapes
-        If inlShape.Type = wdInlineShapePicture Then inlShape.Width = CentimetersToPoints(29)
-    Next inlShape
-
+    RaMacros.FindAndReplaceClearParameters
 End Sub
 
 
@@ -901,9 +1011,6 @@ End Sub
 
 
 Sub TitulosConTresEspacios(dcArgumentDocument As Document)
-'
-' TitulosConTresEspacios Sub
-'
 ' Sustituye la tabulación en los títulos por 3 espacios
 '
     With dcArgumentDocument.Range.Find
@@ -919,16 +1026,16 @@ Sub TitulosConTresEspacios(dcArgumentDocument As Document)
         .MatchWildcards = True
         .Text = "([0-9].)^t"
         .Replacement.Text = "\1   "
-        .Style = wdStyleHeading1
+        .Style = wdstyleheading2
         .Execute Replace:=wdReplaceAll
-        .Style = wdStyleHeading2
+        .Style = wdstyleheading3
         .Execute Replace:=wdReplaceAll
-        .Style = wdStyleHeading3
+        .Style = wdstyleheading4
         .Execute Replace:=wdReplaceAll
 
     End With
 
-    RaMacros.LimpiarFindAndReplaceParameters dcArgumentDocument
+    RaMacros.FindAndReplaceClearParameters
 
 End Sub
 
@@ -936,10 +1043,7 @@ End Sub
 
 
 
-Sub InisegNotasPie(dcArgumentDocument As Document)
-'
-' NotasPieATexto Sub
-'
+Sub NotasPieMarcadores(dcArgumentDocument As Document)
 ' Convierte las referencias de notas al pie al texto "NOTA_PIE-numNota"
     ' para poder automatizar externamente su conversión en el .story
 '
@@ -958,7 +1062,7 @@ Sub InisegNotasPie(dcArgumentDocument As Document)
         .Superscript = True
     End With
     
-    RaMacros.LimpiarFindAndReplaceParameters dcArgumentDocument
+    RaMacros.FindAndReplaceClearParameters
     
     Do While bSeguir = True
     
@@ -988,7 +1092,7 @@ Sub InisegNotasPie(dcArgumentDocument As Document)
         
     Loop
 
-    RaMacros.LimpiarFindAndReplaceParameters dcArgumentDocument
+    RaMacros.FindAndReplaceClearParameters
     
 End Sub
 
