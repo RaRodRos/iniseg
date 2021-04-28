@@ -51,7 +51,7 @@ Function StyleInUse(Styname As String, dcArgumentDocument As Document) As Boolea
 	' check if Currently used in a story?
 
 	For Each Stry In dcArgumentDocument.StoryRanges
-		If StoryInUse(Stry, dcArgumentDocument) Then
+		If StoryInUse(dcArgumentDocument, Stry) Then
 			If StyleInUseInRangeText(Stry, Styname) Then StyleInUse = True: Exit Function
 			For Each Shp In Stry.ShapeRange
 				Set txtFrame = Shp.TextFrame
@@ -85,7 +85,7 @@ Function StyleInUseInRangeText(rng As Range, Styname As String) As Boolean
 	End With
 End Function
 
-Function StoryInUse(Stry As Range, dcArgumentDocument As Document) As Boolean
+Function StoryInUse(dcArgumentDocument As Document, Stry As Range) As Boolean
 ' Del mismo desarrollador que StylesDeleteUnused
 ' Note: this will mark even the always-existing stories as not in use if they're empty
 	If Not Stry.StoryLength > 1 Then StoryInUse = False: Exit Function
@@ -331,117 +331,176 @@ Sub CleanBasic(dcArgumentDocument As Document)
 '
 	Application.ScreenUpdating = False
 
-	RaMacros.CleanEmptyParagraphs dcArgumentDocument
-	RaMacros.CleanSpaces dcArgumentDocument
+	RaMacros.CleanEmptyParagraphs dcArgumentDocument, 0
+	RaMacros.CleanSpaces dcArgumentDocument, 0
 	RaMacros.FindAndReplaceClearParameters
 
 	Application.ScreenUpdating = True
 
 End Sub
 
-Sub CleanEmptyParagraphs(dcArgumentDocument As Document)
+Sub CleanEmptyParagraphs(dcArgumentDocument As Document, Optional iStory As Integer = 0)
 ' Deletes empty paragraphs
 	' First and last empty paragraphs: https://wordmvp.com/FAQs/MacrosVBA/DeleteEmptyParas.htm
+' Args:
+	' iStory: defines the storyranges that will be cleaned
+		' All (1 to 5)		0
+		' wdMainTextStory	1
+		' wdFootnotesStory	2
+		' wdEndnotesStory	3
+		' wdCommentsStory	4
+		' wdTextFrameStory	5
 '
-	Dim rgActiveRange As Range
+	Dim rgFindRange As Range, iMaxCount As Integer
 
-	Set rgActiveRange = dcArgumentDocument.Paragraphs(1).Range
+	If iStory < 0 Or iStory > 5 Then
+		Err.Raise Number:=514, Description:="Argument out of range it must be between 0 and 5"
+	ElseIf iStory = 0 Then
+		iStory = 1
+		iMaxCount = 5
+	Else
+		iMaxCount = iStory
+	End If
 
-	If rgActiveRange.Text = vbCr Then rgActiveRange.Delete
+	Set rgFindRange = dcArgumentDocument.Paragraphs(1).Range
+	If rgFindRange.Text = vbCr Then rgFindRange.Delete
 
-	Set rgActiveRange = dcArgumentDocument.Paragraphs.Last.Range
-	If rgActiveRange.Text = vbCr Then rgActiveRange.Delete
+	Set rgFindRange = dcArgumentDocument.Paragraphs.Last.Range
+	If rgFindRange.Text = vbCr Then rgFindRange.Delete
 
-	RaMacros.FindAndReplaceClearParameters
-
-	With dcArgumentDocument.Range.Find
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Forward = True
-		.Wrap = wdFindContinue
-		.Format = False
-		.MatchCase = False
-		.MatchWholeWord = False
-		.MatchAllWordForms = False
-		.MatchSoundsLike = False
-		.MatchWildcards = True
-		.Text = "[^13^l]{2;}"
-		.Replacement.Text = "^13"
-		.Execute Replace:=wdReplaceAll
-	End With
-
-	RaMacros.FindAndReplaceClearParameters
+	For iStory = iStory To iMaxCount Step 1
+		On Error GoTo noStoryFound
+		Set rgFindRange = dcArgumentDocument.StoryRanges(iStory)
+		On Error GoTo 0
+		With rgFindRange.Find
+			.ClearFormatting
+			.Replacement.ClearFormatting
+			.Forward = True
+			.Wrap = wdFindContinue
+			.Format = False
+			.MatchCase = False
+			.MatchWholeWord = False
+			.MatchAllWordForms = False
+			.MatchSoundsLike = False
+			.MatchWildcards = True
+			.Text = "[^13^l]{2;}"
+			.Replacement.Text = "^13"
+			.Execute Replace:=wdReplaceAll
+			Do While Not rgFindRange.NextStoryRange Is Nothing
+				Set rgFindRange = rgFindRange.NextStoryRange
+				With rgFindRange.Find
+					.ClearFormatting
+					.Replacement.ClearFormatting
+					.Forward = True
+					.Wrap = wdFindContinue
+					.Format = False
+					.MatchCase = False
+					.MatchWholeWord = False
+					.MatchAllWordForms = False
+					.MatchSoundsLike = False
+					.MatchWildcards = True
+				End With
+			Loop
+		End With
+nextLoop:
+	Next iStory
+	
+Exit Sub
+noStoryFound:
+Resume nextLoop
 End Sub
 
-Sub CleanSpaces(dcArgumentDocument As Document)
+Sub CleanSpaces(dcArgumentDocument As Document, Optional iStory As Integer = 0)
 ' Deletes:
 	' Tabulations
 	' More than 1 consecutive spaces
 	' Spaces just before paragraph marks, stops, parenthesis, etc.
 	' Spaces just after paragraph marks
+' Args:
+	' iStory: defines the storyranges that will be cleaned
+		' All (1 to 5)		0
+		' wdMainTextStory	1
+		' wdFootnotesStory	2
+		' wdEndnotesStory	3
+		' wdCommentsStory	4
+		' wdTextFrameStory	5
 '
-	Dim bFound As Boolean, rgFindRange As Range
+	Dim bFound As Boolean, rgFindRange As Range, iMaxCount As Integer
 
-	With dcArgumentDocument.Content.Find
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Forward = True
-		.Wrap = wdFindContinue
-		.Format = False
-		.MatchCase = False
-		.MatchWholeWord = False
-		.MatchAllWordForms = False
-		.MatchSoundsLike = False
-		.MatchWildcards = True
-	End With
-	Do
-		bFound = False
+	If iStory < 0 Or iStory > 5 Then
+		Err.Raise Number:=514, Description:="Argument out of range it must be between 0 and 5"
+	ElseIf iStory = 0 Then
+		iStory = 1
+		iMaxCount = 5
+	Else
+		iMaxCount = iStory
+	End If
 
-		Set rgFindRange = dcArgumentDocument.Content
+	For iStory = iStory To iMaxCount Step 1
+		On Error GoTo noStoryFound
+		Set rgFindRange = dcArgumentDocument.StoryRanges(iStory)
+		On Error GoTo 0
 		With rgFindRange.Find
-			.Text = "[^t]"
-			.Replacement.Text = " "
-			.Execute Replace:=wdReplaceAll
-			If .Found Then
-				bFound = True
-				Set rgFindRange = dcArgumentDocument.Content
-			End If
+			.ClearFormatting
+			.Replacement.ClearFormatting
+			.Forward = True
+			.Wrap = wdFindStop
+			.Format = False
+			.MatchCase = False
+			.MatchWholeWord = False
+			.MatchAllWordForms = False
+			.MatchSoundsLike = False
+			.MatchWildcards = True
 		End With
 
-		Set rgFindRange = dcArgumentDocument.Content
-		With rgFindRange.Find
-			.Text = "[ ]{2;}"
-			.Execute Replace:=wdReplaceAll
-			If .Found Then
+		Do
+			bFound = False
+
+			With rgFindRange.Find
+				.Text = "[^t]"
+				.Replacement.Text = " "
+				.Execute Replace:=wdReplaceAll
+				If .Found Then bFound = True
+
+				.Text = " {2;}"
+				.Execute Replace:=wdReplaceAll
+				If .Found Then bFound = True
+
+				If iStory <> 2 Then
+					.Text = " ([^13^l,.;:\]\)\}])"
+					.Replacement.Text = "\1"
+					.Execute Replace:=wdReplaceAll
+					If .Found Then bFound = True
+
+					.Text = "([^13^l])[ ,.;:]"
+					.Execute Replace:=wdReplaceAll
+					If .Found Then bFound = True
+				End If
+			End With
+
+			If Not bFound And Not rgFindRange.NextStoryRange Is Nothing Then
+				Set rgFindRange = rgFindRange.NextStoryRange
+				With rgFindRange.Find
+					.ClearFormatting
+					.Replacement.ClearFormatting
+					.Forward = True
+					.Wrap = wdFindContinue
+					.Format = False
+					.MatchCase = False
+					.MatchWholeWord = False
+					.MatchAllWordForms = False
+					.MatchSoundsLike = False
+					.MatchWildcards = True
+				End With
 				bFound = True
-				Set rgFindRange = dcArgumentDocument.Content
 			End If
-		End With
+		Loop While bFound
+nextLoop:
+	Next iStory
 
-		Set rgFindRange = dcArgumentDocument.Content
-		With rgFindRange.Find
-			.Text = "[ ]([^13^l,.;:\]\)\}])"
-			.Replacement.Text = "\1"
-			.Execute Replace:=wdReplaceAll
-			If .Found Then
-				bFound = True
-				Set rgFindRange = dcArgumentDocument.Content
-			End If
-		End With
-
-		Set rgFindRange = dcArgumentDocument.Content
-		With rgFindRange.Find
-			.Text = "([^13^l])[ ,.;:]"
-			.Execute Replace:=wdReplaceAll
-			If .Found Then
-				bFound = True
-				Set rgFindRange = dcArgumentDocument.Content
-			End If
-		End With
-	Loop While bFound
-
-	RaMacros.FindAndReplaceClearParameters
-
+Exit Sub
+noStoryFound:
+Resume nextLoop
 End Sub
 
 
@@ -615,7 +674,7 @@ Sub HyperlinksOnlyDomain(dcArgumentDocument As Document)
 '
 
 	Dim hlCurrent As Hyperlink, stPatron As String, stResultadoPatron As String, rgexUrlRegEx As RegExp
-	stPatron = "(?:https?:(?://)?(?:www\.)?|//|www\.)([a-zA-Z\-]+?\.[a-zA-Z\-\.]+)(?:/[\S]+)?"
+	stPatron = "(?:https?:(?://)?(?:www\.)?|//|www\.)?([a-zA-Z\-]+?\.[a-zA-Z\-\.]+)(?:/[\S]+|/)?"
 		' Este es más exacto (sin puntos o guiones a principio o final del dominio), pero VBA no permite lookbehinds
 	' (?:https?:(?://)?(?:www\.)?|//|www\.)?((?:[a-zA-Z]|(?<=[a-zA-Z])-(?=[a-zA-Z]))+?\.(?:[a-zA-Z]|(?<=[a-zA-Z])[\.\-](?=[a-zA-Z]))+)(/[\S]+)?
 	Set rgexUrlRegEx = New RegExp
