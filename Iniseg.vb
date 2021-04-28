@@ -28,8 +28,8 @@ Sub Iniseg1Limpieza()
 '
 	Dim dcOriginalFile As Document, dcLibro As Document
 	Dim rgRangoActual As Range
-	Dim stFileName As String, stTextoOcultoMsg As String, stStoryRanges(4)
-	Dim iDeleteAnswer As Integer, i As Integer
+	Dim stFileName As String, stTextoOcultoMsg As String, stStoryRanges(4) As String
+	Dim i As Integer, iDeleteAnswer As Integer
 	Dim lEstilosBorrados As Long, lPrimeraNotaAlPie As Long
 	Dim bTextosOcultos() As Boolean
 
@@ -48,14 +48,15 @@ Sub Iniseg1Limpieza()
 	If iDeleteAnswer = vbCancel Then Exit Sub
 
 	rgRangoActual.Start = Selection.Start
-	Debug.Print "1.1/14 - Haciendo copia de seguridad (0) del archivo original"
+	Debug.Print "1.1/14 - Copia de seguridad (0) del archivo original"
 	RaMacros.CopySecurity dcOriginalFile, "0-", ""
 
 	If iDeleteAnswer = vbYes Then
 		If rgRangoActual.Footnotes.Count > 0 Then
-			lPrimeraNotaAlPie = rgRangoActual.Footnotes(1).Index
+			lPrimeraNotaAlPie = rgRangoActual.Footnotes(1).Index _
+				+ rgRangoActual.FootnoteOptions.StartingNumber
 		End If
-		Debug.Print "1.2/14 - Borrando el texto seleccionado"
+		Debug.Print "1.2/14 - Borrando texto seleccionado"
 		rgRangoActual.End = rgRangoActual.Start
 		rgRangoActual.Start = 0
 		rgRangoActual.Delete
@@ -134,16 +135,20 @@ Sub Iniseg2LibroYStory()
 	' Organizado de esta forma las macros de libro y story se pueden llamar por separado
 '
 	Dim dcLibro As Document, dcStory As Document
-	Dim iDocSeparados As Integer, iNotasExportar As Integer, iNotasSeparadas As Integer
+	Private iNotasReiniciar As Integer
+	Private iNotasExportar As Integer
+	Private iNotasSeparadas As Integer
 
-	iDocSeparados = MsgBox("¿Exportar cada tema en archivos separados?", vbYesNoCancel, "Opciones exportar")
-	If iDocSeparados = vbCancel Then Exit Sub
+	Set dcLibro = ActiveDocument
 
-	If ActiveDocument.Footnotes.Count > 0 Then
+	If dcLibro.Footnotes.Count > 0 Then
+		iNotasReiniciar = MsgBox("¿Mantener constante la numeración de notas en cada tema?", _
+			vbYesNoCancel, "Opciones notas")
+		If iNotasReiniciar = vbCancel Then Exit Sub
 		iNotasExportar = MsgBox("¿Exportar notas al pie de página a pdf?", _
 			vbYesNoCancel, "Opciones notas")
 		If iNotasExportar = vbCancel Then Exit Sub
-		If iDocSeparados = vbYes And iNotasExportar = vbYes Then
+		If iNotasExportar = vbYes Then
 			iNotasSeparadas = MsgBox("¿Exportar notas al pie de página de cada tema en archivos separados?", _
 				vbYesNoCancel, "Opciones notas")
 			If iNotasSeparadas = vbCancel Then Exit Sub
@@ -151,11 +156,12 @@ Sub Iniseg2LibroYStory()
 			iNotasSeparadas = vbNo
 		End If
 	Else
+		iNotasReiniciar = vbNo
 		iNotasExportar = vbNo
 		iNotasSeparadas = vbNo
 	End If
 
-	Set dcLibro = Iniseg.ConversionLibro(ActiveDocument, iDocSeparados, iNotasSeparadas)
+	Set dcLibro = Iniseg.ConversionLibro(dcLibro, iNotasReiniciar)
 	Debug.Print "A/4 - Archivo libro: salvando"
 	dcLibro.Save
 
@@ -174,8 +180,24 @@ Sub Iniseg2LibroYStory()
 End Sub
 
 Sub Iniseg3PaginasVaciasVisibles()
-	' Esta macro es una mala práctica y solo está para evitar confusiones por
-		' falta de uniformidad en el uso de plantillas y estilos
+' Exporta cada tema de libro a archivos separados e introduce páginas en blanco 
+' tras las secciones que acaban en página impar para que terceros no se confundan
+'
+	If iDocSeparados = 0 Then
+		iDocSeparados = MsgBox("¿Exportar cada tema en archivos separados?", vbYesNoCancel, "Opciones exportar")
+		If iDocSeparados = vbCancel Then Exit Function
+	ElseIf iDocSeparados < 6 Or iDocSeparados > 7 Then
+		Err.Raise Number:=513, Description:="iDocSeparados out of range"
+	End If
+
+	If iDocSeparados = vbYes Then
+		Debug.Print iUltima - 1 & "/" & iUltima & _
+			" - Archivo libro: exportando cada tema a archivos separados"
+		RaMacros.SectionsExportEachToFiles dcLibro, False, True, False,, " TEMA "
+	End If
+
+	' Esto es una mala práctica y solo está para evitar confusiones por
+	' falta de uniformidad en el uso de plantillas y estilos
 	RaMacros.SectionsFillBlankPages ActiveDocument
 	Debug.Print "Iniseg3PaginasVaciasVisibles terminada"
 End Sub
@@ -189,37 +211,25 @@ End Sub
 
 
 
-Function ConversionLibro(dcLibro As Document, Optional ByVal iDocSeparados As Integer = 0, _
-						Optional ByVal iNotasSeparadas As Integer = 0) _
+Function ConversionLibro(dcLibro As Document, _
+						Optional ByVal iNotasReiniciar As Integer = 0) _
 	As Document
 ' Realiza la limpieza necesaria y formatea correctamente
 '
 	Dim iContador As Integer, iUltima As Integer
 
-	If iDocSeparados = 0 Then
-		iDocSeparados = MsgBox("¿Exportar cada tema en archivos separados?", vbYesNoCancel, "Opciones exportar")
-		If iDocSeparados = vbCancel Then Exit Function
-	ElseIf iDocSeparados < 6 Or iDocSeparados > 7 Then
-		Err.Raise Number:=513, Description:="iDocSeparados out of range"
-	End If
-	If iDocSeparados = vbYes And dcLibro.Footnotes.Count > 0 Then
-		If iNotasSeparadas = 0 Then
-			iNotasSeparadas = MsgBox("¿Reiniciar notas en cada tema?", vbYesNoCancel, _
-				"Opciones notas")
-			If iNotasSeparadas = vbCancel Then Exit Function
-		ElseIf iNotasSeparadas < 6 Or iNotasSeparadas > 7 Then
-			Err.Raise Number:=513, Description:="iNotasSeparadas out of range"
+	If dcLibro.Footnotes.Count > 0 Then
+		If iNotasReiniciar = 0 Then
+			iNotasReiniciar = MsgBox("¿Mantener constante la numeración de notas para cada tema?", _
+				vbYesNoCancel, "Opciones notas")
+			If iNotasReiniciar = vbCancel Then Exit Function
+		ElseIf iNotasReiniciar < 6 Or iNotasReiniciar > 7 Then
+			Err.Raise Number:=513, Description:="iNotasReiniciar out of range"
 		End If
-	End If
-
-	If iNotasSeparadas = vbYes Then
-		dcLibro.Sections(1).Range.FootnoteOptions.NumberingRule = wdRestartSection
-	ElseIf iNotasSeparadas = vbNo Then
-		dcLibro.Sections(1).Range.FootnoteOptions.NumberingRule = wdRestartContinuous
+		iNotasReiniciar = iNotasReiniciar - 6
 	End If
 
 	iUltima = 17
-	If iDocSeparados = vbYes Then iUltima = iUltima + 1
 
 	Debug.Print "1/" & iUltima & " - Archivo libro: haciendo copia de seguridad (1)"
 	RaMacros.SaveAsNewFile dcLibro, "1-", "", False, True
@@ -273,7 +283,7 @@ Function ConversionLibro(dcLibro As Document, Optional ByVal iDocSeparados As In
 	RaMacros.SectionBreakBeforeHeading dcLibro, False, 4, 1
 	If dcLibro.Sections.Count > 1 Then
 		Debug.Print "15.2/" & iUltima & " - Archivo libro: mismo numbering rule de notas al pie en todas las secciones"
-		RaMacros.FootnotesSameNumberingRule dcLibro, 3, -501
+		RaMacros.FootnotesSameNumberingRule dcLibro, iNotasReiniciar, -501
 	End If
 	Debug.Print "16/" & iUltima & " - Archivo libro: añadiendo saltos de página antes de Títulos de bibliografía"
 	Iniseg.BibliografiaSaltosDePagina dcLibro
@@ -282,12 +292,6 @@ Function ConversionLibro(dcLibro As Document, Optional ByVal iDocSeparados As In
 	Do While dcLibro.Paragraphs.Last.Range.Text = vbCr
 		If dcLibro.Paragraphs.Last.Range.Delete = 0 Then Exit Do
 	Loop
-
-	If iDocSeparados = vbYes Then
-		Debug.Print iUltima - 1 & "/" & iUltima & _
-			" - Archivo libro: exportando cada tema a archivos separados"
-		RaMacros.SectionsExportEachToFiles dcLibro,, " TEMA "
-	End If
 
 	Debug.Print iUltima & "/" & iUltima & " - Conversión a libro terminada"
 	Set ConversionLibro = dcLibro
@@ -322,8 +326,13 @@ Function ConversionStory(dcLibro As Document, Optional ByVal iNotasExportar As I
 					If iNotasSeparadas = 0 Then
 						iNotasSeparadas = MsgBox("¿Exportar las notas al pie de cada tema en archivos separados?", _
 							vbYesNoCancel, "Opciones notas al pie")
-						If iNotasSeparadas = vbCancel Then Exit Function
-						If iNotasSeparadas = vbYes Then bNotasSeparadas = True Else bNotasSeparadas = False
+						If iNotasSeparadas = vbCancel Then
+							Exit Function
+						ElseIf iNotasSeparadas = vbYes Then
+							bNotasSeparadas = True
+						Else
+							bNotasSeparadas = False
+						End If
 					ElseIf iNotasSeparadas < 6 Or iNotasSeparadas > 7 Then
 						Err.Raise Number:=513, Description:="iNotasSeparadas out of range"
 					End If
@@ -334,7 +343,7 @@ Function ConversionStory(dcLibro As Document, Optional ByVal iNotasExportar As I
 		End If
 	End If
 
-	iUltima = 11
+	iUltima = 10
 	If iNotasExportar = vbYes Then iUltima = iUltima + 1
 	If iNotasExportar = vbYes Then iUltima = iUltima + 1
 
@@ -367,15 +376,15 @@ Function ConversionStory(dcLibro As Document, Optional ByVal iNotasExportar As I
 	Debug.Print "4/" & iUltima & " - Archivo story: títulos con 3 espacios en vez de tabulación"
 	Debug.Print "5.1/" & iUltima & " - Archivo story: adaptando listas para Storyline"
 	Iniseg.ListasParaStory dcStory
-	Debug.Print "5.2/" & iUltima & " - Archivo story: convirtiendo listas y campos LISTNUM a texto"
+	Debug.Print "5.2/" & iUltima & " - Archivo story: títulos divididos para no solaparse con el logo en la diapositiva"
+	Iniseg.TitulosDivididos dcStory
+	Debug.Print "5.3/" & iUltima & " - Archivo story: convirtiendo listas y campos LISTNUM a texto"
 	dcStory.ConvertNumbersToText
 	
 	Debug.Print "6/" & iUltima & " - Archivo story: adaptando el tamaño de párrafos"
 	Iniseg.ParrafosConversionStory dcStory
 	Iniseg.TitulosConTresEspacios dcStory
 
-	Debug.Print "7/" & iUltima & " - Archivo story: títulos divididos para no solaparse con el logo en la diapositiva"
-	Iniseg.TitulosDivididos dcStory
 	Debug.Print "8/" & iUltima & " - Archivo story: formateando imágenes"
 	Iniseg.ImagenesStory dcStory
 	Debug.Print "9/" & iUltima & " - Archivo story: corrigiendo interlineado"
@@ -407,15 +416,15 @@ Function ConversionStory(dcLibro As Document, Optional ByVal iNotasExportar As I
 		Debug.Print iUltima - 2 & ".1/" & iUltima & " - Exportando notas a archivo externo"
 		Iniseg.NotasPieExportar dcLibro, bNotasSeparadas
 		Debug.Print iUltima - 2 & ".2/" & iUltima & " - Archivo story: formateando notas"
-		Iniseg.NotasPieMarcas dcStory, True, bNotasSeparadas
+		Iniseg.NotasPieMarcas dcStory, True
 	Else
 		Debug.Print iUltima - 2 & "/" & iUltima & " - Archivo story: formateando notas"
-		Iniseg.NotasPieMarcas dcStory, False, bNotasSeparadas
+		Iniseg.NotasPieMarcas dcStory, False
 	End If
 
 	If dcLibro.Sections.Count > 1 Then
 		Debug.Print iUltima - 1 & "/" & iUltima & " - Archivo story: exportando en archivos separados"
-		RaMacros.SectionsExportEachToFiles dcStory,, "-tema_"
+		RaMacros.SectionsExportEachToFiles dcStory, False, True, False,, "-tema_"
 	End If
 
 	Debug.Print iUltima & "/" iUltima & " - Conversión para story terminada"
@@ -604,7 +613,6 @@ Sub ImagenesLibro(dcArgument As Document)
 '
 	Dim inlShape As InlineShape, sngRealPageWidth As Single, sngRealPageHeight As Single, iIndex As Integer
 
-	Application.ScreenUpdating = False
 	
 	sngRealPageWidth = dcArgument.PageSetup.PageWidth - dcArgument.PageSetup.Gutter _
 		- dcArgument.PageSetup.RightMargin - dcArgument.PageSetup.LeftMargin
@@ -674,7 +682,6 @@ Sub ImagenesLibro(dcArgument As Document)
 			End If
 		End With
 	Next inlShape
-	Application.ScreenUpdating = True
 End Sub
 
 
@@ -686,11 +693,9 @@ Sub ImagenesStory(dcArgument As Document)
 '
 	Dim inlShape As InlineShape
 
-	Application.ScreenUpdating = False
 	For Each inlShape In dcArgument.InlineShapes
 		inlShape.Width = CentimetersToPoints(29)
 	Next inlShape
-	Application.ScreenUpdating = True
 End Sub
 
 
@@ -727,7 +732,6 @@ Sub ParrafosSeparacionLibro(dcArgument As Document)
 	Dim rgStory As Range
 	Dim pCurrent As Paragraph
 
-	Application.ScreenUpdating = False
 	For iStory = 1 To 5 Step 4
 		On Error Resume Next
 		Set rgStory = dcArgument.StoryRanges(iStory)
@@ -816,7 +820,6 @@ Sub ParrafosSeparacionLibro(dcArgument As Document)
 			On Error GoTo 0
 		End If
 	Next iStory
-	Application.ScreenUpdating = True
 End Sub
 Function GetSeparacionTamaño(pArgument As Paragraph) As Integer
 ' Devuelve el tamaño de separación propio del tipo de párrafo pasado como argumento
@@ -854,7 +857,6 @@ Sub TablasParrafosSeparacion(dcArgument As Document)
 	Dim rgTable As Range
 	Dim tbCurrent As Table
 
-	Application.ScreenUpdating = False
 	For iCounter = 1 To dcArgument.Tables.Count Step 1
 		Set tbCurrent = dcArgument.Tables(iCounter)
 		If tbCurrent.NestingLevel = 1 Then
@@ -878,14 +880,11 @@ Sub TablasParrafosSeparacion(dcArgument As Document)
 			End If
 		End If
 	Next iCounter
-	Application.ScreenUpdating = True
 End Sub
 
 Sub ParrafosConversionStory(dcArgument As Document)
 ' Conversion de Word impreso a formato para Storyline
 '
-
-	Application.ScreenUpdating = False
 	RaMacros.FindAndReplaceClearParameters
 	' Cambio del tamaño de Titulo 2 de 16 a 17
 	With dcArgument.Styles(wdstyleheading2).Font
@@ -1005,17 +1004,17 @@ Sub ParrafosConversionStory(dcArgument As Document)
 		.MatchSoundsLike = False
 		.MatchWildcards = True
 		.Text = "(*@^13)"
-		.Replacement.Text = "\1FISTRO"
+		.Replacement.Text = "\1MARCA_PARR-8"
 		.Execute Replace:=wdReplaceAll
 
+		.MatchWildcards = False
 		.Style = wdStyleNormal
-		.Text = "FISTRO^13"
+		.Text = "MARCA_PARR-8^p"
 		.Replacement.Font.Size = 8
-		.Replacement.Text = "^13"
+		.Replacement.Text = "^p"
 		.Execute Replace:=wdReplaceAll
 	End With
 	RaMacros.FindAndReplaceClearParameters
-	Application.ScreenUpdating = True
 End Sub
 
 
@@ -1079,8 +1078,13 @@ Sub TitulosDivididos(dcArgument As Document)
 		.MatchAllWordForms = False
 		.MatchSoundsLike = False
 		.MatchWildcards = True
-		.Text = "(?{30;}) "
-		.Replacement.Text = "\1^13      "
+		If dcArgument.Styles(wdstyleheading2).ListLevelNumber = 0 Then
+			.Text = "(?{35;}) "
+			.Replacement.Text = "\1^l"
+		Else
+			.Text = "(?{30;}) "
+			.Replacement.Text = "\1^l      "
+		End If
 		.Style = wdstyleheading2
 		.Execute Replace:=wdReplaceAll
 
@@ -1116,15 +1120,15 @@ End Sub
 
 
 
-Sub NotasPieMarcas(dcArgument As Document, ByVal bExportar As Boolean, ByVal bReiniciar As Boolean)
+Sub NotasPieMarcas(dcArgument As Document, ByVal bExportar As Boolean)
 ' Convierte las referencias de notas al pie al texto "NOTA_PIE-numNota"
 	' para poder automatizar externamente su conversión en el .story
 ' Args:
 	' bExportar: si es true las notas se borran y su referencia se sustituye por el texto
 		' si es false la referencia de la nota no se borra, se le aplica el atributo "hidden"
-	' bReiniciar: true si cada sección tiene un número de inicio de notas distinto
 '
-	Dim lContadorNotas As Long, lReferencia As Long, lStartingPage As Long
+	Dim lNota As Long, lReferencia As Long
+	Dim iSection As Integer
 	Dim rgFootNote As Range
 	Dim oEstiloNota As Font
 	Dim scCurrent As Section
@@ -1137,18 +1141,14 @@ Sub NotasPieMarcas(dcArgument As Document, ByVal bExportar As Boolean, ByVal bRe
 		.Superscript = True
 	End With
 
-	Application.ScreenUpdating = False
 
-	If Not bReiniciar Then
-		lReferencia = dcArgument.Footnotes.StartingNumber + dcArgument.Footnotes.Count - 1
-	End If
-
-	For Each scCurrent In dcArgument.Sections
-		If bReiniciar Then
-			lReferencia = scCurrent.Range.FootnoteOptions.StartingNumber + scCurrent.Range.Footnotes.Count - 1
-		End If
-		For lContadorNotas = scCurrent.Range.Footnotes.Count To 1 Step -1
-			Set rgFootNote = scCurrent.Range.Footnotes(lContadorNotas).Reference
+	For iSection = dcArgument.Sections.Count To 1 Step -1
+		Set scCurrent = dcArgument.Sections(iSection)
+		lReferencia = RaMacros.SectionGetFirstFootnoteNumber(dcArgument, scCurrent.Index) _
+			+ scCurrent.Range.Footnotes.Count
+		For lNota = scCurrent.Range.Footnotes.Count To 1 Step -1
+			lReferencia = lReferencia - 1
+			Set rgFootNote = scCurrent.Range.Footnotes(lNota).Reference
 			If bExportar Then
 				rgFootNote.Text = "NOTA_PIE-" & lReferencia
 			Else
@@ -1156,14 +1156,13 @@ Sub NotasPieMarcas(dcArgument As Document, ByVal bExportar As Boolean, ByVal bRe
 				rgFootNote.Font.Hidden = True
 			End If
 			rgFootNote.Font = oEstiloNota
-			lReferencia = lReferencia - 1
-		Next lContadorNotas
-	Next scCurrent
+		Next lNota
+	Next iSection
 
-	Application.ScreenUpdating = True
 End Sub
 
-Sub NotasPieExportar(dcArgument As Document, ByVal bDivide As Boolean, _
+Sub NotasPieExportar(dcArgument As Document, _
+					ByVal bDivide As Boolean, _
 					Optional ByVal stSuffix As String = "Footnotes", _
 					Optional ByVal stSectionSuffix As String = "Section", _
 					Optional ByVal stTitle As String = "Footnotes")
@@ -1178,8 +1177,9 @@ Sub NotasPieExportar(dcArgument As Document, ByVal bDivide As Boolean, _
 ' ToDo:
 	' Convertir esta subrutina en una función de uso general:
 		' cambiar idioma
-		' Retornar el archivo de notas
+		' Retornar el archivo de notas / array de archivos
 		' Implementar los argumentos opcionales
+		' implementar un parámetro para elegir si exportar en pdf o no
 '
 	Dim dcNotas As Document
 	Dim stFilename As String, stOriginalName As String, stOriginalExtension As String
@@ -1187,12 +1187,11 @@ Sub NotasPieExportar(dcArgument As Document, ByVal bDivide As Boolean, _
 	Dim fnCurrent As Footnote
 	Dim scCurrent As Section
 	Dim bFirst As Boolean
-	Dim lCounter As Long
+	Dim lCounter As Long, lStartingFootnote
 
 	stOriginalName = Left(dcArgument.Name, InStrRev(dcArgument.Name, ".") - 1)
 	stOriginalExtension = Right(dcArgument.Name, Len(dcArgument.Name) - InStrRev(dcArgument.Name, ".") + 1)
 	bFirst = True
-
 	For Each scCurrent In dcArgument.Sections
 		If scCurrent.Range.Footnotes.Count > 0 Then
 			If bDivide Then
@@ -1214,14 +1213,16 @@ Sub NotasPieExportar(dcArgument As Document, ByVal bDivide As Boolean, _
 
 			If bDivide Or bFirst Then
 				stFileName = dcArgument.Path & Application.PathSeparator & "NOTAS " _
-							& stFileName & stOriginalName & stOriginalExtension
+					& stFileName & stOriginalName & stOriginalExtension
+				lStartingFootnote = _
+					RaMacros.SectionGetFirstFootnoteNumber(dcArgument, scCurrent.Index)
 			End If
 
 			If bDivide = False And bFirst And Dir(stFileName) > "" Then
 				Set dcNotas = Documents.Open(FileName:=stFileName, ConfirmConversions:=False, _
 											ReadOnly:=False, Revert:=False, Visible:=False)
 				RaMacros.CopySecurity dcNotas, "0-", ""
-			ElseIf bDivide Or (bFirst And bDivide = False) Then
+			ElseIf bDivide Or bFirst Then
 				Set dcNotas = Documents.Add _
 						(Template:= "iniseg-wd", _
 						Visible:= False)
@@ -1260,7 +1261,9 @@ Sub NotasPieExportar(dcArgument As Document, ByVal bDivide As Boolean, _
 			Next lCounter
 			bFirst = False
 		End If
+		
 		If Not dcNotas Is Nothing And (bDivide Or scCurrent.Index = dcArgument.Sections.Count) Then
+			dcNotas.Styles("iniseg-list_mixta").ListTemplate.ListLevels(1).StartAt = lStartingFootnote
 			RaMacros.CleanBasic dcNotas, 1, True, True
 			Iniseg.AutoFormateo dcNotas
 			RaMacros.HyperlinksFormatting dcNotas, 3, 1
@@ -1349,7 +1352,6 @@ Sub BibliografiaSaltosDePagina(dcArgument As Document)
 '
 	Dim scCurrent As Section, rgFindRange As Range
 
-	Application.ScreenUpdating = False
 	For Each scCurrent In dcArgument.Sections
 		Set rgFindRange = scCurrent.Range
 		With rgFindRange.Find
@@ -1387,7 +1389,6 @@ Sub BibliografiaSaltosDePagina(dcArgument As Document)
 				End If
 			End If
 	Next scCurrent
-	Application.ScreenUpdating = True
 End Sub
 
 Sub BibliografiaExportar(dcArgument As Document)
