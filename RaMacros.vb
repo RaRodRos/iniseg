@@ -241,7 +241,7 @@ End Function
 
 Function GetFormattedDateAndTime(Optional chosedInfo As Integer = 1) As String
 ' Devuelve un string con la fecha y hora en formato yymmdd, hhmm o yymmdd_hhmm, según requerido
-
+'
 	Dim formatedInfo As String
 
 	Select Case chosedInfo
@@ -262,21 +262,18 @@ End Function
 
 Sub HeadersFootersRemove(dcArgumentDocument As Document)
 ' Borra todos los pies y encabezados de página
+'
+	Dim scCurrentSection As Section, hfCurrentHF As HeaderFooter
 
-' https://word.tips.net/T001777_Deleting_All_Headers_and_Footers.html
+	For Each scCurrentSection In dcArgumentDocument.Sections
+		For Each hfCurrentHF In scCurrentSection.Headers
+			If hfCurrentHF.Exists Then hfCurrentHF.Range.Delete
+		Next hfCurrentHF
 
-	Dim oSec As Section
-	Dim oHead As HeaderFooter
-	Dim oFoot As HeaderFooter
-	For Each oSec In dcArgumentDocument.Sections
-		For Each oHead In oSec.Headers
-			If oHead.Exists Then oHead.Range.Delete
-		Next oHead
-
-		For Each oFoot In oSec.Footers
-			If oFoot.Exists Then oFoot.Range.Delete
-		Next oFoot
-	Next oSec
+		For Each hfCurrentHF In scCurrentSection.Footers
+			If hfCurrentHF.Exists Then hfCurrentHF.Range.Delete
+		Next hfCurrentHF
+	Next scCurrentSection
 End Sub
 
 
@@ -384,7 +381,7 @@ Sub CleanSpaces(dcArgumentDocument As Document, Optional iStory As Integer = 0)
 					Or rgFindRange.Characters.First.Text = "." _
 					Or rgFindRange.Characters.First.Text = ";" _
 					Or rgFindRange.Characters.First.Text = ":"
-				rgFindRange2.Delete
+				If rgFindRange2.Delete = 0 Then Exit Do
 			Loop
 			Set rgFindRange2 = rgFindRange.Duplicate
 			rgFindRange2.Collapse wdCollapseEnd
@@ -392,7 +389,7 @@ Sub CleanSpaces(dcArgumentDocument As Document, Optional iStory As Integer = 0)
 			Do While rgFindRange2.Text = " " _
 					Or rgFindRange.Characters.Last.Text = vbTab
 				rgFindRange2.Collapse wdCollapseStart
-				rgFindRange2.Delete
+				If rgFindRange2.Delete = 0 Then Exit Do
 				rgFindRange2.MoveStart wdCharacter, -1
 			Loop
 
@@ -441,7 +438,7 @@ Sub CleanSpaces(dcArgumentDocument As Document, Optional iStory As Integer = 0)
 						Set rgFindRange2 = tbCurrentTable.Range.Next(wdParagraph,1).Characters.First
 							rgFindRange2.collapse wdCollapseStart
 						Do While rgFindRange2.Text = " "
-							rgFindRange2.Delete
+							If rgFindRange2.Delete = 0 Then Exit Do
 						Loop
 					End If
 				Next tbCurrentTable
@@ -482,7 +479,7 @@ Sub CleanSpaces(dcArgumentDocument As Document, Optional iStory As Integer = 0)
 									Or rgFindRange2.Characters.Last = "." _
 									Or rgFindRange2.Characters.Last = ";" _
 									Or rgFindRange2.Characters.Last = ":"
-								rgFindRange2.Delete
+								If rgFindRange2.Delete = 0 Then Exit Do
 							Loop
 							rgFindRange2.EndOf wdStory, wdExtend
 						Loop
@@ -514,7 +511,6 @@ End Sub
 
 Sub CleanEmptyParagraphs(dcArgumentDocument As Document, Optional iStory As Integer = 0)
 ' Deletes empty paragraphs
-	' First and last empty paragraphs: https://wordmvp.com/FAQs/MacrosVBA/DeleteEmptyParas.htm
 ' Args:
 	' iStory: defines the storyranges that will be cleaned
 		' All (1 to 5)		0
@@ -524,8 +520,8 @@ Sub CleanEmptyParagraphs(dcArgumentDocument As Document, Optional iStory As Inte
 		' wdCommentsStory	4
 		' wdTextFrameStory	5
 '
-	Dim rgFindRange As Range, rgFindRange2 As Range, tbCurrentTable As Table, cllCurrentCell As Cell
-	Dim bAutoFit As Boolean, iMaxCount As Integer
+	Dim rgStory As Range, rgFindRange2 As Range, tbCurrentTable As Table, cllCurrentCell As Cell
+	Dim bAutoFit As Boolean, bFound As Boolean, iMaxCount As Integer
 
 	If iStory < 0 Or iStory > 5 Then
 		Err.Raise Number:=514, Description:="Argument out of range it must be between 0 and 5"
@@ -536,74 +532,175 @@ Sub CleanEmptyParagraphs(dcArgumentDocument As Document, Optional iStory As Inte
 		iMaxCount = iStory
 	End If
 
-	Set rgFindRange = dcArgumentDocument.Paragraphs(1).Range
-
-	Set rgFindRange = dcArgumentDocument.Paragraphs.Last.Range
-	If rgFindRange.Text = vbCr Then rgFindRange.Delete
-
 	For iStory = iStory To iMaxCount Step 1
 		On Error Resume Next
-		Set rgFindRange = dcArgumentDocument.StoryRanges(iStory)
+		Set rgStory = dcArgumentDocument.StoryRanges(iStory)
 		If Err.Number = 0 Then
 			On Error GoTo 0
 
-			' Deletting empty paragraphs related to tables
-			For each tbCurrentTable In rgFindRange.Tables
-				bAutoFit = tbCurrentTable.AllowAutoFit
-				tbCurrentTable.AllowAutoFit = False
-				
-				' Deletting empty paragraphs before tables
-				Set rgFindRange2 = tbCurrentTable.Range
-				If rgFindRange2.Previous(wdParagraph,1).Start <> 0 Then
-					Do While rgFindRange2.Previous(wdParagraph,1).Text = vbCr _
-							And rgFindRange2.Previous(wdParagraph,2).Tables.Count = 0
-						rgFindRange2.Previous(wdParagraph,1).Delete
+			Do
+				bFound = False
+
+				' Deletting first and last paragraphs, if empty
+				Do While rgStory.Paragraphs.First.Range.Text = vbCr
+					If rgStory.Paragraphs.First.Range.Delete = 0 Then Exit Do
 				Loop
-							Or (rgFindRange2.Previous(wdParagraph,1).Start = 0 _
-							And rgFindRange2.Previous(wdParagraph,1).Text = vbCr)
-
-				' Word inserts an empty paragraph after each table, so it's better to leave them alone
-				' Set rgFindRange2 = tbCurrentTable.Range
-				' Do While rgFindRange2.Next(wdParagraph,1).Text = vbCr _
-				' 	And rgFindRange2.Next(wdParagraph,2).Tables.Count = 0
-				' 	rgFindRange2.Next(wdParagraph,2).Delete
-				' Loop
-
-				' Deletting empty paragraphs inside non empty cell tables
-				For Each cllCurrentCell In tbCurrentTable.Range.Cells
-					If Len(cllCurrentCell.Range.Text) > 2 And _
-							cllCurrentCell.Range.Characters(1).Text = vbCr Then
-						cllCurrentCell.Range.Characters(1).Delete
+				Do While rgStory.Paragraphs.Last.Range.Text = vbCr 
+					If iStory = 2 Or iStory = 3 Or iStory = 4 Then
+						If rgStory.Paragraphs.Last.Range.Previous(wdCharacter, 1).Delete = 0 Then Exit Do
+					Else
+						If rgStory.Paragraphs.Last.Range.Delete = 0 Then Exit Do
 					End If
+				Loop
 
-					If Len(cllCurrentCell.Range.Text) > 2 And _
-							Asc(Right$(cllCurrentCell.Range.Text, 3)) = 13 Then
-						Set rgFindRange2 = cllCurrentCell.Range
-						rgFindRange2.MoveEnd Unit:=wdCharacter, Count:=-1
-						rgFindRange2.Characters.Last.Delete
-					End If
-				Next cllCurrentCell
+				' Deletting empty paragraphs related to tables
+				For each tbCurrentTable In rgStory.Tables
+					bAutoFit = tbCurrentTable.AllowAutoFit
+					tbCurrentTable.AllowAutoFit = False
+					
+					' Deletting empty paragraphs before tables
+					Do
+						If tbCurrentTable.Range.Start <> 0 Then
+							Set rgFindRange2 = tbCurrentTable.Range.Previous(wdParagraph,1)
+							If rgFindRange2.Text = vbCr Then
+								If rgFindRange2.Start = 0 Then
+									If rgFindRange2.Delete = 0 Then Exit Do
+									Exit Do
+								Else
+									If rgFindRange2.Previous(wdParagraph, 1).Tables.Count = 0 Then
+										If rgFindRange2.Delete = 0 Then Exit Do
+										Set rgFindRange2 = tbCurrentTable.Range.Previous(wdParagraph,1)
+									Else
+										Exit Do
+									End If
+								End If
+							Else
+								Exit Do
+							End If
+						Else
+							Exit Do
+						End If
+					Loop
 
-				tbCurrentTable.AllowAutoFit = bAutoFit
-			Next tbCurrentTable
+					' Deletting empty paragraphs after tables
+					Do
+						If tbCurrentTable.Range.End <> rgStory.End Then
+							Set rgFindRange2 = tbCurrentTable.Range.Next(wdParagraph,1)
+							If rgFindRange2.Text = vbCr Then
+								If rgFindRange2.End <> rgStory.End Then
+									If rgFindRange2.Next(wdParagraph, 1).Tables.Count = 0 Then
+										If rgFindRange2.Delete = 0 Then Exit Do
+										Set rgFindRange2 = tbCurrentTable.Range.Next(wdParagraph,1)
+									Else
+										Exit Do
+									End If
+								Else
+									If rgFindRange2.Delete = 0 Then Exit Do
+									Exit Do
+								End If
+							Else
+								Exit Do
+							End If
+						Else
+							Exit Do
+						End If
+					Loop
 
-			With rgFindRange.Find
-				.ClearFormatting
-				.Replacement.ClearFormatting
-				.Forward = True
-				.Wrap = wdFindContinue
-				.Format = False
-				.MatchCase = False
-				.MatchWholeWord = False
-				.MatchAllWordForms = False
-				.MatchSoundsLike = False
-				.MatchWildcards = True
-				.Text = "[^13^l]{2;}"
-				.Replacement.Text = "^13"
-				.Execute Replace:=wdReplaceAll
-				Do While Not rgFindRange.NextStoryRange Is Nothing
-					Set rgFindRange = rgFindRange.NextStoryRange
-					With rgFindRange.Find
+					' Deletting empty paragraphs inside non empty cell tables
+					For Each cllCurrentCell In tbCurrentTable.Range.Cells
+						If Len(cllCurrentCell.Range.Text) > 2 And _
+								cllCurrentCell.Range.Characters(1).Text = vbCr Then
+							cllCurrentCell.Range.Characters(1).Delete
+						End If
+
+						If Len(cllCurrentCell.Range.Text) > 2 And _
+								Asc(Right$(cllCurrentCell.Range.Text, 3)) = 13 Then
+							Set rgFindRange2 = cllCurrentCell.Range
+							rgFindRange2.MoveEnd Unit:=wdCharacter, Count:=-1
+							rgFindRange2.Characters.Last.Delete
+						End If
+					Next cllCurrentCell
+
+					tbCurrentTable.AllowAutoFit = bAutoFit
+				Next tbCurrentTable
+
+				With rgStory.Find
+					.ClearFormatting
+					.Replacement.ClearFormatting
+					.Forward = True
+					.Wrap = wdFindStop
+					.Format = False
+					.MatchCase = False
+					.MatchWholeWord = False
+					.MatchAllWordForms = False
+					.MatchSoundsLike = False
+					.MatchWildcards = True
+				End With
+
+				If iStory = 2 Or iStory = 3 Or iStory = 4 Then
+					Do
+						bFound = False
+						Set rgFindRange2 = rgStory.Duplicate
+						With rgFindRange2.Find
+							.ClearFormatting
+							.Replacement.ClearFormatting
+							.Forward = True
+							.Wrap = wdFindStop
+							.Format = False
+							.MatchCase = False
+							.MatchWholeWord = False
+							.MatchAllWordForms = False
+							.MatchSoundsLike = False
+							.MatchWildcards = True
+							' If iStory = 4 Then .Text = "[^13^l]{2;}" Else .Text = "[^13^l]@^13^2"
+							.Text = "[^13^l]{2;}"
+						End With
+                        If rgFindRange2.Find.Execute Then
+							' ------------------- 1st version
+							' If iStory = 4 Then
+							' 	If Len(rgFindRange2) <= 2 Then rgFindRange2.Collapse wdCollapseStart
+							' 	If rgFindRange2.Delete <> 0 Then bFound = True
+							' ElseIf rgFindRange2.End <> 0 Then
+							' 	rgFindRange2.MoveEnd wdCharacter, -2
+							' 	If rgFindRange2.Delete <> 0 Then bFound = True
+							' End If
+							' ------------------- 2nd version (no loops, unlike 3rd version)
+                            If Len(rgFindRange2) = 2 Then
+                                rgFindRange2.Collapse wdCollapseStart
+                                If rgFindRange2.Delete <> 0 Then bFound = True
+                            Else
+                                If rgFindRange2.Delete <> 0 Then
+                                    rgFindRange2.Collapse wdCollapseStart
+                                    If rgFindRange2.Delete <> 0 Then bFound = True
+                                End If
+                            End If
+							' ------------------- 3rd version
+							' bFound = True
+							' rgFindRange2.Collapse wdCollapseStart
+							' Do While rgFindRange2.Next(wdCharacter, 1).Text = vbCr
+                            '     If rgFindRange2.Delete = 0 Then Exit Do
+							' Loop
+                        End If
+					Loop While bFound
+				End If
+
+				bFound = False
+				With rgStory.Find
+					.Replacement.Text = "\1"
+
+					.Text = "([^13^l]){2;}"
+					If .Execute(Replace:=wdReplaceAll) Then bFound = True
+
+					.Text = "(^13)^l"
+					If .Execute(Replace:=wdReplaceAll) Then bFound = True
+
+					.Text = "(^l)^13"
+					If .Execute(Replace:=wdReplaceAll) Then bFound = True
+				End With
+
+				If iStory = 5 And Not bFound And Not rgStory.NextStoryRange Is Nothing Then
+					Set rgStory = rgStory.NextStoryRange
+					With rgStory.Find
 						.ClearFormatting
 						.Replacement.ClearFormatting
 						.Forward = True
@@ -615,14 +712,14 @@ Sub CleanEmptyParagraphs(dcArgumentDocument As Document, Optional iStory As Inte
 						.MatchSoundsLike = False
 						.MatchWildcards = True
 					End With
-				Loop
-			End With
+					bFound = True
+				End If
+			Loop While bFound
 		Else
 			On Error GoTo 0
 		End If
 	Next iStory
 End Sub
-
 
 
 
@@ -789,92 +886,10 @@ End Sub
 
 
 
-Sub HyperlinksOnlyDomain(dcArgumentDocument As Document)
-' Limpia los hipervínculos para que limpien la URL completa y muestren solo el dominio
-'
-	Dim hlCurrent As Hyperlink, stPatron As String, stResultadoPatron As String, rgexUrlRegEx As RegExp
-	stPatron = "(?:https?:(?://)?(?:www\.)?|//|www\.)?([a-zA-Z\-]+?\.[a-zA-Z\-\.]+)(?:/[\S]+|/)?"
-		' Este es más exacto (sin puntos o guiones a principio o final del dominio), pero VBA no permite lookbehinds
-	' (?:https?:(?://)?(?:www\.)?|//|www\.)?((?:[a-zA-Z]|(?<=[a-zA-Z])-(?=[a-zA-Z]))+?\.(?:[a-zA-Z]|(?<=[a-zA-Z])[\.\-](?=[a-zA-Z]))+)(/[\S]+)?
-	Set rgexUrlRegEx = New RegExp
-	rgexUrlRegEx.Pattern = stPatron
-	rgexUrlRegEx.IgnoreCase = True
-	rgexUrlRegEx.Global = True
-
-	For Each hlCurrent In dcArgumentDocument.Hyperlinks
-		If hlCurrent.Type = 0 And rgexUrlRegEx.Test(hlCurrent.TextToDisplay) = True Then
-			hlCurrent.TextToDisplay = rgexUrlRegEx.Replace(hlCurrent.TextToDisplay, "$1")
-		End If
-	Next hlCurrent
-
-End Sub
-
-
-
-
-
-' Sub HyperlinksFormatting(dcArgumentDocument As Document, Optional iStory As Integer = 0)
-' ' Aplica el estilo Hipervínculo a todos los hipervínculos
-' ' Args:
-' 	' iStory: defines the storyranges that will be cleaned
-' 		' All (1 to 5)		0
-' 		' wdMainTextStory	1
-' 		' wdFootnotesStory	2
-' 		' wdEndnotesStory	3
-' 		' wdCommentsStory	4
-' 		' wdTextFrameStory	5
-' '
-' 	Dim rgFindRange As Range, iMaxCount As Integer
-
-' 	If iStory < 0 Or iStory > 5 Then
-' 		Err.Raise Number:=514, Description:="Argument out of range it must be between 0 and 5"
-' 	ElseIf iStory = 0 Then
-' 		iStory = 1
-' 		iMaxCount = 5
-' 	Else
-' 		iMaxCount = iStory
-' 	End If
-
-' 	dcArgumentDocument.Activate
-' 	ActiveWindow.View.ShowFieldCodes = Not ActiveWindow.View.ShowFieldCodes
-
-' 	For iStory = iStory To iMaxCount Step 1
-' 		On Error Resume Next
-' 		Set rgFindRange = dcArgumentDocument.StoryRanges(iStory)
-' 		If Err.Number = 0 Then
-' 			On Error GoTo 0
-' 			With rgFindRange.Find
-' 				.ClearFormatting
-' 				.Text = "^d HYPERLINK"
-' 				.Replacement.Text = ""
-' 				.Replacement.Style = wdStyleHyperlink
-' 				.Forward = True
-' 				.Wrap = wdFindContinue
-' 				.Format = True
-' 				.MatchCase = False
-' 				.MatchWholeWord = False
-' 				.MatchAllWordForms = False
-' 				.MatchSoundsLike = False
-' 				.MatchWildcards = False
-' 				.Execute Replace:=wdReplaceAll
-' 			End With
-' 		Else
-' 			On Error GoTo 0
-' 		End If
-' 	Next iStory
-
-' 	dcArgumentDocument.Activate
-' 	ActiveWindow.View.ShowFieldCodes = Not ActiveWindow.View.ShowFieldCodes
-' End Sub
-
-
-
-
-
 Sub HyperlinksFormatting(dcArgumentDocument As Document, Optional iStory As Integer = 0)
 ' Aplica el estilo Hipervínculo a todos los hipervínculos
 '
-	Dim rgFindRange As Range, iMaxCount As Integer, hlCurrentLink As Hyperlink
+	Dim rgStory As Range, iMaxCount As Integer, hlCurrentLink As Hyperlink
 
 	If iStory < 0 Or iStory > 5 Then
 		Err.Raise Number:=514, Description:="Argument out of range it must be between 0 and 5"
@@ -885,23 +900,57 @@ Sub HyperlinksFormatting(dcArgumentDocument As Document, Optional iStory As Inte
 		iMaxCount = iStory
 	End If
 
-	dcArgumentDocument.Activate
-	ActiveWindow.View.ShowFieldCodes = Not ActiveWindow.View.ShowFieldCodes
-
 	For iStory = iStory To iMaxCount Step 1
 		On Error Resume Next
-		Set rgFindRange = dcArgumentDocument.StoryRanges(iStory)
+		Set rgStory = dcArgumentDocument.StoryRanges(iStory)
 		If Err.Number = 0 Then
 			On Error GoTo 0
-			For Each hlCurrentLink In rgFindRange.Hyperlinks
+			For Each hlCurrentLink In rgStory.Hyperlinks
 				hlCurrentLink.Range.Style = wdStyleHyperlink
+			Next hlCurrentLink
+		Else
+			On Error GoTo 0
+		End If
+	Next iStory	
+End Sub
+
+Sub HyperlinksOnlyDomain(dcArgumentDocument As Document, Optional iStory As Integer = 0)
+' Limpia los hipervínculos para que limpien la URL completa y muestren solo el dominio
+'
+	Dim hlCurrentLink As Hyperlink, stPatron As String, stResultadoPatron As String, rgexUrlRegEx As RegExp
+	Dim rgStory As Range, iMaxCount As Integer
+
+	If iStory < 0 Or iStory > 5 Then
+		Err.Raise Number:=514, Description:="Argument out of range it must be between 0 and 5"
+	ElseIf iStory = 0 Then
+		iStory = 1
+		iMaxCount = 5
+	Else
+		iMaxCount = iStory
+	End If
+
+	stPatron = "(?:https?:(?://)?(?:www\.)?|//|www\.)?([a-zA-Z\-]+?\.[a-zA-Z\-\.]+)(?:/[\S]+|/)?"
+		' Este es más exacto (sin puntos o guiones a principio o final del dominio), pero VBA no permite lookbehinds
+	' (?:https?:(?://)?(?:www\.)?|//|www\.)?((?:[a-zA-Z]|(?<=[a-zA-Z])-(?=[a-zA-Z]))+?\.(?:[a-zA-Z]|(?<=[a-zA-Z])[\.\-](?=[a-zA-Z]))+)(/[\S]+)?
+	Set rgexUrlRegEx = New RegExp
+	rgexUrlRegEx.Pattern = stPatron
+	rgexUrlRegEx.IgnoreCase = True
+	rgexUrlRegEx.Global = True
+
+    For iStory = iStory To iMaxCount Step 1
+        On Error Resume Next
+        Set rgStory = dcArgumentDocument.StoryRanges(iStory)
+        If Err.Number = 0 Then
+            On Error GoTo 0
+			For Each hlCurrentLink In rgStory.Hyperlinks
+				If hlCurrentLink.Type = 0 And rgexUrlRegEx.Test(hlCurrentLink.TextToDisplay) = True Then
+					hlCurrentLink.TextToDisplay = rgexUrlRegEx.Replace(hlCurrentLink.TextToDisplay, "$1")
+				End If
+			Next hlCurrentLink
 		Else
 			On Error GoTo 0
 		End If
 	Next iStory
-
-	Next
-	
 End Sub
 
 
