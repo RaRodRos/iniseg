@@ -7,79 +7,90 @@ Function StylesDeleteUnused(dcArgument As Document, _
 ' Based on:
 	' https://word.tips.net/T001337_Removing_Unused_Styles.html
 ' Modifications:
+	' Renamed variables
 	' It runs until no unused styles left
 	' A message with the number of styles must be turn on by the bMsgBox parameter
 	' It's now a function that returns the number of deleted styles
+	' If the style cannot be found because the NameLocal property is corrupted
+		' (eg. because of leading or trailing spaces) it gets automatically deleted
+	' It now detects textframes in shapes or inline shapes
 '
-	Dim oStyle As Style
-	Dim sCount As Long
-	Dim lTotalSCount As Long
-	Dim sStart As Single, sEnd As Single
+	Dim stCurrent As Style
+	Dim lCount As Long, lTotalCount As Long
+	Dim sStart As Single
 
 	sStart = Timer
-	lTotalSCount = 0
+	lTotalCount = 0
 	Do
-		sCount = 0
-		For Each oStyle In dcArgument.Styles
+		lCount = 0
+		For Each stCurrent In dcArgument.Styles
 			'Only check out non-built-in styles
-			If oStyle.BuiltIn = False Then
-				If StyleInUse(oStyle.NameLocal, dcArgument) = False Then
+			If stCurrent.BuiltIn = False Then
+				If StyleInUse(stCurrent.NameLocal, dcArgument) = False Then
 					Application.OrganizerDelete Source:= dcArgument.FullName, _
-					Name:= oStyle.NameLocal, Object:=wdOrganizerObjectStyles
-					sCount = sCount + 1
+					Name:= stCurrent.NameLocal, Object:=wdOrganizerObjectStyles
+					lCount = lCount + 1
 				End If
 			End If
-		Next oStyle
-		lTotalSCount = lTotalSCount + sCount
-	Loop While sCount > 0
+		Next stCurrent
+		lTotalCount = lTotalCount + lCount
+	Loop While lCount > 0
 
 	If bMsgBox Then 
-		MsgBox lTotalSCount & " styles deleted"
-		StylesDeleteUnused = lTotalSCount
+		MsgBox lTotalCount & " styles deleted"
+		StylesDeleteUnused = lTotalCount
 	End If
 
-	sEnd = Timer
-	Debug.Print lTotalSCount & " styles erased in " & sEnd - sStart " seconds"
-	StylesDeleteUnused = lTotalSCount
+	Debug.Print lTotalCount & " styles erased in " & CInt((Timer-sStart)/60) _
+		& " minutes (" & Format(Timer - sStart, "0") & " seconds)"
+	StylesDeleteUnused = lTotalCount
 End Function
 
-Function StyleInUse(ByVal Styname As String, dcArgument As Document) As Boolean
+Function StyleInUse(ByVal stStyName As String, dcArgument As Document) As Boolean
 ' Del mismo desarrollador que StylesDeleteUnused
 ' Is Stryname used any of dcArgument's story
-	Dim Stry As Range
+	Dim rgStory As Range
 	Dim Shp As Shape
 	Dim txtFrame As TextFrame
 
-	If Not dcArgument.Styles(Styname).InUse Then StyleInUse = False: Exit Function
-	' check if Currently used in a story?
-
-	For Each Stry In dcArgument.StoryRanges
-		If StoryInUse(dcArgument, Stry) Then
-			If StyleInUseInRangeText(Stry, Styname) Then StyleInUse = True: Exit Function
-			For Each Shp In Stry.ShapeRange
+	On Error Resume Next
+	If Not dcArgument.Styles(stStyName).InUse Then
+		StyleInUse = False
+		Exit Function
+	End If
+	On Error GoTo 0
+	' check if Currently used in a story
+	For Each rgStory In dcArgument.StoryRanges
+		If StoryInUse(dcArgument, rgStory) Then
+			If StyleInUseInRangeText(rgStory, stStyName) Then 
+				StyleInUse = True
+				Exit Function
+			End If
+			For Each Shp In rgStory.ShapeRange
 				Set txtFrame = Shp.TextFrame
 				If Not txtFrame Is Nothing Then
 					If txtFrame.HasText Then
 						If txtFrame.TextRange.Characters.Count > 1 Then
-							If StyleInUseInRangeText(txtFrame.TextRange, Styname) Then
-								StyleInUse = True: Exit Function
+							If StyleInUseInRangeText(txtFrame.TextRange, stStyName) Then
+								StyleInUse = True
+								Exit Function
 							End If
 						End If
 					End If
 				End If
 			Next Shp
 		End If
-	Next Stry
+	Next rgStory
 	StyleInUse = False ' Not currently in use.
 End Function
 
-Function StyleInUseInRangeText(rng As Range, Styname As String) As Boolean
+Function StyleInUseInRangeText(rng As Range, ByVal stStyName As String) As Boolean
 ' Del mismo desarrollador que StylesDeleteUnused
-' Returns True if "Styname" is use in rng
+' Returns True if "stStyName" is use in rng
 	With rng.Find
 		.ClearFormatting
 		.ClearHitHighlight
-		.Style = Styname
+		.Style = stStyName
 		.Format = True
 		.Text = ""
 		.Replacement.Text = ""
@@ -91,18 +102,41 @@ End Function
 Function StoryInUse(dcArgument As Document, Stry As Range) As Boolean
 ' Del mismo desarrollador que StylesDeleteUnused
 ' Note: this will mark even the always-existing stories as not in use if they're empty
-	If Not Stry.StoryLength > 1 Then StoryInUse = False: Exit Function
+'
+	Dim sh As Shape, iSh As InlineShape
+
+	If Not Stry.StoryLength > 1 Then
+		StoryInUse = False
+		Exit Function
+	End If
 	Select Case Stry.StoryType
-		Case wdMainTextStory, wdPrimaryFooterStory, wdPrimaryHeaderStory: StoryInUse = True
-		Case wdEvenPagesFooterStory, wdEvenPagesHeaderStory: StoryInUse = Stry.Sections(1).PageSetup.OddAndEvenPagesHeaderFooter = True
-		Case wdFirstPageFooterStory, wdFirstPageHeaderStory: StoryInUse = Stry.Sections(1).PageSetup.DifferentFirstPageHeaderFooter = True
-		Case wdFootnotesStory, wdFootnoteContinuationSeparatorStory: StoryInUse = dcArgument.Footnotes.Count > 1
-		Case wdFootnoteSeparatorStory, wdFootnoteContinuationNoticeStory: StoryInUse = dcArgument.Footnotes.Count > 1
-		Case wdEndnotesStory, wdEndnoteContinuationSeparatorStory: StoryInUse = dcArgument.Endnotes.Count > 1
-		Case wdEndnoteSeparatorStory, wdEndnoteContinuationNoticeStory: StoryInUse = dcArgument.Endnotes.Count > 1
-		Case wdCommentsStory: StoryInUse = dcArgument.Comments.Count > 1
-		Case wdTextFrameStory: StoryInUse = dcArgument.Frames.Count > 1
-		Case Else: StoryInUse = False ' Must be some new or unknown wdStoryType
+		Case wdMainTextStory, wdPrimaryFooterStory, wdPrimaryHeaderStory
+			StoryInUse = True
+		Case wdEvenPagesFooterStory, wdEvenPagesHeaderStory
+			StoryInUse = Stry.Sections(1).PageSetup.OddAndEvenPagesHeaderFooter = True
+		Case wdFirstPageFooterStory, wdFirstPageHeaderStory
+			StoryInUse = Stry.Sections(1).PageSetup.DifferentFirstPageHeaderFooter = True
+		Case wdFootnotesStory, wdFootnoteContinuationSeparatorStory
+			StoryInUse = dcArgument.Footnotes.Count > 0
+		Case wdFootnoteSeparatorStory, wdFootnoteContinuationNoticeStory
+			StoryInUse = dcArgument.Footnotes.Count > 0
+		Case wdEndnotesStory, wdEndnoteContinuationSeparatorStory
+			StoryInUse = dcArgument.Endnotes.Count > 0
+		Case wdEndnoteSeparatorStory, wdEndnoteContinuationNoticeStory
+			StoryInUse = dcArgument.Endnotes.Count > 0
+		Case wdCommentsStory
+			StoryInUse = dcArgument.Comments.Count > 0
+		Case wdTextFrameStory
+			' StoryInUse = dcArgument.Frames.Count > 0
+			If dcArgument.Frames.Count > 0 Then StoryInUse = True: Exit Function
+			For Each sh In dcArgument.Shapes
+				If sh.Type = msoTextBox Then StoryInUse = True: Exit Function
+			Next sh
+			For Each iSh In dcArgument.InlineShapes
+				If iSh.Type = msoTextBox Then StoryInUse = True: Exit Function
+			Next iSh
+		Case Else
+			StoryInUse = False ' Must be some new or unknown wdStoryType
 	End Select
 End Function
 
@@ -111,12 +145,28 @@ End Function
 
 
 
-Sub StylesNoDirectFormatting(dcArgument As Document)
+Function StyleExists(dcArgument As Document, stStyName As String) As Boolean
+' Checks if styObjective exists in dcArgument and returns a boolean
+'
+	On Error GoTo NotExist
+	If Not dcArgument.Styles(stStyName) Is Nothing Then StyleExists = True
+	Exit Function
+NotExist:
+	StyleExists = False
+End Function
+
+
+
+
+
+
+Sub StylesNoDirectFormatting(dcArgument As Document, Optional bUnderlineDelete As Boolean)
 ' Convierte los estilos directos de negritas y cursivas a los estilos Strong y Emphasis, respectivamente
 '
-	Dim iCounter As Integer, arrstStylesToApply(13) As WdBuiltinStyle
-	dcArgument.Activate
-
+	Dim iCounter As Integer
+	Dim arrstStylesToApply(13) As WdBuiltinStyle
+	Dim rgFind As Range
+	
 	arrstStylesToApply(0) = wdStyleNormal
 	arrstStylesToApply(1) = wdStyleCaption
 	arrstStylesToApply(2) = wdStyleList
@@ -133,49 +183,120 @@ Sub StylesNoDirectFormatting(dcArgument As Document)
 	arrstStylesToApply(13) = wdStyleListNumber3
 
 	Application.ScreenUpdating = False
-	With dcArgument.Range.Find
-		.ClearFormatting
-		.Text = ""
-		.Replacement.Text = ""
-		.Forward = True
-		.Wrap = wdFindContinue
-		.Format = True
-		.MatchCase = False
-		.MatchWholeWord = False
-		.MatchAllWordForms = False
-		.MatchSoundsLike = False
-		.MatchWildcards = False
 
-		.Style = wdStyleQuote
-		.Font.Bold = True
-		.Replacement.Style = wdStyleStrong
-		.Execute Replace:=wdReplaceAll
+	Do
+		Set rgFind = RaMacros.GetStoryNext(dcArgument)
+		If rgFind Is Nothing Then Exit Do
+		With rgFind.Find
+			.ClearFormatting
+			.Text = ""
+			.Replacement.Text = ""
+			.Forward = True
+			.Wrap = wdFindContinue
+			.Format = True
+			.MatchCase = False
+			.MatchWholeWord = False
+			.MatchAllWordForms = False
+			.MatchSoundsLike = False
+			.MatchWildcards = False
 
-		For iCounter = 0 To 13
-			.Style = arrstStylesToApply(iCounter)
+			.Style = wdStyleQuote
 			.Font.Bold = True
-			.Font.Italic = True
-			.Replacement.Style = wdStyleIntenseEmphasis
-			.Execute Replace:=wdReplaceAll
-			.Font.Bold = True
-			.Font.Italic = False
 			.Replacement.Style = wdStyleStrong
 			.Execute Replace:=wdReplaceAll
-			.Font.Bold = False
-			.Font.Italic = True
-			.Replacement.Style = wdStyleEmphasis
+
+			For iCounter = 0 To 13
+				.Style = arrstStylesToApply(iCounter)
+				.Font.Bold = True
+				.Font.Italic = True
+				.Replacement.Style = wdStyleIntenseEmphasis
+				.Execute Replace:=wdReplaceAll
+				.Font.Bold = True
+				.Font.Italic = False
+				.Replacement.Style = wdStyleStrong
+				.Execute Replace:=wdReplaceAll
+				.Font.Bold = False
+				.Font.Italic = True
+				.Replacement.Style = wdStyleEmphasis
+				.Execute Replace:=wdReplaceAll
+				.Font.Bold = False
+				.Font.Italic = True
+				.Replacement.Style = wdStyleEmphasis
+				.Execute Replace:=wdReplaceAll
+				If bUnderlineDelete Then
+					.Font.Underline = True
+					.Replacement.Font.Underline = False
+					.Execute Replace:=wdReplaceAll
+				End If
+			Next iCounter
+
+			.ClearFormatting
+			.Text = "^f"
+			.Replacement.Style = wdStyleFootnoteReference
 			.Execute Replace:=wdReplaceAll
-		Next iCounter
-
-		.ClearFormatting
-		.Text = "^f"
-		.Replacement.Style = wdStyleFootnoteReference
-		.Execute Replace:=wdReplaceAll
-
-	End With
+		End With
+	Loop While Not rgFind Is Nothing
 	RaMacros.FindAndReplaceClearParameters
 	Application.ScreenUpdating = True
 End Sub
+
+
+
+
+
+
+Function GetStoryNext(dcArgument As Document, Optional bReset As Boolean) As Range
+' Each time the function is executed it returns the next storyrange available
+' (until 5, text frames). When it has finally looped through all of them it returns 
+' an empty range (Nothing)
+' Args:
+	' bReset: if True the count is restarted
+' iCount indicates the current story:
+	' wdMainTextStory	1
+	' wdFootnotesStory	2
+	' wdEndnotesStory	3
+	' wdCommentsStory	4
+	' wdTextFrameStory	5
+'
+	Static rgCurrentStory As Range
+	Static iCount As Integer
+	Static dcCurrent As Document
+
+	If bReset Or dcCurrent Is Nothing Then
+		iCount = 0
+		Set dcCurrent = dcArgument
+	ElseIf dcArgument <> dcCurrent Then
+		Err.Raise Number:=516, Description:="dcArgument was change without " _
+			& "resetting the function"
+	End If
+
+	Do While iCount < 5
+		iCount = iCount + 1
+		On Error Resume Next
+		Set rgCurrentStory = dcCurrent.StoryRanges(iCount)
+		If Err.Number = 0 Then
+			On Error GoTo 0
+			Set GetStoryNext = rgCurrentStory
+			Exit Function
+		' Resetting the static variables
+		ElseIf iCount = 5 Then
+			On Error GoTo 0
+			iCount = 0
+			Set rgCurrentStory = Nothing
+			Set GetStoryNext = Nothing
+			Set dcCurrent = Nothing
+			Exit Function
+		End If
+	Loop
+
+	' This is only executed when iCount = 5
+	Set rgCurrentStory = rgCurrentStory.NextStoryRange
+	If rgCurrentStory Is Nothing Then
+		iCount = 0
+		Set dcCurrent = Nothing
+	End If
+	Set GetStoryNext = rgCurrentStory
+End Function
 
 
 
@@ -189,17 +310,17 @@ Sub CopySecurity(dcArgument As Document, _
 ' there are none, it appends a number
 '
 	Dim fsFileSystem As Object
-	Dim stOriginalName As String, stOriginalExtension As String, stNewFullName As String
+	Dim stOriginalName As String, stExtension As String, stNewFullName As String
 	Dim iCount As Integer
 
 	stOriginalName = Left(dcArgument.Name, InStrRev(dcArgument.Name, ".") - 1)
-	stOriginalExtension = Right(dcArgument.Name, Len(dcArgument.Name) - InStrRev(dcArgument.Name, ".") + 1)
+	stExtension = Right(dcArgument.Name, Len(dcArgument.Name) - InStrRev(dcArgument.Name, ".") + 1)
 	stNewFullName = dcArgument.Path & Application.PathSeparator & stPrefix _
-		& stOriginalName & stSuffix & stOriginalExtension
+		& stOriginalName & stSuffix & stExtension
 
 	Do While Dir(stNewFullName) > ""
 		stNewFullName = dcArgument.Path & Application.PathSeparator & stPrefix _
-			& stOriginalName & stSuffix & "-" & Format(iCount, "00") & stOriginalExtension
+			& stOriginalName & stSuffix & "-" & Format(iCount, "00") & stExtension
 		iCount = iCount + 1
 	Loop
 
@@ -214,36 +335,53 @@ End Sub
 Function SaveAsNewFile(dcArgument As Document, _
 						Optional ByVal stPrefix As String, _
 						Optional ByVal stSuffix As String, _
-						Optional ByVal bClose As Boolean = True)
+						Optional ByVal bOpen As Boolean = True, _
+						Optional ByVal bCompatibility As Boolean = False)
 ' Guarda una copia del documento pasado como argumento, manteniendo el original abierto y convirtiéndolo al formato actual
 ' Args:
 	' stPrefix: string to prefix the new document's name
 	' stSuffix: string to suffix the new document's name. By default it will add the current date
-	' bClose: if True the new document is saved AND closed
+	' bOpen: if True the new document stays open, if false it's saved AND closed
+	' bCompatibility: if True the new document will be converted to the new Word Format
 '
-	Dim stOriginalName As String, stOriginalExtension As String, stNewFullName As String, dcNewDocument As Document
+	Dim stOriginalName As String, stNewFullName As String, stExtension As String
+	Dim dcNewDocument As Document
 
 	stOriginalName = Left(dcArgument.Name, InStrRev(dcArgument.Name, ".") - 1)
-	stOriginalExtension = Right(dcArgument.Name, Len(dcArgument.Name) - InStrRev(dcArgument.Name, ".") + 1)
-	If stSuffix = vbNullString Then stSuffix = "-" & Format(Date, "yymmdd")
+	If stSuffix = vbNullString And stPrefix = vbNullString Then stSuffix = "-" & Format(Date, "yymmdd")
+
 	stNewFullName = dcArgument.Path & Application.PathSeparator & stPrefix _
-		& stOriginalName & stSuffix & stOriginalExtension
-	Set dcNewDocument = Documents.Add(dcArgument.FullName)
+		& stOriginalName & stSuffix
 
-	' IF THE FILE GETS CONVERTED TO THE LATEST VERSION IT CAN MESS UP SOME FIELDS
-		' (INCLUDEPICTURE, particularly), so it's better to do it later
-	'If dcArgument.CompatibilityMode < 15 Then dcArgument.Convert
+	Set dcNewDocument = Documents.Add(dcArgument.FullName, Visible:=bOpen)
 
-	If Dir(stNewFullName) > "" Then
-		stNewFullName = dcArgument.Path & Application.PathSeparator & stPrefix & "_" _
-			& Format(Time, "hhnn") & stOriginalName & stSuffix & stOriginalExtension
-	End If
-	dcNewDocument.SaveAs2 FileName:=stNewFullName, FileFormat:= wdFormatDocumentDefault
-
-	If bClose = True Then
-		dcNewDocument.Close
+	If bCompatibility Then
+		stExtension = ".docx"
+		' IF THE FILE GETS CONVERTED TO THE LATEST VERSION THE FIELDS CAN GET MESSED UP
+		' (INCLUDEPICTURE and EMBED particularly), so it may be better to closely watch the process
+		If dcNewDocument.CompatibilityMode < 15 Then
+			RaMacros.FieldsUnlink dcNewDocument
+			dcNewDocument.Convert
+		End If
 	Else
+		stExtension = Right(dcArgument.Name, Len(dcArgument.Name) - InStrRev(dcArgument.Name, ".") + 1)
+	End If
+
+	If Dir(stNewFullName & stExtension) > "" Then
+		stNewFullName = dcArgument.Path & Application.PathSeparator & stPrefix & "_" _
+			& Format(Time, "hhnn") & stOriginalName & stSuffix & stExtension
+	End If
+
+	If bCompatibility Then
+		dcNewDocument.SaveAs2 FileName:=stNewFullName, FileFormat:= wdFormatDocumentDefault
+	Else
+		dcNewDocument.SaveAs2 FileName:=stNewFullName
+	End If
+
+	If bOpen Then
 		Set SaveAsNewFile = dcNewDocument
+	Else
+		dcNewDocument.Close
 	End If
 End Function
 
@@ -251,6 +389,26 @@ End Function
 
 
 
+
+Sub FieldsUnlink(dcArgument As Document)
+' Unlinks included and embed fields so the images doesn't corrupt the file when it 
+' gets updated from older (or different software) versions
+'
+	Dim iIndex As Integer
+	For iIndex = dcArgument.Content.Fields.Count To 1 Step -1
+		If dcArgument.Fields(iIndex).Type = wdFieldIncludePicture _
+			Or dcArgument.Fields(iIndex).Type = wdFieldEmbed _
+		Then
+			dcArgument.Content.Fields(iIndex).Unlink
+		End If
+	Next iIndex
+End Sub
+		
+		
+		
+		
+		
+		
 Sub HeadersFootersRemove(dcArgument As Document)
 ' Borra todos los pies y encabezados de página
 '
@@ -271,6 +429,7 @@ End Sub
 
 
 
+	
 
 
 Sub ListsNoExtraNumeration(dcArgument As Document, Optional ByVal iStory As Integer = 0)
@@ -283,7 +442,7 @@ Sub ListsNoExtraNumeration(dcArgument As Document, Optional ByVal iStory As Inte
 	Dim lpList As Paragraph
 
 	If iStory < 0 Or iStory > 5 Then
-		Err.Raise Number:=514, Description:="Argument out of range it must be between 0 and 5"
+		Err.Raise Number:=514, Description:="iStory out of range it must be between 0 and 5"
 	ElseIf iStory = 0 Then
 		iStory = 1
 		iMaxCount = 5
@@ -353,7 +512,8 @@ End Sub
 
 
 
-Sub CleanBasic(dcArgument As Document, Optional ByVal iStory As Integer = 0)
+Sub CleanBasic(dcArgument As Document, Optional ByVal iStory As Integer = 0, _
+	Optional ByVal bTabs As Boolean = True, Optional ByVal bBreakLines As Boolean = False)
 ' CleanSpaces + CleanEmptyParagraphs
 ' It's important to execute the subroutines in the proper order to achieve their optimal effects
 ' Args:
@@ -368,12 +528,13 @@ Sub CleanBasic(dcArgument As Document, Optional ByVal iStory As Integer = 0)
 	If iStory < 0 Or iStory > 5 Then
 		Err.Raise Number:=514, Description:="iStory out of range it must be between 0 and 5"
 	End If
-	RaMacros.CleanSpaces dcArgument, iStory
-	RaMacros.CleanEmptyParagraphs dcArgument, iStory
+	RaMacros.CleanSpaces dcArgument, iStory, bTabs
+	RaMacros.CleanEmptyParagraphs dcArgument, iStory, bBreakLines
 	RaMacros.FindAndReplaceClearParameters
 End Sub
 
-Sub CleanSpaces(dcArgument As Document, Optional ByVal iStory As Integer = 0)
+Sub CleanSpaces(dcArgument As Document, Optional ByVal iStory As Integer = 0, _
+				Optional ByVal bTabs As Boolean = True)
 ' Deletes:
 	' Tabulations
 	' More than 1 consecutive spaces
@@ -387,9 +548,10 @@ Sub CleanSpaces(dcArgument As Document, Optional ByVal iStory As Integer = 0)
 		' wdEndnotesStory	3
 		' wdCommentsStory	4
 		' wdTextFrameStory	5
+	' bTabs: if True Tabs are substituted for a single space
 '
 	Dim bFound1 As Boolean, bFound2 As Boolean, iMaxCount As Integer 
-	Dim rgFindRange As Range, rgFindRange2 As Range, tbCurrentTable As Table
+	Dim rgFind As Range, rgFind2 As Range, tbCurrentTable As Table
 
 	If iStory < 0 Or iStory > 5 Then
 		Err.Raise Number:=514, Description:="Argument out of range it must be between 0 and 5"
@@ -406,32 +568,32 @@ Sub CleanSpaces(dcArgument As Document, Optional ByVal iStory As Integer = 0)
 	Application.ScreenUpdating = False
 	For iStory = iStory To iMaxCount Step 1
 		On Error Resume Next
-		Set rgFindRange = dcArgument.StoryRanges(iStory)
+		Set rgFind = dcArgument.StoryRanges(iStory)
 		If Err.Number = 0 Then
 			On Error GoTo 0
 
 			' Deletting first and last characters if necessary
-			Set rgFindRange2 = rgFindRange.Duplicate
-			rgFindRange2.Collapse wdCollapseStart
-			Do While rgFindRange.Characters.First.Text = " " _
-					Or rgFindRange.Characters.First.Text = vbTab _
-					Or rgFindRange.Characters.First.Text = "," _
-					Or rgFindRange.Characters.First.Text = "." _
-					Or rgFindRange.Characters.First.Text = ";" _
-					Or rgFindRange.Characters.First.Text = ":"
-				If rgFindRange2.Delete = 0 Then Exit Do
+			Set rgFind2 = rgFind.Duplicate
+			rgFind2.Collapse wdCollapseStart
+			Do While rgFind.Characters.First.Text = " " _
+					Or rgFind.Characters.First.Text = vbTab _
+					Or rgFind.Characters.First.Text = "," _
+					Or rgFind.Characters.First.Text = "." _
+					Or rgFind.Characters.First.Text = ";" _
+					Or rgFind.Characters.First.Text = ":"
+				If rgFind2.Delete = 0 Then Exit Do
 			Loop
-			Set rgFindRange2 = rgFindRange.Duplicate
-			rgFindRange2.Collapse wdCollapseEnd
-			rgFindRange2.MoveStart wdCharacter, -1
-			Do While rgFindRange2.Text = " " _
-					Or rgFindRange.Characters.Last.Text = vbTab
-				rgFindRange2.Collapse wdCollapseStart
-				If rgFindRange2.Delete = 0 Then Exit Do
-				rgFindRange2.MoveStart wdCharacter, -1
+			Set rgFind2 = rgFind.Duplicate
+			rgFind2.Collapse wdCollapseEnd
+			rgFind2.MoveStart wdCharacter, -1
+			Do While rgFind2.Text = " " _
+					Or rgFind.Characters.Last.Text = vbTab
+				rgFind2.Collapse wdCollapseStart
+				If rgFind2.Delete = 0 Then Exit Do
+				rgFind2.MoveStart wdCharacter, -1
 			Loop
 
-			With rgFindRange.Find
+			With rgFind.Find
 				.ClearFormatting
 				.Replacement.ClearFormatting
 				.Forward = True
@@ -444,11 +606,13 @@ Sub CleanSpaces(dcArgument As Document, Optional ByVal iStory As Integer = 0)
 				.MatchWildcards = True
 			End With
 			Do
-				With rgFindRange.Find
-					.Text = "[^t]"
-					.Replacement.Text = " "
-					.Execute Replace:=wdReplaceAll
-					If .Found Then bFound1 = True
+				With rgFind.Find
+					If bTabs Then	
+						.Text = "[^t]"
+						.Replacement.Text = " "
+						.Execute Replace:=wdReplaceAll
+						If .Found Then bFound1 = True
+					End IF
 
 					.Text = " {2;}"
 					.Execute Replace:=wdReplaceAll
@@ -457,47 +621,47 @@ Sub CleanSpaces(dcArgument As Document, Optional ByVal iStory As Integer = 0)
 
 				' Deletting spaces before paragraph marks before tables (there is a bug that prevents
 					' them to be erased through find and replace)
-				For each tbCurrentTable In rgFindRange.Tables
+				For each tbCurrentTable In rgFind.Tables
 					If tbCurrentTable.Range.Start <> 0 Then
-						Set rgFindRange2 = tbCurrentTable.Range.Previous(wdParagraph,1)
-						rgFindRange2.MoveEnd wdCharacter, -1
-						rgFindRange2.Start = rgFindRange2.End - 1
-						If rgFindRange2.Text = " " Then
+						Set rgFind2 = tbCurrentTable.Range.Previous(wdParagraph,1)
+						rgFind2.MoveEnd wdCharacter, -1
+						rgFind2.Start = rgFind2.End - 1
+						If rgFind2.Text = " " Then
 							bFound2 = False
-							Do While rgFindRange2.Previous(wdCharacter, 1).Text = " "
-								rgFindRange2.Start = rgFindRange2.Start - 1
+							Do While rgFind2.Previous(wdCharacter, 1).Text = " "
+								rgFind2.Start = rgFind2.Start - 1
 								bFound2 = True
 							Loop
-							If bFound2 Then rgFindRange2.Delete
-							rgFindRange2.Collapse wdCollapseStart
-							rgFindRange2.Delete
+							If bFound2 Then rgFind2.Delete
+							rgFind2.Collapse wdCollapseStart
+							rgFind2.Delete
 						End If
 
-						Set rgFindRange2 = tbCurrentTable.Range.Next(wdParagraph,1).Characters.First
-							rgFindRange2.collapse wdCollapseStart
-						Do While rgFindRange2.Text = " "
-							If rgFindRange2.Delete = 0 Then Exit Do
+						Set rgFind2 = tbCurrentTable.Range.Next(wdParagraph,1).Characters.First
+							rgFind2.collapse wdCollapseStart
+						Do While rgFind2.Text = " "
+							If rgFind2.Delete = 0 Then Exit Do
 						Loop
 					End If
 				Next tbCurrentTable
 				
 				bFound1 = False
-				With rgFindRange.Find
+				With rgFind.Find
 					If iStory <> 2 Then
 						.Text = " @([^13^l,.;:\]\)\}])"
 						.Replacement.Text = "\1"
 						.Execute Replace:=wdReplaceAll
 						If .Found Then bFound1 = True
 					Else
-						Set rgFindRange2 = rgFindRange.Duplicate
-						Do While rgFindRange2.Find.Execute( _
+						Set rgFind2 = rgFind.Duplicate
+						Do While rgFind2.Find.Execute( _
 														FindText:=" @[^13^l,.;:\]\)\}]", _
 														MatchWildcards:=True, Wrap:=wdFindStop)
-							Do While rgFindRange2.Characters.First = " "
-								rgFindRange2.Collapse wdCollapseStart
-								rgFindRange2.Delete
+							Do While rgFind2.Characters.First = " "
+								rgFind2.Collapse wdCollapseStart
+								rgFind2.Delete
 							Loop
-							rgFindRange2.EndOf wdStory, wdExtend
+							rgFind2.EndOf wdStory, wdExtend
 						Loop
 					End If
 
@@ -506,27 +670,27 @@ Sub CleanSpaces(dcArgument As Document, Optional ByVal iStory As Integer = 0)
 						.Execute Replace:=wdReplaceAll
 						If .Found Then bFound1 = True
 					Else
-						Set rgFindRange2 = rgFindRange.Duplicate
-						Do While rgFindRange2.Find.Execute( _
+						Set rgFind2 = rgFind.Duplicate
+						Do While rgFind2.Find.Execute( _
 														FindText:="[^13^l][ ,.;:]@", _
 														MatchWildcards:=True, Wrap:=wdFindStop)
-							rgFindRange2.Collapse wdCollapseStart
-							rgFindRange2.Move wdCharacter, 1
-							Do While rgFindRange2.Characters.Last = " " _
-									Or rgFindRange2.Characters.Last = "," _
-									Or rgFindRange2.Characters.Last = "." _
-									Or rgFindRange2.Characters.Last = ";" _
-									Or rgFindRange2.Characters.Last = ":"
-								If rgFindRange2.Delete = 0 Then Exit Do
+							rgFind2.Collapse wdCollapseStart
+							rgFind2.Move wdCharacter, 1
+							Do While rgFind2.Characters.Last = " " _
+									Or rgFind2.Characters.Last = "," _
+									Or rgFind2.Characters.Last = "." _
+									Or rgFind2.Characters.Last = ";" _
+									Or rgFind2.Characters.Last = ":"
+								If rgFind2.Delete = 0 Then Exit Do
 							Loop
-							rgFindRange2.EndOf wdStory, wdExtend
+							rgFind2.EndOf wdStory, wdExtend
 						Loop
 					End If
 				End With
 
-				If iStory = 5 And Not bFound1 And Not rgFindRange.NextStoryRange Is Nothing Then
-					Set rgFindRange = rgFindRange.NextStoryRange
-					With rgFindRange.Find
+				If iStory = 5 And Not bFound1 And Not rgFind.NextStoryRange Is Nothing Then
+					Set rgFind = rgFind.NextStoryRange
+					With rgFind.Find
 						.ClearFormatting
 						.Replacement.ClearFormatting
 						.Forward = True
@@ -548,7 +712,8 @@ Sub CleanSpaces(dcArgument As Document, Optional ByVal iStory As Integer = 0)
 	Application.ScreenUpdating = True
 End Sub
 
-Sub CleanEmptyParagraphs(dcArgument As Document, Optional ByVal iStory As Integer = 0)
+Sub CleanEmptyParagraphs(dcArgument As Document, Optional ByVal iStory As Integer = 0, _
+						Optional ByVal bBreakLines As Boolean = False)
 ' Deletes empty paragraphs
 ' Args:
 	' iStory: defines the storyranges that will be cleaned
@@ -558,6 +723,7 @@ Sub CleanEmptyParagraphs(dcArgument As Document, Optional ByVal iStory As Intege
 		' wdEndnotesStory	3
 		' wdCommentsStory	4
 		' wdTextFrameStory	5
+	' bBreakLines: manual break lines get converted to paragraph marks
 '
 	Dim rgStory As Range, rgFind As Range
 	Dim tbCurrentTable As Table
@@ -581,6 +747,23 @@ Sub CleanEmptyParagraphs(dcArgument As Document, Optional ByVal iStory As Intege
 		If Err.Number = 0 Then
 			On Error GoTo 0
 			Do
+				If bBreakLines Then
+					With rgStory.Find
+						.ClearFormatting
+						.Replacement.ClearFormatting
+						.Forward = True
+						.Format = False
+						.MatchCase = False
+						.MatchWholeWord = False
+						.MatchAllWordForms = False
+						.MatchSoundsLike = False
+						.MatchWildcards = False
+						.Text = "^l"
+						.Replacement.Text = "^p"
+						.Execute Replace:=wdReplaceAll
+					End With
+				End If
+
 				bFound = False
 
 				' Deletting first and last paragraphs, if empty
@@ -700,7 +883,7 @@ Sub CleanEmptyParagraphs(dcArgument As Document, Optional ByVal iStory As Intege
 							' If iStory = 4 Then .Text = "[^13^l]{2;}" Else .Text = "[^13^l]@^13^2"
 							.Text = "[^13^l]{2;}"
 						End With
-                        If rgFind.Find.Execute Then
+						If rgFind.Find.Execute Then
 							' ------------------- 1st version
 							' If iStory = 4 Then
 							' 	If Len(rgFind) <= 2 Then rgFind.Collapse wdCollapseStart
@@ -710,35 +893,32 @@ Sub CleanEmptyParagraphs(dcArgument As Document, Optional ByVal iStory As Intege
 							' 	If rgFind.Delete <> 0 Then bFound = True
 							' End If
 							' ------------------- 2nd version (no loops, unlike 3rd version)
-                            If Len(rgFind) = 2 Then
-                                rgFind.Collapse wdCollapseStart
-                                If rgFind.Delete <> 0 Then bFound = True
-                            Else
-                                If rgFind.Delete <> 0 Then
-                                    rgFind.Collapse wdCollapseStart
-                                    If rgFind.Delete <> 0 Then bFound = True
-                                End If
-                            End If
+							If Len(rgFind) = 2 Then
+								rgFind.Collapse wdCollapseStart
+								If rgFind.Delete <> 0 Then bFound = True
+							Else
+								If rgFind.Delete <> 0 Then
+									rgFind.Collapse wdCollapseStart
+									If rgFind.Delete <> 0 Then bFound = True
+								End If
+							End If
 							' ------------------- 3rd version
 							' bFound = True
 							' rgFind.Collapse wdCollapseStart
 							' Do While rgFind.Next(wdCharacter, 1).Text = vbCr
-                            '     If rgFind.Delete = 0 Then Exit Do
+							'     If rgFind.Delete = 0 Then Exit Do
 							' Loop
-                        End If
+						End If
 					Loop While bFound
 				End If
 
 				bFound = False
 				With rgStory.Find
 					.Replacement.Text = "\1"
-
 					.Text = "([^13^l]){2;}"
 					If .Execute(Replace:=wdReplaceAll) Then bFound = True
-
 					.Text = "(^13)^l"
 					If .Execute(Replace:=wdReplaceAll) Then bFound = True
-
 					.Text = "(^l)^13"
 					If .Execute(Replace:=wdReplaceAll) Then bFound = True
 				End With
@@ -814,7 +994,7 @@ End Sub
 Sub HeadingsNoNumeration(dcArgument As Document)
 ' Deletes headings' manual numerations
 '
-	Dim iTitulo As Integer, stPatron As String, rgexNumeracion As RegExp, rgFindRange As Range, bFound As Boolean
+	Dim iTitulo As Integer, stPatron As String, rgexNumeracion As RegExp, rgFind As Range, bFound As Boolean
 
 	Set rgexNumeracion = New RegExp
 	stPatron = "^[a-zA-Z0-9]{1,2}[\.\)\-ºª]+(?:[a-zA-Z0-9]{1,2}[\.\)\-ºª]?)*[\s]*"
@@ -825,10 +1005,10 @@ Sub HeadingsNoNumeration(dcArgument As Document)
 	Application.ScreenUpdating = False
 	RaMacros.FindAndReplaceClearParameters
 	For iTitulo = -2 To -10 Step -1
-		Set rgFindRange = dcArgument.Content
+		Set rgFind = dcArgument.Content
 		Do
 			bFound = False
-			With rgFindRange.Find
+			With rgFind.Find
 				.ClearFormatting
 				.Forward = True
 				.Wrap = wdFindStop
@@ -836,15 +1016,15 @@ Sub HeadingsNoNumeration(dcArgument As Document)
 				.Style = iTitulo
 				.Text = ""
 				If .Execute Then
-					If rgexNumeracion.Test(rgFindRange.Text) Then
-						rgFindRange.End = rgFindRange.End - Len(rgexNumeracion.Replace(rgFindRange.Text, ""))
-						rgFindRange.Delete
+					If rgexNumeracion.Test(rgFind.Text) Then
+						rgFind.End = rgFind.End - Len(rgexNumeracion.Replace(rgFind.Text, ""))
+						rgFind.Delete
 					End If
 					' Continue the find operation using range
-					rgFindRange.Expand wdParagraph
-					If rgFindRange.End <> dcArgument.Content.End Then
-						Set rgFindRange = rgFindRange.Next(Unit:=wdParagraph, Count:=1)
-						rgFindRange.EndOf wdStory, wdExtend
+					rgFind.Expand wdParagraph
+					If rgFind.End <> dcArgument.Content.End Then
+						Set rgFind = rgFind.Next(Unit:=wdParagraph, Count:=1)
+						rgFind.EndOf wdStory, wdExtend
 						bFound = True
 					End If
 				End If
@@ -867,7 +1047,7 @@ Sub HeadingsChangeCase(dcArgument As Document, ByVal iHeading As Integer, ByVal 
 		' wdTitleSentence: 4
 		' wdToggleCase: 5
 '
-	Dim iCurrentHeading As Integer, iLowerHeading As Integer, rgFindRange As Range, bFound As Boolean
+	Dim iCurrentHeading As Integer, iLowerHeading As Integer, rgFind As Range, bFound As Boolean
 
 	If iCase <> 0 And iCase <> 1 And iCase <> 2 And iCase <> 4 And iCase <> 5 Then
 		Err.Raise Number:=515, Description:="Incorrect case argument"
@@ -885,10 +1065,10 @@ Sub HeadingsChangeCase(dcArgument As Document, ByVal iHeading As Integer, ByVal 
 
 	Application.ScreenUpdating = False
 	For iCurrentHeading = iLowerHeading To iHeading Step -1
-		Set rgFindRange = dcArgument.Content
+		Set rgFind = dcArgument.Content
 		Do
 			bFound = False
-			With rgFindRange.Find
+			With rgFind.Find
 				.ClearFormatting
 				.Replacement.ClearFormatting
 				.Forward = True
@@ -899,18 +1079,18 @@ Sub HeadingsChangeCase(dcArgument As Document, ByVal iHeading As Integer, ByVal 
 				.MatchAllWordForms = False
 				.MatchSoundsLike = False
 				.MatchWildcards = False
-                .style = iCurrentHeading
+				.style = iCurrentHeading
 				.Text = ""
 				If .Execute Then
 					' Sometimes there's a bug that only allow to change from lower case
-					' rgFindRange.Case = wdLowerCase
-					' If iCase <> 0 Then rgFindRange.Case = iCase
-					rgFindRange.Case = iCase
+					' so, if it's necessary, it gets converted
+					rgFind.Case = wdLowerCase
+					If iCase <> 0 Then rgFind.Case = iCase
 
-					rgFindRange.Expand wdParagraph
-					If rgFindRange.End <> dcArgument.Content.End Then
-						Set rgFindRange = rgFindRange.Next(Unit:=wdParagraph, Count:=1)
-						rgFindRange.EndOf wdStory, wdExtend
+					rgFind.Expand wdParagraph
+					If rgFind.End <> dcArgument.Content.End Then
+						Set rgFind = rgFind.Next(Unit:=wdParagraph, Count:=1)
+						rgFind.EndOf wdStory, wdExtend
 						bFound = True
 					End If					
 				End If
@@ -960,11 +1140,11 @@ Sub HyperlinksFormatting(dcArgument As Document, ByVal iPurpose As Integer, _
 	End If
 
 	Application.ScreenUpdating = False
-    For iStory = iStory To iMaxCount Step 1
-        On Error Resume Next
-        Set rgStory = dcArgument.StoryRanges(iStory)
-        If Err.Number = 0 Then
-            On Error GoTo 0
+	For iStory = iStory To iMaxCount Step 1
+		On Error Resume Next
+		Set rgStory = dcArgument.StoryRanges(iStory)
+		If Err.Number = 0 Then
+			On Error GoTo 0
 			For Each hlCurrentLink In rgStory.Hyperlinks
 				If hlCurrentLink.Type = 0 Then
 					If iPurpose = 1 Or iPurpose = 3 Then
@@ -1144,7 +1324,7 @@ Sub SectionBreakBeforeHeading(dcArgument As Document, _
 	' iWdSectionStart: the kind of section break to insert
 	' iHeading: heading style that will be found
 '
-	Dim iPageNumber As Integer, iWdBreakType As Integer, rgFindRange As Range, bFound As Boolean
+	Dim iPageNumber As Integer, iWdBreakType As Integer, rgFind As Range, bFound As Boolean
 
 	If iHeading >= 1 And iHeading <= 9 Then
 		iHeading = iHeading - iHeading * 2 - 1
@@ -1172,12 +1352,12 @@ Sub SectionBreakBeforeHeading(dcArgument As Document, _
 			Err.Raise Number:=514, Description:="Argument out of range it must be between 0 and 4"
 	End Select					
 
-	Set rgFindRange = dcArgument.Content
+	Set rgFind = dcArgument.Content
 
 	Application.ScreenUpdating = False
 	Do
 		bFound = False
-		With rgFindRange.Find
+		With rgFind.Find
 			.ClearFormatting
 			.Forward = True
 			.Wrap = wdFindStop
@@ -1190,23 +1370,23 @@ Sub SectionBreakBeforeHeading(dcArgument As Document, _
 			.Style = iHeading
 			.Text = ""
 			If .Execute Then
-				If rgFindRange.Start <> rgFindRange.Sections(1).Range.Start Then
+				If rgFind.Start <> rgFind.Sections(1).Range.Start Then
 					If iWdSectionStart = 1 Or iWdSectionStart = 2 Then
-						rgFindRange.Collapse wdCollapseStart
+						rgFind.Collapse wdCollapseStart
 					End If
-					rgFindRange.InsertBreak iWdBreakType
-					Set rgFindRange = rgFindRange.Next(Unit:=wdParagraph, Count:=1)
-					rgFindRange.Collapse Direction:=wdCollapseStart
+					rgFind.InsertBreak iWdBreakType
+					Set rgFind = rgFind.Next(Unit:=wdParagraph, Count:=1)
+					rgFind.Collapse Direction:=wdCollapseStart
 				ElseIf bRespect = False _
-						And rgFindRange.Start = rgFindRange.Sections(1).Range.Start _
-						And	rgFindRange.Sections(1).PageSetup.SectionStart <> iWdSectionStart Then
-					rgFindRange.Sections(1).PageSetup.SectionStart = iWdSectionStart
+						And rgFind.Start = rgFind.Sections(1).Range.Start _
+						And	rgFind.Sections(1).PageSetup.SectionStart <> iWdSectionStart Then
+					rgFind.Sections(1).PageSetup.SectionStart = iWdSectionStart
 				End If
 				' Continue the find operation using range
-				rgFindRange.Expand wdParagraph
-				If rgFindRange.End <> dcArgument.Content.End Then
-					Set rgFindRange = rgFindRange.Next(Unit:=wdParagraph, Count:=1)
-					rgFindRange.EndOf wdStory, wdExtend
+				rgFind.Expand wdParagraph
+				If rgFind.End <> dcArgument.Content.End Then
+					Set rgFind = rgFind.Next(Unit:=wdParagraph, Count:=1)
+					rgFind.EndOf wdStory, wdExtend
 					bFound = True
 				End If
 			End If
@@ -1268,17 +1448,18 @@ Sub SectionsFillBlankPages(dcArgument As Document, _
 	Application.ScreenUpdating = True
 End Sub
 
-Sub SectionsExportEachToFiles(dcArgument As Document, _
+Function SectionsExportEachToFiles(dcArgument As Document, _
 							Optional ByVal stPrefix As String, _
-							Optional ByVal stSuffix As String = "-section_")
+							Optional ByVal stSuffix As String = "-section_", _
+							Optional ByVal bClose As Boolean = True)
 ' Exports each section of the document to a separate file
-'
+' ToDo: if bClose false then devolver array con los documentos generados
 	Dim iCounter As Integer, lStartingPage As Long, lFirstFootnote As Long, scCurrent As Section, dcNewDocument As Document
 
 	lFirstFootnote = 0
 
 	For Each scCurrent In dcArgument.Sections
-		Set dcNewDocument = RaMacros.SaveAsNewFile(dcArgument, , stSuffix & scCurrent.index, False)
+		Set dcNewDocument = RaMacros.SaveAsNewFile(dcArgument, , stSuffix & scCurrent.index, True, False)
 
 		' Delete all sections of new document except the one to be saved
 		For iCounter = dcNewDocument.Sections.Count To 1 Step -1
@@ -1294,7 +1475,9 @@ Sub SectionsExportEachToFiles(dcArgument As Document, _
 		End If
 
 		' Correct footnote starting number
-		If scCurrent.Range.Footnotes.Count > 0 And scCurrent.Range.Footnotes.NumberingRule = wdRestartContinuous Then
+		If scCurrent.Range.Footnotes.Count > 0 _
+			And scCurrent.Range.Footnotes.NumberingRule = wdRestartContinuous _
+		Then
 			lFirstFootnote = scCurrent.Range.Footnotes(1).index
 			If scCurrent.Range.Footnotes.StartingNumber = 1 Then
 				dcNewDocument.Footnotes.StartingNumber = lFirstFootnote
@@ -1304,12 +1487,17 @@ Sub SectionsExportEachToFiles(dcArgument As Document, _
 				lFirstFootnote = lFirstFootnote + scCurrent.Range.Footnotes.StartingNumber - 1
 				dcNewDocument.Footnotes.StartingNumber = lFirstFootnote
 			End If
-			' This remembers the footnote index of the last section, in case the next has none, but BE AWARE
-			' that inserting new footnotes in the exported files would require to readjust all following files!!!
+			' This remembers the footnote index of the last section, in case the
+			' next has none, but BE AWARE that inserting new footnotes in the exported
+			' files would require to readjust all following files!!!
 			lFirstFootnote = scCurrent.Range.Footnotes.Count
 			lFirstFootnote = scCurrent.Range.Footnotes(lFirstFootnote).index + 1
-		ElseIf lFirstFootnote <> 0 And scCurrent.Range.Footnotes.NumberingRule = wdRestartContinuous Then
+		ElseIf lFirstFootnote <> 0 _
+			And scCurrent.Range.Footnotes.NumberingRule = wdRestartContinuous _
+		Then
 			dcNewDocument.Footnotes.StartingNumber = lFirstFootnote
+		ElseIf scCurrent.Range.Footnotes.NumberingRule = wdRestartSection Then
+			dcNewDocument.Footnotes.StartingNumber = scCurrent.Range.Footnotes.StartingNumber
 		End If
 
 		' Correct page starting number
@@ -1319,7 +1507,7 @@ Sub SectionsExportEachToFiles(dcArgument As Document, _
 
 		dcNewDocument.Close wdSaveChanges
 	Next
-End Sub
+End Function
 
 
 
@@ -1395,7 +1583,47 @@ End Sub
 
 
 
-Sub FootnotesHangingIndentation (dcArgument As Document, _
+Sub FootnotesFormatting(dcArgument As Document, _
+						Optional stFootnotes As String, _
+						Optional stFootnoteReferences As String)
+' Applies styles to the footnotes story and the footnotes references
+' Args:
+	' stFootnotes: style for the body text. Default: wdStyleFootnoteText
+	' styFootnoteReferences: style for the references. Default: stFootnoteReferences
+'
+	If stFootnotes = vbNullString Then
+		stFootnotes = dcArgument.Styles(wdStyleFootnoteText).NameLocal
+	ElseIf Not RaMacros.StyleExists(dcArgument, stFootnotes) Then
+		Err.Raise Number:=517, Description:= stFootnotes & _
+			" (stFootnotes) doesn't exist in " & dcArgument.Name
+	End If
+	If stFootnoteReferences = vbNullString Then
+		stFootnoteReferences = dcArgument.Styles(wdStyleFootnoteReference).NameLocal
+	ElseIf Not RaMacros.StyleExists(dcArgument, stFootnoteReferences) Then
+		Err.Raise Number:=517, Description:= stFootnoteReferences & _
+			" (stFootnoteReferences) doesn't exist in " & dcArgument.Name
+	End If
+
+	Dim i As Integer
+	dcArgument.StoryRanges(2).Style = stFootnotes
+	For i = 1 To 2
+		With dcArgument.StoryRanges(i).Find
+			.ClearFormatting
+			.Replacement.ClearFormatting
+			.Format = False
+			.MatchCase = False
+			.MatchWholeWord = False
+			.MatchWildcards = False
+			.MatchSoundsLike = False
+			.MatchAllWordForms = False
+			.Text = "^f"
+			.Replacement.style = stFootnoteReferences
+			.Execute Replace:=wdReplaceAll
+		End With
+	Next i
+End Sub
+
+Sub FootnotesHangingIndentation(dcArgument As Document, _
 								Optional ByVal sIndentation As Single = 0.5, _
 								Optional ByVal iFootnoteStyle As Integer = wdStyleFootnoteText)
 ' Adds a tab to the beginning of each paragraph and footnote, so their indentation is hanging
@@ -1411,13 +1639,13 @@ Sub FootnotesHangingIndentation (dcArgument As Document, _
 			Do Until .TabStops(1).Position >= sIndentation
 				.TabStops(1).Clear
 			Loop
-            If .TabStops(1).Position >= CentimetersToPoints(0.75) Then
+			If .TabStops(1).Position >= CentimetersToPoints(0.75) Then
 				.TabStops.Add sIndentation, 0, 0
 			End If
 		Else
 			.TabStops.Add sIndentation, 0, 0
 		End If
-        .FirstLineIndent = -sIndentation
+		.FirstLineIndent = -sIndentation
 	End With
 
 	With dcArgument.StoryRanges(2).Find
@@ -1431,6 +1659,9 @@ Sub FootnotesHangingIndentation (dcArgument As Document, _
 		.MatchSoundsLike = False
 		.MatchWildcards = True
 		
+		.Text = "(^2)"
+		.Replacement.Text = "\1^t"
+		.Execute Replace:=wdReplaceAll		
 		.Text = "(^2)[ ^t]@"
 		.Replacement.Text = "\1^t"
 		.Execute Replace:=wdReplaceAll
@@ -1441,7 +1672,7 @@ Sub FootnotesHangingIndentation (dcArgument As Document, _
 	Application.ScreenUpdating = True
 End Sub
 
-Sub FootnotesSameNumberingRule (dcArgument As Document, _
+Sub FootnotesSameNumberingRule(dcArgument As Document, _
 								Optional ByVal iNumberingRule As Integer = 3, _
 								Optional ByVal iStartingNumber As Integer = -501)
 ' Set the same footnotes numbering rule in all sections of the document
@@ -1453,7 +1684,7 @@ Sub FootnotesSameNumberingRule (dcArgument As Document, _
 		' 2: wdRestartPage: wdRestartPage
 	' iStartingNumber: starting number of each section
 		' -501: doesn't change anything
-		' 0: copies the starting number of the first section in al the others
+		' 0: copies the starting number of the first section in all the others
 '
 	If iNumberingRule < 0 Or iNumberingRule > 3 Then
 		Err.Raise Number:=514, Description:="iNumberingRule must be between 0 and 3"
@@ -1478,3 +1709,85 @@ Sub FootnotesSameNumberingRule (dcArgument As Document, _
 		End If
 	Next scCurrent
 End Sub
+
+
+
+
+
+
+Function ClearHiddenText(dcArgument As Document, _
+						Optional bDelete As Boolean = False, _
+						Optional styWarning As Style, _
+						Optional bMaintainHidden As Boolean = False, _
+						Optional bShowHidden As Integer = 0) _
+						As Boolean()
+' Deletes or apply a warning style to all hidden text in the document.
+' Returns: array of booleans for each story range
+' Args:
+	' bDelete: true deletes all hidden text
+	' styWarning: defines the style for the hidden text
+	' bMaintainHidden: if true the text maintains its hidden attribute
+	' bShowHidden: changes if the hidden text is displayed
+		' 0: maintains the current configuration
+		' 1: stays hidden
+		' 2: stays visible
+'
+	Dim rgFind As Range
+	Dim bFound(4) As Boolean, bShowOption As Boolean
+
+	If bShowHidden < 0 Or bShowHidden > 2 Then
+		Err.Raise Number:=514, Description:="bShowHidden out of range it must be between 0 and 2"
+	ElseIf bShowHidden = 0 Then
+		bShowOption = dcArgument.ActiveWindow.View.ShowHiddenText
+	ElseIf bShowHidden = 1 Then
+		bShowOption = False
+	ElseIf bShowHidden = 2 Then
+		bShowOption = True
+	End If
+
+	If Not bDelete And styWarning Is Nothing Then
+		If Not StyleExists(dcArgument, "WarningHiddenText") Then
+			Set styWarning = dcArgument.Styles.Add("WarningHiddenText", wdStyleTypeCharacter)
+			styWarning.QuickStyle = True
+			With styWarning.Font
+				.Size = 31
+				.ColorIndex = wdYellow
+				.Shading.Texture = wdTextureNone
+				.Shading.BackgroundPatternColorIndex = wdRed
+				.Hidden = bMaintainHidden
+			End With
+		Else
+			Set styWarning = dcArgument.Styles("WarningHiddenText")
+		End If
+	End If
+
+	dcArgument.ActiveWindow.View.ShowHiddenText = True
+	Do
+		Set rgFind = RaMacros.GetStoryNext(dcArgument)
+		If rgFind Is Nothing Then Exit Do
+		With rgFind.Find
+			.ClearFormatting
+			.Replacement.ClearFormatting
+			.Forward = True
+			.Format = True
+			.MatchCase = False
+			.MatchWholeWord = False
+			.MatchAllWordForms = False
+			.MatchSoundsLike = False
+			.MatchWildcards = False
+			.Font.Hidden = True
+			.Text = ""
+			If bDelete Then
+				.Replacement.Text = ""
+			Else
+				.Replacement.Style = styWarning
+			End If
+			.Replacement.Font.Hidden = bMaintainHidden
+			.Execute Replace:=wdReplaceAll
+			If .Found Then bFound(rgFind.StoryType - 1) = True
+		End With
+	Loop
+	dcArgument.ActiveWindow.View.ShowHiddenText = bShowOption
+
+	ClearHiddenText = bFound
+End Function
