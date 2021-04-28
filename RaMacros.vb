@@ -1,5 +1,25 @@
 Option Explicit
 
+Function RangeInField(dcArgument As Document, rgArgument As Range) As Boolean
+' Returns true if rgArgument is part of a field
+'
+	Dim fcurrent As Field
+	Dim i As Integer
+
+	For Each fCurrent in dcArgument.Fields
+		If rgArgument.InRange(fCurrent.Result) Then
+			RangeInField = True
+			Exit Function
+		End If
+	Next fCurrent
+	RangeInField = False
+End Function
+
+
+
+
+
+
 Function StylesDeleteUnused(dcArgument As Document, _
 							Optional ByVal bMsgBox As Boolean = False) As Long
 ' Deletes unused styles using multiple loops to respect their hierarchy 
@@ -160,7 +180,8 @@ End Function
 
 
 
-Sub StylesNoDirectFormatting(dcArgument As Document, Optional bUnderlineDelete As Boolean)
+Sub StylesNoDirectFormatting(dcArgument As Document, Optional rgArgument As Range, _
+							Optional ByVal bUnderlineDelete As Boolean)
 ' Convierte los estilos directos de negritas y cursivas a los estilos Strong y Emphasis, respectivamente
 '
 	Dim iCounter As Integer
@@ -545,7 +566,7 @@ Sub CleanSpaces(dcArgument As Document, Optional ByVal iStory As Integer = 0, _
 	' bTabs: if True Tabs are substituted for a single space
 '
 	Dim bFound1 As Boolean, bFound2 As Boolean, iMaxCount As Integer 
-	Dim rgFind As Range, rgFind2 As Range, tbCurrentTable As Table
+	Dim rgFind As Range, rgFind2 As Range, tbCurrent As Table
 
 	If iStory < 0 Or iStory > 5 Then
 		Err.Raise Number:=514, Description:="Argument out of range it must be between 0 and 5"
@@ -614,9 +635,9 @@ Sub CleanSpaces(dcArgument As Document, Optional ByVal iStory As Integer = 0, _
 
 				' Deletting spaces before paragraph marks before tables (there is a bug that prevents
 					' them to be erased through find and replace)
-				For each tbCurrentTable In rgFind.Tables
-					If tbCurrentTable.Range.Start <> 0 Then
-						Set rgFind2 = tbCurrentTable.Range.Previous(wdParagraph,1)
+				For each tbCurrent In rgFind.Tables
+					If tbCurrent.Range.Start <> 0 Then
+						Set rgFind2 = tbCurrent.Range.Previous(wdParagraph,1)
 						rgFind2.MoveEnd wdCharacter, -1
 						rgFind2.Start = rgFind2.End - 1
 						If rgFind2.Text = " " Then
@@ -630,13 +651,13 @@ Sub CleanSpaces(dcArgument As Document, Optional ByVal iStory As Integer = 0, _
 							rgFind2.Delete
 						End If
 
-						Set rgFind2 = tbCurrentTable.Range.Next(wdParagraph,1).Characters.First
+						Set rgFind2 = tbCurrent.Range.Next(wdParagraph,1).Characters.First
 							rgFind2.collapse wdCollapseStart
 						Do While rgFind2.Text = " "
 							If rgFind2.Delete = 0 Then Exit Do
 						Loop
 					End If
-				Next tbCurrentTable
+				Next tbCurrent
 				
 				bFound1 = False
 				With rgFind.Find
@@ -717,8 +738,8 @@ Sub CleanEmptyParagraphs(dcArgument As Document, Optional ByVal iStory As Intege
 		' wdTextFrameStory	5
 	' bBreakLines: manual break lines get converted to paragraph marks
 '
-	Dim rgStory As Range, rgFind As Range
-	Dim tbCurrentTable As Table
+	Dim rgStory As Range, rgFind As Range, rgBibliography As Range
+	Dim tbCurrent As Table
 	Dim cllCurrentCell As Cell
 	Dim bAutoFit As Boolean, bFound As Boolean, bWrap As Boolean
 	Dim iMaxCount As Integer
@@ -770,78 +791,81 @@ Sub CleanEmptyParagraphs(dcArgument As Document, Optional ByVal iStory As Intege
 				Loop
 
 				' Deletting empty paragraphs related to tables
-				For each tbCurrentTable In rgStory.Tables
-					bAutoFit = tbCurrentTable.AllowAutoFit
-					tbCurrentTable.AllowAutoFit = False
-					bWrap = tbCurrentTable.Rows.WrapAroundText
-					tbCurrentTable.Rows.WrapAroundText = False
-					
-					' Deletting empty paragraphs before tables
-					Do
-						If tbCurrentTable.Range.Start <> 0 Then
-							Set rgFind = tbCurrentTable.Range.Previous(wdParagraph,1)
-							If rgFind.Text = vbCr Then
-								If rgFind.Start = 0 Then
-									If rgFind.Delete = 0 Then Exit Do
-									Exit Do
-								Else
-									If rgFind.Previous(wdParagraph, 1).Tables.Count = 0 Then
+				For each tbCurrent In rgStory.Tables
+					' Check if the table is part of a field (it can get bugged)
+					If Not RangeInField(dcArgument, tbCurrent.Range) Then
+						bAutoFit = tbCurrent.AllowAutoFit
+						tbCurrent.AllowAutoFit = False
+						bWrap = tbCurrent.Rows.WrapAroundText
+						tbCurrent.Rows.WrapAroundText = False
+						
+						' Deletting empty paragraphs before tables
+						Do
+							If tbCurrent.Range.Start <> 0 Then
+								Set rgFind = tbCurrent.Range.Previous(wdParagraph,1)
+								If rgFind.Text = vbCr Then
+									If rgFind.Start = 0 Then
 										If rgFind.Delete = 0 Then Exit Do
-										Set rgFind = tbCurrentTable.Range.Previous(wdParagraph,1)
-									Else
 										Exit Do
-									End If
-								End If
-							Else
-								Exit Do
-							End If
-						Else
-							Exit Do
-						End If
-					Loop
-
-					' Deletting empty paragraphs after tables
-					Do
-						If tbCurrentTable.Range.End <> rgStory.End Then
-							Set rgFind = tbCurrentTable.Range.Next(wdParagraph,1)
-							If rgFind.Text = vbCr Then
-								If rgFind.End <> rgStory.End Then
-									If rgFind.Next(wdParagraph, 1).Tables.Count = 0 Then
-										If rgFind.Delete = 0 Then Exit Do
-										Set rgFind = tbCurrentTable.Range.Next(wdParagraph,1)
 									Else
-										Exit Do
+										If rgFind.Previous(wdParagraph, 1).Tables.Count = 0 Then
+											If rgFind.Delete = 0 Then Exit Do
+											Set rgFind = tbCurrent.Range.Previous(wdParagraph,1)
+										Else
+											Exit Do
+										End If
 									End If
 								Else
-									If rgFind.Delete = 0 Then Exit Do
 									Exit Do
 								End If
 							Else
 								Exit Do
 							End If
-						Else
-							Exit Do
-						End If
-					Loop
+						Loop
 
-					' Deletting empty paragraphs inside non empty cell tables
-					For Each cllCurrentCell In tbCurrentTable.Range.Cells
-						If Len(cllCurrentCell.Range.Text) > 2 And _
-								cllCurrentCell.Range.Characters(1).Text = vbCr Then
-							cllCurrentCell.Range.Characters(1).Delete
-						End If
+						' Deletting empty paragraphs after tables
+						Do
+							If tbCurrent.Range.End <> rgStory.End Then
+								Set rgFind = tbCurrent.Range.Next(wdParagraph,1)
+								If rgFind.Text = vbCr Then
+									If rgFind.End <> rgStory.End Then
+										If rgFind.Next(wdParagraph, 1).Tables.Count = 0 Then
+											If rgFind.Delete = 0 Then Exit Do
+											Set rgFind = tbCurrent.Range.Next(wdParagraph,1)
+										Else
+											Exit Do
+										End If
+									Else
+										If rgFind.Delete = 0 Then Exit Do
+										Exit Do
+									End If
+								Else
+									Exit Do
+								End If
+							Else
+								Exit Do
+							End If
+						Loop
 
-						If Len(cllCurrentCell.Range.Text) > 2 And _
-								Asc(Right$(cllCurrentCell.Range.Text, 3)) = 13 Then
-							Set rgFind = cllCurrentCell.Range
-							rgFind.MoveEnd Unit:=wdCharacter, Count:=-1
-							rgFind.Characters.Last.Delete
-						End If
-					Next cllCurrentCell
+						' Deletting empty paragraphs inside non empty cell tables
+						For Each cllCurrentCell In tbCurrent.Range.Cells
+							If Len(cllCurrentCell.Range.Text) > 2 And _
+									cllCurrentCell.Range.Characters(1).Text = vbCr Then
+								cllCurrentCell.Range.Characters(1).Delete
+							End If
 
-					tbCurrentTable.AllowAutoFit = bAutoFit
-					tbCurrentTable.Rows.WrapAroundText = bWrap
-				Next tbCurrentTable
+							If Len(cllCurrentCell.Range.Text) > 2 And _
+									Asc(Right$(cllCurrentCell.Range.Text, 3)) = 13 Then
+								Set rgFind = cllCurrentCell.Range
+								rgFind.MoveEnd Unit:=wdCharacter, Count:=-1
+								rgFind.Characters.Last.Delete
+							End If
+						Next cllCurrentCell
+
+						tbCurrent.AllowAutoFit = bAutoFit
+						tbCurrent.Rows.WrapAroundText = bWrap
+					End If
+				Next tbCurrent
 
 				With rgStory.Find
 					.ClearFormatting
@@ -1520,21 +1544,36 @@ End Sub
 Sub TablesConvertToImage(dcArgument As Document, _
 						Optional ByVal iPlacement As Integer = wdInLine)
 ' Convert each table to an inline image
+' Solution to problems with clipboard (do loop) found in:
+	' https://www.mrexcel.com/board/threads/excel-vba-inconsistent-errors-when-trying-to-copy-and-paste-objects-from-excel-to-word.1112368/post-5485704
 ' Args:
 	' iPlacement: WdOLEPlacement enum
 		' 0: wdInLine
 		' 1: wdFloatOverText
 '
 	Dim iTable As Integer
-	Dim rgTable
+	Dim iTry As Integer
+	Dim rgTable As Range
 
 	For iTable = dcArgument.Tables.Count To 1 Step -1
 		If dcArgument.Tables(iTable).NestingLevel = 1 Then
-			Set rgTable = dcArgument.Tables(iTable).Range
-			rgTable.Select
-			rgTable.CopyAsPicture
+			iTry = 0
+			Do Until iTry = 10
+                On Error GoTo 0
+				iTry = iTry + 1
+				Set rgTable = dcArgument.Tables(iTable).Range
+				rgTable.CopyAsPicture
+                DoEvents
+				Set rgTable = rgTable.Previous(wdCharacter, 1)
+				rgTable.Collapse wdCollapseStart
+				If iTry < 10 Then On Error Resume Next
+				rgTable.PasteSpecial DataType:=wdPasteEnhancedMetafile, Placement:=iPlacement
+				If Err.Number = 0 Then
+                    On Error GoTo 0
+					Exit Do
+				End If
+			Loop
 			dcArgument.Tables(iTable).Delete
-			rgTable.PasteSpecial DataType:=wdPasteEnhancedMetafile, Placement:=iPlacement
 		End If
 	Next iTable
 End Sub

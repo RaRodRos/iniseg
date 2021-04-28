@@ -372,22 +372,19 @@ Function ConversionStory(dcLibro As Document, _
 	RaMacros.HeadingsChangeCase dcStory, 1, 4
 
 	Debug.Print "4/" & iUltima & " - Archivo story: títulos con 3 espacios en vez de tabulación"
+	Iniseg.TitulosConTresEspacios dcStory
 	Debug.Print "5.1/" & iUltima & " - Archivo story: adaptando listas para Storyline"
 	Iniseg.ListasParaStory dcStory
-	Debug.Print "5.2/" & iUltima & " - Archivo story: títulos divididos para no solaparse con el logo en la diapositiva"
-	Iniseg.TitulosDivididos dcStory
-	Debug.Print "5.3/" & iUltima & " - Archivo story: convirtiendo listas y campos LISTNUM a texto"
+	Debug.Print "5.2/" & iUltima & " - Archivo story: convirtiendo listas y campos LISTNUM a texto"
 	dcStory.ConvertNumbersToText
+	Debug.Print "5.3/" & iUltima & " - Archivo story: títulos divididos para no solaparse con el logo en la diapositiva"
+	Iniseg.TitulosDivididos dcStory
 	
 	Debug.Print "6/" & iUltima & " - Archivo story: adaptando el tamaño de párrafos"
 	Iniseg.ParrafosConversionStory dcStory
 	Iniseg.TitulosConTresEspacios dcStory
 
-	Debug.Print "8/" & iUltima & " - Archivo story: formateando imágenes"
-	Iniseg.ImagenesStory dcStory
-	Debug.Print "9/" & iUltima & " - Archivo story: corrigiendo interlineado"
-	Iniseg.InterlineadoCorregido dcStory
-	Debug.Print "10/" & iUltima & " - Archivo story: transformando/exportando tablas"
+	Debug.Print "7/" & iUltima & " - Archivo story: transformando/exportando tablas"
 	If dcStory.Tables.Count > 0 Then
 		RaMacros.TablesConvertToImage dcStory
 		' RaMacros.TablesExportToPdf dcStory, "Tabla ", True, "Enlace a ", True, _
@@ -410,6 +407,10 @@ Function ConversionStory(dcLibro As Document, _
 	Else
 		Debug.Print "--- No hay tablas ---"
 	End If
+	Debug.Print "8/" & iUltima & " - Archivo story: formateando imágenes"
+	Iniseg.ImagenesStory dcStory
+	Debug.Print "9/" & iUltima & " - Archivo story: corrigiendo interlineado"
+	Iniseg.InterlineadoCorregido dcStory
 
 	If iNotasExportar = vbYes Then
 		Debug.Print iUltima - 2 & ".1/" & iUltima & " - Exportando notas a archivo externo"
@@ -1045,7 +1046,7 @@ Sub NotasPieMarcas(dcArgument As Document, ByVal bExportar As Boolean)
 		.Name = "Swis721 Lt BT"
 		.Bold = True
 		.Color = -738148353
-		.Superscript = True
+		.Superscript = False
 	End With
 
 
@@ -1059,8 +1060,10 @@ Sub NotasPieMarcas(dcArgument As Document, ByVal bExportar As Boolean)
 			If bExportar Then
 				rgFootNote.Text = "NOTA_PIE-" & lReferencia
 			Else
-				rgFootNote.Previous(wdCharacter, 1).InsertAfter "NOTA_PIE-" & lReferencia
-				rgFootNote.Font.Hidden = True
+                Set rgFootNote = rgFootNote.Previous(wdCharacter, 1)
+                rgFootNote.Collapse wdCollapseEnd
+                rgFootNote.InsertAfter ("NOTA_PIE-" & lReferencia)
+                scCurrent.Range.Footnotes(lNota).Reference.Font.Hidden = True
 			End If
 			rgFootNote.Font = oEstiloNota
 		Next lNota
