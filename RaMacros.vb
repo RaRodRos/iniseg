@@ -184,6 +184,7 @@ Sub StylesNoDirectFormatting(dcArgument As Document, Optional rgArgument As Rang
 							Optional ByVal bUnderlineDelete As Boolean)
 ' Convierte los estilos directos de negritas y cursivas a los estilos Strong y Emphasis, respectivamente
 '
+	Dim bAllStoryRanges As Boolean
 	Dim iCounter As Integer
 	Dim arrstStylesToApply(13) As WdBuiltinStyle
 	Dim rgFind As Range
@@ -203,16 +204,19 @@ Sub StylesNoDirectFormatting(dcArgument As Document, Optional rgArgument As Rang
 	arrstStylesToApply(12) = wdStyleListNumber2
 	arrstStylesToApply(13) = wdStyleListNumber3
 
-
-	Do
+	Set rgFind = rgArgument
+	If rgFind Is Nothing Then
+		bAllStoryRanges = True
 		Set rgFind = RaMacros.GetStoryNext(dcArgument)
-		If rgFind Is Nothing Then Exit Do
+	End If
+
+	Do While Not rgFind Is Nothing
 		With rgFind.Find
 			.ClearFormatting
 			.Text = ""
 			.Replacement.Text = ""
 			.Forward = True
-			.Wrap = wdFindContinue
+			.Wrap = wdFindStop
 			.Format = True
 			.MatchCase = False
 			.MatchWholeWord = False
@@ -254,8 +258,14 @@ Sub StylesNoDirectFormatting(dcArgument As Document, Optional rgArgument As Rang
 			.Text = "^f"
 			.Replacement.Style = wdStyleFootnoteReference
 			.Execute Replace:=wdReplaceAll
+
+			Set rgFind = Nothing
+			If bAllStoryRanges Then
+				Set rgFind = RaMacros.GetStoryNext(dcArgument)
+				If rgFind Is Nothing Then Exit Do
+			End If
 		End With
-	Loop While Not rgFind Is Nothing
+	Loop
 	RaMacros.FindAndReplaceClearParameters
 End Sub
 

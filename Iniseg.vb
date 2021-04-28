@@ -53,8 +53,10 @@ Sub Iniseg1Limpieza()
 
 	If iDeleteAnswer = vbYes Then
 		If rgRangoActual.Footnotes.Count > 0 Then
-			lPrimeraNotaAlPie = rgRangoActual.Footnotes(1).Index _
-				+ rgRangoActual.FootnoteOptions.StartingNumber
+			lPrimeraNotaAlPie = rgRangoActual.FootnoteOptions.StartingNumber
+			If rgRangoActual.Footnotes(1).Index <> 1 Then
+				lPrimeraNotaAlPie = lPrimeraNotaAlPie + rgRangoActual.Footnotes(1).Index
+			End If
 		End If
 		Debug.Print "1.2/14 - Borrando texto seleccionado"
 		rgRangoActual.End = rgRangoActual.Start
@@ -268,9 +270,10 @@ Function ConversionLibro(dcLibro As Document, _
 	Debug.Print "11/" & iUltima & " - Archivo libro: corrigiendo limpieza e interlineado"
 	Iniseg.InterlineadoCorregido dcLibro
 	RaMacros.CleanBasic dcLibro, 0, False, True
-	dcLibro.Content.Select
-	Selection.ClearCharacterDirectFormatting
-	Selection.ClearParagraphDirectFormatting
+	' Lo siguiente es demasiado agresivo, devuelve numeraciones y cambia cosas sin ton ni son
+	' dcLibro.Content.Select
+	' Selection.ClearCharacterDirectFormatting
+	' Selection.ClearParagraphDirectFormatting
 
 	Debug.Print "12/" & iUltima & " - Archivo libro: formateando imágenes"
 	Iniseg.ImagenesLibro dcLibro
