@@ -1,3 +1,4 @@
+Attribute VB_Name = "Iniseg"
 Option Explicit
 
 ' Private iActual As Integer

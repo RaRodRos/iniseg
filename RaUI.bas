@@ -1,3 +1,4 @@
+Attribute VB_Name = "RaUI"
 Option Explicit
 
 ' En este módulo se implementarán todas las subrutinas y funciones a las que
