@@ -1,15 +1,11 @@
 Attribute VB_Name = "InisegStory"
 Option Explicit
 
-Sub Iniseg4ConversionParrafos()
+Private Function ConversionParrafos()
 '
-' StoryConversionParrafos Macro
+' Iniseg4ConversionParrafos Macro
 ' Conversion de Word impreso a formato para Storyline
 '
-
-    ' Eliminar los espaciados verticales entre párrafos (repetición)
-    Application.Run "InisegLibro.InisegInterlineado"
-
     ' Cambio del tamaño de Titulo 1 de 16 a 17
     With ActiveDocument.Styles(wdStyleHeading1).Font
         .Name = "Swis721 Lt BT"
@@ -44,21 +40,26 @@ Sub Iniseg4ConversionParrafos()
         .BaseStyle = "List Paragraph"
         .NextParagraphStyle = "Normal"
     End With
-    
-' Eliminar ALLCAPS de los títulos 2 y 3
 
+    ' Eliminar ALLCAPS de los títulos 2 y 3
     ActiveDocument.Styles(wdStyleHeading2).Font.AllCaps = False
     ActiveDocument.Styles(wdStyleHeading3).Font.AllCaps = False
+
+    ' Poner el estilo quote centrado y sin espacio a derecha ni izquierda
+    With ActiveDocument.Styles(wdStyleQuote).ParagraphFormat
+        .LeftIndent = 0
+        .RightIndent = 0
+        .Alignment = wdAlignParagraphCenter
+    End With
 
 ' Cambio de tamaño de parrafos de separacion
 
     ' Listas: 4 a 2
-    Selection.Find.Execute Replace:=wdReplaceAll
-    Selection.Find.ClearFormatting
-    Selection.Find.Font.Size = 4
-    Selection.Find.Replacement.ClearFormatting
-    Selection.Find.Replacement.Font.Size = 2
-    With Selection.Find
+    With ActiveDocument.Range.Find
+        .ClearFormatting
+        .Font.Size = 4
+        .Replacement.ClearFormatting
+        .Replacement.Font.Size = 2
         .Text = ""
         .Replacement.Text = ""
         .Forward = True
@@ -69,15 +70,15 @@ Sub Iniseg4ConversionParrafos()
         .MatchWildcards = False
         .MatchSoundsLike = False
         .MatchAllWordForms = False
+        .Execute Replace:=wdReplaceAll
     End With
 
     ' Parrafos normales: 5 a 4.
-    Selection.Find.Execute Replace:=wdReplaceAll
-    Selection.Find.ClearFormatting
-    Selection.Find.Font.Size = 5
-    Selection.Find.Replacement.ClearFormatting
-    Selection.Find.Replacement.Font.Size = 4
-    With Selection.Find
+    With ActiveDocument.Range.Find
+        .ClearFormatting
+        .Font.Size = 5
+        .Replacement.ClearFormatting
+        .Replacement.Font.Size = 4
         .Text = ""
         .Replacement.Text = ""
         .Forward = True
@@ -88,15 +89,15 @@ Sub Iniseg4ConversionParrafos()
         .MatchWildcards = False
         .MatchSoundsLike = False
         .MatchAllWordForms = False
+        .Execute Replace:=wdReplaceAll
     End With
 
     ' Titulos 2, 3 y 4: 8 a 6.
-    Selection.Find.Execute Replace:=wdReplaceAll
-    Selection.Find.ClearFormatting
-    Selection.Find.Font.Size = 8
-    Selection.Find.Replacement.ClearFormatting
-    Selection.Find.Replacement.Font.Size = 6
-    With Selection.Find
+    With ActiveDocument.Range.Find
+        .ClearFormatting
+        .Font.Size = 8
+        .Replacement.ClearFormatting
+        .Replacement.Font.Size = 6
         .Text = ""
         .Replacement.Text = ""
         .Forward = True
@@ -107,87 +108,136 @@ Sub Iniseg4ConversionParrafos()
         .MatchWildcards = False
         .MatchSoundsLike = False
         .MatchAllWordForms = False
+        .Execute Replace:=wdReplaceAll
     End With
 
 ' Titulos 1: 11 a 8
 
-    ' Cambiar el primer párrafo tras todos los Headings 1 y marcarlo con la palabra FISTRO
-    Selection.Find.Execute Replace:=wdReplaceAll
-    Selection.Find.ClearFormatting
-    Selection.Find.Style = ActiveDocument.Styles(wdStyleHeading1)
-    Selection.Find.Replacement.ClearFormatting
-    With Selection.Find
+    ' Dar tamaño 8 a todos los párrafos tras los Heading 1
+    With ActiveDocument.Range.Find
+        .ClearFormatting
+        .Style = ActiveDocument.Styles(wdStyleHeading1)
+        .Replacement.ClearFormatting
+        .Forward = True
+        .Wrap = wdFindContinue
+        .Format = True
+        .MatchCase = False
+        .MatchWholeWord = False
+        .MatchAllWordForms = False
+        .MatchSoundsLike = False
+        .MatchWildcards = True
         .Text = "(*@^13)"
         .Replacement.Text = "\1FISTRO"
-        .Forward = True
-        .Wrap = wdFindContinue
-        .Format = True
-        .MatchCase = False
-        .MatchWholeWord = False
-        .MatchAllWordForms = False
-        .MatchSoundsLike = False
-        .MatchWildcards = True
-    End With
-
-    ' Seleccionar dos simbolos de parrafos seguidos, de tamaño 11,
-        ' anterior a todos Headings 1, y marcarlos con la palabra FISTRO
-    Selection.Find.Execute Replace:=wdReplaceAll
-    Selection.Find.ClearFormatting
-    Selection.Find.Font.Size = 11
-    Selection.Find.Replacement.ClearFormatting
-    With Selection.Find
-        .Text = "^13^13"
-        .Replacement.Text = "^13FISTRO^13"
-        .Forward = True
-        .Wrap = wdFindContinue
-        .Format = True
-        .MatchCase = False
-        .MatchWholeWord = False
-        .MatchAllWordForms = False
-        .MatchSoundsLike = False
-        .MatchWildcards = True
-    End With
-
-    ' Seleccionar todos los parrafos con la palabra FISTRO y darles un estilo "Normal"
-    Selection.Find.Execute Replace:=wdReplaceAll
-    Selection.Find.ClearFormatting
-    Selection.Find.Replacement.ClearFormatting
-    Selection.Find.Replacement.Style = ActiveDocument.Styles(wdStyleNormal)
-    With Selection.Find
+        .Execute Replace:=wdReplaceAll
+        .Style = ActiveDocument.Styles(wdStyleNormal)
         .Text = "FISTRO^13"
-        .Replacement.Text = "FISTRO^13"
-        .Forward = True
-        .Wrap = wdFindContinue
-        .Format = True
-        .MatchCase = False
-        .MatchWholeWord = False
-        .MatchAllWordForms = False
-        .MatchSoundsLike = False
-        .MatchWildcards = True
-    End With
-
-    ' Seleccionar todos los parrafos con la palabra FISTRO, cambiar su tamaño a 8
-        ' y borrar la palabra FISTRO
-    Selection.Find.Execute Replace:=wdReplaceAll
-    Selection.Find.ClearFormatting
-    Selection.Find.Replacement.ClearFormatting
-    Selection.Find.Replacement.Font.Size = 8
-    With Selection.Find
-        .Text = "FISTRO^13"
+        .Replacement.Font.Size = 8
         .Replacement.Text = "^13"
-        .Forward = True
-        .Wrap = wdFindContinue
-        .Format = True
-        .MatchCase = False
-        .MatchWholeWord = False
-        .MatchAllWordForms = False
-        .MatchSoundsLike = False
-        .MatchWildcards = True
         .Execute Replace:=wdReplaceAll
     End With
+
+    ' Meter salto de página antes de cada Heading 1 y Title
+    ' With ActiveDocument.Range.Find
+    '     .ClearFormatting
+    '     .Replacement.ClearFormatting
+    '     .Forward = True
+    '     .Wrap = wdFindContinue
+    '     .Format = True
+    '     .MatchCase = False
+    '     .MatchWholeWord = False
+    '     .MatchAllWordForms = False
+    '     .MatchSoundsLike = False
+    '     .MatchWildcards = True
+    '   .Style = ActiveDocument.Styles(wdStyleHeading1)
+    '     .Text = "(*^13)"
+    '     .Replacement.Text = "GROMENAUER^13^m^13\1"
+    '     .Execute Replace:=wdReplaceAll
+    '     .Text = "(TEMA*^13)"
+    '   .Style = ActiveDocument.Styles(wdStyleTitle)
+    '     .Execute Replace:=wdReplaceAll
+    '     .ClearFormatting
+    '     .Replacement.ClearFormatting
+    '     .MatchWildcards = True
+    '     .Text = "GROMENAUER^13^m^13"
+    '   .Replacement.Style = ActiveDocument.Styles(wdStyleNormal)
+    '     .Replacement.Text = "^m^13"
+    '     .Execute Replace:=wdReplaceAll
+
+    ' End With
+
+    Dim prParrafoActual As Paragraph, index As Integer
+
+    For index = 1 To ActiveDocument.Paragraphs.Count - 1
+        With ActiveDocument.Paragraphs(index).Range
+            If .Next(Unit:=wdParagraph, Count:=1).Paragraphs(1).OutlineLevel = 1 Then
+                If .Previous(Unit:=wdParagraph, Count:=2).Style <> ActiveDocument.Styles(wdStyleTitle) Then
+                    '.Collapse Direction:=wdCollapseEnd
+                    ActiveDocument.Paragraphs(index).Range.InsertBreak Type:=wdPageBreak
+                    'index = index + 1
+                End If
+            End If
+        End With
+    Next index
+
+    Application.Run "RaMacros.LimpiarFindAndReplaceParameters"
     
+End Function
+
+Private Function ImagenesGrandes()
+'
+' ImagenesGrandes Function
+'
+' Hace que todas las imágenes sean enormes, para meterlas en el story
+'
+    Dim inlShape As InlineShape
+        
+    For Each inlShape In ActiveDocument.InlineShapes
+        If inlShape.Type = wdInlineShapePicture Then inlShape.Width = CentimetersToPoints(29)
+    Next inlShape
+
+End Function
+
+Private Function TitulosCon3Espacios()
+'
+' TitulosCon3Espacios Function
+'
+' Sustituye la tabulación en los títulos por 3 espacios
+'
+    With ActiveDocument.Range.Find
+        .ClearFormatting
+        .Replacement.ClearFormatting
+        .Forward = True
+        .Wrap = wdFindContinue
+        .Format = True
+        .MatchCase = False
+        .MatchWholeWord = False
+        .MatchAllWordForms = False
+        .MatchSoundsLike = False
+        .MatchWildcards = True
+        .Text = "([0-9].)^t"
+        .Replacement.Text = "\1   "
+        .Style = ActiveDocument.Styles(wdStyleHeading1)
+        .Execute Replace:=wdReplaceAll
+        .Style = ActiveDocument.Styles(wdStyleHeading2)
+        .Execute Replace:=wdReplaceAll
+        .Style = ActiveDocument.Styles(wdStyleHeading3)
+        .Execute Replace:=wdReplaceAll
+
+    End With
+
+    Application.Run "RaMacros.LimpiarFindAndReplaceParameters"
+
+End Function
+
+Sub Iniseg4FormatoStory()
+
+    Application.Run "InisegLibro.InisegInterlineado"
     Application.Run "RaMacros.ListasATexto"
-    
+    Application.Run "ConversionParrafos"
+    Application.Run "TitulosCon3Espacios"
+    Application.Run "ImagenesGrandes"
+    Application.Run "InisegLibro.InisegInterlineado"
+
 End Sub
 
 Sub Iniseg5NotasPieATexto()
@@ -197,7 +247,6 @@ Sub Iniseg5NotasPieATexto()
 ' Convierte las referencias de notas al pie al texto "NOTA_PIE-numNota"
     ' para poder automatizar externamente su conversión en el .story
 '
-
     Dim lContadorNotas As Long
     Dim bSeguir As Boolean
     Dim oEstiloNota As Font
@@ -218,7 +267,7 @@ Sub Iniseg5NotasPieATexto()
     
     Do While bSeguir = True
     
-        With Selection.Find
+        With ActiveDocument.Range.Find
             .ClearFormatting
             .Text = "^2"
             .Forward = True
@@ -248,3 +297,4 @@ Sub Iniseg5NotasPieATexto()
     Application.Run "RaMacros.LimpiarFindAndReplaceParameters"
     
 End Sub
+
