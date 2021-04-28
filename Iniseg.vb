@@ -24,6 +24,7 @@ Sub Iniseg1Limpieza()
 	Dim rgRangoActual As Range
 	Dim stFileName As String
 	Dim iDeleteAnswer As Integer, lEstilosBorrados As Long, lPrimeraNotaAlPie As Long
+	Dim dEmpiece As Double, dFin As Double
 
 	Set dcOriginalFile = ActiveDocument
 	Set rgRangoActual = dcOriginalFile.Content
@@ -72,7 +73,11 @@ Sub Iniseg1Limpieza()
 	Iniseg.ColoresCorrectos dcOriginalFile
 
 	Debug.Print "8/13 - Borrando estilos sin uso"
+	dEmpiece = Timer
 	lEstilosBorrados = RaMacros.StylesDeleteUnused(dcOriginalFile, False)
+	dFin = Timer
+	Debug.Print dFin-dEmpiece & " segundos (" & CInt((dFin-dEmpiece)/60) _
+		& " minutos) para borrar " & lEstilosBorrados & " estilos"
 
 	' Copia de seguridad limpia
 	Debug.Print "9/13 - Creando copia de seguridad limpia (01)"
@@ -108,11 +113,14 @@ Sub Iniseg2LibroYStory()
 	If ActiveDocument.Footnotes.Count > 0 Then
 		iNotas = MsgBox("¿Exportar notas al pie de página a archivo separado?", vbYesNoCancel, "Opciones exportar")
 		If iNotas = vbCancel Then Exit Sub
+
+	
 	Else
 		iNotas = vbNo
 	End If
-	iExportar = MsgBox("¿Exportar cada tema en archivos separados?", vbYesNoCancel, "Opciones exportar")
-	If iExportar = vbCancel Then Exit Sub
+	' iExportar = MsgBox("¿Exportar cada tema en archivos separados?", vbYesNoCancel, "Opciones exportar")
+	' If iExportar = vbCancel Then Exit Sub
+	iExportar = vbYes
 
 	Set dcLibro = Iniseg.ConversionLibro(ActiveDocument)
 	Debug.Print "A/4 - Archivo libro: salvando"
@@ -132,11 +140,11 @@ Sub Iniseg2LibroYStory()
 	MsgBox "Revisar formato libro (viudas/huérfanas, tamaño de imágenes o tablas...), exportar material necesario y ejecutar iniseg 3"
 End Sub
 
-Sub Iniseg3PáginasBlancasVisibles()
+Sub Iniseg3PáginasVaciasVisibles()
 	' Esta macro es una mala práctica y solo está para evitar confusiones por
 		' falta de uniformidad en el uso de plantillas y estilos
 	RaMacros.SectionsFillBlankPages ActiveDocument
-	Debug.Print "Iniseg3PáginasBlancasVisibles terminada"
+	Debug.Print "Iniseg3PáginasVaciasVisibles terminada"
 End Sub
 
 
@@ -162,7 +170,7 @@ Function ConversionLibro(dcLibro As Document) As Document
 	Debug.Print "4.1/17 - Archivo libro: títulos sin numeración repetida"
 	RaMacros.HeadingsNoNumeration dcLibro
 	Debug.Print "4.2/17 - Archivo libro: listas sin numeración repetida"
-	RaMacros.ListsNoNumeration dcLibro
+	RaMacros.ListsNoExtraNumeration dcLibro
 
 	' Títulos y mayúsculas
 	Debug.Print "5/17 - Archivo libro: Títulos sin AllCaps"
@@ -172,9 +180,9 @@ Function ConversionLibro(dcLibro As Document) As Document
 	Debug.Print "6/17 - Archivo libro: Título 1 en mayúsculas"
 	dcLibro.Styles(wdstyleheading1).Font.AllCaps = True
 
-	Debug.Print "7/17 - Archivo libro: aplicado estilo correcto a hipervínculos"
+	Debug.Print "7/17 - Archivo libro: aplicando estilo correcto a hipervínculos"
 	RaMacros.HyperlinksFormatting dcLibro, 1, 0
-	Debug.Print "8.1/17 - Archivo libro: aplicado estilo correcto a notas al pie"
+	Debug.Print "8.1/17 - Archivo libro: aplicando estilo correcto a notas al pie"
 	If dcLibro.Footnotes.Count > 0 Then
 		dcLibro.StoryRanges(2).Style = wdStyleFootnoteText
 		With dcLibro.StoryRanges(2).Find
@@ -211,8 +219,12 @@ Function ConversionLibro(dcLibro As Document) As Document
 	Iniseg.ParrafosSeparacionLibro dcLibro
 	Debug.Print "14/17 - Archivo libro: añadiendo párrafos de separación antes de tablas"
 	Iniseg.TablasParrafosSeparacion dcLibro
-	Debug.Print "15/17 - Archivo libro: añadiendo saltos de sección antes de Títulos 1"
+	Debug.Print "15.1/17 - Archivo libro: añadiendo saltos de sección antes de Títulos 1"
 	RaMacros.SectionBreakBeforeHeading dcLibro, False, 4, 1
+	If dcLibro.Sections.Count > 1 Then
+		Debug.Print "15.2/17 - Archivo libro: mismo numbering rule de notas al pie en todas las secciones"
+		RaMacros.FootnotesSameNumberingRule dcLibro, 3, -501
+	End If
 	Debug.Print "16/17 - Archivo libro: añadiendo saltos de página antes de Títulos de bibliografía"
 	Iniseg.BibliografiaSaltosDePagina dcLibro
 
@@ -224,10 +236,16 @@ Function ConversionLibro(dcLibro As Document) As Document
 	Set ConversionLibro = dcLibro
 End Function
 
-Function ConversionStory(dcLibro As Document, Optional iExportarNotas As Integer = 0, Optional iExportarSeparados As Integer = 0) As Document
+Function ConversionStory(dcLibro As Document, Optional ByVal iExportarNotas As Integer = 0, _
+						Optional ByVal iExportarSeparados As Integer = 0, _
+						Optional ByVal iNotasSeparadas As Integer = 0) _
+	As Document
 ' Da el tamaño correcto a párrafos, imágenes y formatea marcas de pie de página
 '
-	Dim dcStory As Document, dcBibliografia As Document, iUltima As Integer
+	Dim dcStory As Document
+	Dim dcBibliografia As Document
+	Dim iUltima As Integer
+	Dim bNotasSeparadas As Boolean
 
 	If iExportarNotas = 0 And dcLibro.Footnotes.Count > 0 Then
 		iExportarNotas = MsgBox("¿Exportar notas al pie de página a archivo separado?", vbYesNoCancel, "Opciones exportar")
@@ -241,6 +259,19 @@ Function ConversionStory(dcLibro As Document, Optional iExportarNotas As Integer
 		If iExportarSeparados = vbCancel Then Exit Function
 	ElseIf iExportarSeparados < 6 Or iExportarSeparados > 7 Then
 		Err.Raise Number:=513, Description:="iExportarSeparados out of range"
+	End If
+
+	If iNotasSeparadas = 0 And dcLibro.Sections.Count > 1 Then
+		iNotasSeparadas = MsgBox("¿Exportar las notas al pie de cada tema en archivos separados?", _
+			vbYesNoCancel, "Opciones notas al pie")
+		If iNotasSeparadas = vbCancel Then Exit Function
+		If iNotasSeparadas = vbYes Then bNotasSeparadas = True Else bNotasSeparadas = False
+	ElseIf iNotasSeparadas < 6 Or iNotasSeparadas > 7 Then
+		Err.Raise Number:=513, Description:="iNotasSeparadas out of range"
+	End If
+
+	If dcLibro.Sections(1).Range.FootnoteOptions.NumberingRule = wdRestartSection Then
+		bNotasSeparadas = True
 	End If
 
 	iUltima = 10
@@ -272,12 +303,16 @@ Function ConversionStory(dcLibro As Document, Optional iExportarNotas As Integer
 	dcStory.Styles(wdstyleheading1).Font.AllCaps = False
 	RaMacros.HeadingsChangeCase dcStory, 1, 4
 
-	Debug.Print "4/" & iUltima & " - Archivo story: convirtiendo listas a texto"
+	Debug.Print "4.1/" & iUltima & " - Archivo story: convirtiendo listas y campos LISTNUM a texto"
 	dcStory.ConvertNumbersToText
+	Debug.Print "4.2/" & iUltima & " - Archivo story: adaptando listas para Storyline"
+	Iniseg.ListasParaStory dcStory
+	
 	Debug.Print "5/" & iUltima & " - Archivo story: adaptando el tamaño de párrafos"
 	Iniseg.ParrafosConversionStory dcStory
 	Debug.Print "6/" & iUltima & " - Archivo story: títulos con 3 espacios en vez de tabulación"
 	Iniseg.TitulosConTresEspacios dcStory
+
 	Debug.Print "7/" & iUltima & " - Archivo story: títulos divididos para no solaparse con el logo en la diapositiva"
 	Iniseg.TitulosDivididos dcStory
 	Debug.Print "8/" & iUltima & " - Archivo story: formateando imágenes"
@@ -286,7 +321,8 @@ Function ConversionStory(dcLibro As Document, Optional iExportarNotas As Integer
 	Iniseg.InterlineadoCorregido dcStory
 	Debug.Print "10/" & iUltima & " - Archivo story: exportando y borrando tablas"
 	If dcStory.Tables.Count > 0 Then
-		RaMacros.TablesExportToPdf dcStory,, True, wdStyleBlockQuotation, 17
+		RaMacros.TablesExportToPdf dcStory, "Tabla ", True, "Enlace a ", True, _
+			dcStory.Name, wdStyleBlockQuotation, 17
 		With dcStory.Content.Find
 			.ClearFormatting
 			.Replacement.ClearFormatting
@@ -297,6 +333,7 @@ Function ConversionStory(dcLibro As Document, Optional iExportarNotas As Integer
 			.MatchWildcards = False
 			.MatchSoundsLike = False
 			.MatchAllWordForms = False
+			.Style = wdStyleBlockQuotation
 			.Text = "Enlace a tabla"
 			.Replacement.ParagraphFormat.Alignment = wdAlignParagraphCenter
 			.Execute Replace:=wdReplaceAll
@@ -305,14 +342,16 @@ Function ConversionStory(dcLibro As Document, Optional iExportarNotas As Integer
 		Debug.Print "--- No hay tablas ---"
 	End If
 
-	If iExportarNotas = vbYes Then
-		Debug.Print iUltima - 2 & ".1/" & iUltima & " - exportando notas a archivo externo"
-		Iniseg.NotasPieExportar dcLibro
-			Debug.Print iUltima - 2 & ".2/" & iUltima & " - Archivo story: formateando notas"
-		Iniseg.NotasPieMarcas dcStory, True
-	ElseIf dcLibro.Footnotes.Count > 0 Then
-		Debug.Print iUltima - 2 & "/" & iUltima & " - Archivo story: formateando notas"
-		Iniseg.NotasPieMarcas dcStory, False
+	If dcLibro.Footnotes.Count > 0 Then
+		If iExportarNotas = vbYes Then
+			Debug.Print iUltima - 2 & ".1/" & iUltima & " - exportando notas a archivo externo"
+			Iniseg.NotasPieExportar dcLibro, bNotasSeparadas
+				Debug.Print iUltima - 2 & ".2/" & iUltima & " - Archivo story: formateando notas"
+			Iniseg.NotasPieMarcas dcStory, True
+		Else
+			Debug.Print iUltima - 2 & "/" & iUltima & " - Archivo story: formateando notas"
+			Iniseg.NotasPieMarcas dcStory, False
+		End If
 	Else
 		Debug.Print iUltima - 2 & "/" & iUltima & " - Archivo story: --- no hay notas al pie ---"
 	End If
@@ -352,7 +391,7 @@ End Sub
 
 Sub HeaderCopy(dcOriginalDocument As Document, _
 				dcObjectiveDocument As Document, _
-				Optional iHeaderOption As Integer = 3)
+				Optional ByVal iHeaderOption As Integer = 3)
 ' Copia los encabezados de un archivo a otro según la opción que se le pase:
 	' iHeaderOption = 1 => copia el encabezado de pág. impar en todos los encabezados
 	' iHeaderOption = 2 => copia los de pág. impar y par
@@ -527,6 +566,8 @@ Sub ImagenesLibro(dcArgument As Document)
 '
 	Dim inlShape As InlineShape, sngRealPageWidth As Single, sngRealPageHeight As Single, iIndex As Integer
 
+	Application.ScreenUpdating = False
+	
 	sngRealPageWidth = dcArgument.PageSetup.PageWidth - dcArgument.PageSetup.Gutter _
 		- dcArgument.PageSetup.RightMargin - dcArgument.PageSetup.LeftMargin
 
@@ -595,7 +636,7 @@ Sub ImagenesLibro(dcArgument As Document)
 			End If
 		End With
 	Next inlShape
-
+	Application.ScreenUpdating = True
 End Sub
 
 
@@ -607,9 +648,11 @@ Sub ImagenesStory(dcArgument As Document)
 '
 	Dim inlShape As InlineShape
 
+	Application.ScreenUpdating = False
 	For Each inlShape In dcArgument.InlineShapes
 		inlShape.Width = CentimetersToPoints(29)
 	Next inlShape
+	Application.ScreenUpdating = True
 End Sub
 
 
@@ -640,416 +683,131 @@ End Sub
 
 Sub ParrafosSeparacionLibro(dcArgument As Document)
 ' Inserta párrafos vacíos de separación
-' TODO
-	' Refactorizar con variables y recolocando el código
 '
-	With dcArgument.Range.Find
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Forward = True
-		.Wrap = wdFindContinue
-		.Format = False
-		.MatchCase = False
-		.MatchWholeWord = False
-		.MatchWildcards = True
-		.MatchSoundsLike = False
-		.MatchAllWordForms = False
+	Dim lContador As Long
+	Dim iStory As Integer, iSize As Integer, iSizeNext As Integer
+	Dim rgStory As Range
+	Dim pCurrent As Paragraph
 
-		' Elimina saltos manuales de página (innecesarios con los saltos de sección y revisión posteriores)
-		.Text = "^m"
-		.Replacement.Text = ""
-		.Execute Replace:=wdReplaceAll
+	Application.ScreenUpdating = False
+    For iStory = 1 To 5 Step 4
+        On Error Resume Next
+        Set rgStory = dcArgument.StoryRanges(iStory)
+        If Err.Number = 0 Then
+            On Error GoTo 0
+			' El loop es para que pase por todos los textframe
+			Do
+				With rgStory.Find
+					.ClearFormatting
+					.Replacement.ClearFormatting
+					.Forward = True
+					.Format = False
+					.MatchCase = False
+					.MatchWholeWord = False
+					.MatchWildcards = True
+					.MatchSoundsLike = False
+					.MatchAllWordForms = False
+					' Elimina saltos manuales de página (innecesarios con los saltos de sección y revisión posteriores)
+					.Text = "^m"
+					.Replacement.Text = ""
+					.Execute Replace:=wdReplaceAll
 
-		' Mete dos saltos de línea manuales en los Heading 1, entre "Tema N" y el nombre del tema
-		.Format = True
-		.style = wdstyleheading1
-		.Text = "([tT][eE][mM][aA] [0-9]{1;2})"
-		.Replacement.Text = "\1^l^l"
-		.Execute Replace:=wdReplaceAll
-	End With
+					' Mete un salto de línea en los títulos 1, entre "Tema N" y el nombre del tema
+					.Format = True
+					.style = wdstyleheading1
+					.Text = "^13(*^13)"
+					.Replacement.Text = "^l\1"
+					.Execute Replace:=wdReplaceAll
+					.Text = "([tT][eE][mM][aA] [0-9]{1;2})"
+					.Replacement.Text = "\1 "
+					.Execute Replace:=wdReplaceAll
+					.Text = "([tT][eE][mM][aA] [0-9]{1;2}) @"
+					.Replacement.Text = "\1^l^l"
+					.Execute Replace:=wdReplaceAll
+					' Formatea los saltos de línea y les da tamaño 10
+					.Replacement.ClearFormatting
+					.Replacement.Font.Size = 10
+					.Text = "[^13^l]{2;}"
+					.Replacement.Text = "^l^l"
+					.Execute Replace:=wdReplaceAll
+				End With
+				RaMacros.FindAndReplaceClearParameters
 
-		' Formatea los saltos de línea y les da tamaño 10
-	RaMacros.CleanSpaces dcArgument, 0
-	With dcArgument.Range.Find
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Forward = True
-		.Wrap = wdFindContinue
-		.Format = True
-		.MatchCase = False
-		.MatchWholeWord = False
-		.MatchWildcards = True
-		.MatchSoundsLike = False
-		.MatchAllWordForms = False
-		.style = wdstyleheading1
-		.Replacement.ClearFormatting
-		.Replacement.Font.Size = 10
-		.Text = "[^13^l]{2;}"
-		.Replacement.Text = "^l^l"
-		.Execute Replace:=wdReplaceAll
-	End With
-
-
-	' Párrafos de separación generales
-	With dcArgument.Range.Find
-		.Forward = True
-		.Wrap = wdFindContinue
-		.Format = True
-		.MatchCase = False
-		.MatchWholeWord = False
-		.MatchAllWordForms = False
-		.MatchSoundsLike = False
-		.MatchWildcards = True
-
-		' Cambiar saltos de párrafo por saltos de línea en pies de imagen
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Text = "(*)^13(*^13)"
-		.Style = wdStyleCaption
-		.Replacement.Text = "\1^l\2"
-		.Execute Replace:=wdReplaceAll
-
-		' Marcas para los títulos
-		.Text = "(*^13)"
-
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Style = wdstyleheading1
-		.Replacement.Text = "\1SEP_11^13"
-		.Execute Replace:=wdReplaceAll
-
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Style = wdstyleheading2
-		.Replacement.Text = "SEP_11^13\1SEP_11^13"
-		.Execute Replace:=wdReplaceAll
-
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Style = wdstyleheading3
-		.Replacement.Text = "SEP_8^13\1SEP_8^13"
-		.Execute Replace:=wdReplaceAll
-
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Style = wdstyleheading4
-		.Replacement.Text = "SEP_8^13\1SEP_8^13"
-		.Execute Replace:=wdReplaceAll
-
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Style = wdStyleHeading5
-		.Replacement.Text = "SEP_6^13\1SEP_6^13"
-		.Execute Replace:=wdReplaceAll
-
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Style = wdStyleHeading6
-		.Replacement.Text = "SEP_6^13\1SEP_6^13"
-		.Execute Replace:=wdReplaceAll
-
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Style = wdStyleHeading7
-		.Replacement.Text = "SEP_6^13\1SEP_6^13"
-		.Execute Replace:=wdReplaceAll
-
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Style = wdStyleHeading8
-		.Replacement.Text = "SEP_6^13\1SEP_6^13"
-		.Execute Replace:=wdReplaceAll
-
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Style = wdStyleHeading9
-		.Replacement.Text = "SEP_6^13\1SEP_6^13"
-		.Execute Replace:=wdReplaceAll
-
-
-
-		' Marcas del resto de estilos
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Style = wdStyleNormal
-		.Replacement.Text = "SEP_5^13\1SEP_5^13"
-		.Execute Replace:=wdReplaceAll
-
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Style = wdStyleCaption
-		.Replacement.Text = "SEP_5^13\1SEP_5^13"
-		.Execute Replace:=wdReplaceAll
-
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Style = wdStyleQuote
-		.Replacement.Text = "SEP_5^13\1SEP_5^13"
-		.Execute Replace:=wdReplaceAll
-
-			' Word tiene un bug y se lía con el último párrafo, si es de lista
-		If dcArgument.Paragraphs.Last.Range.ListFormat.ListType <> wdListNoNumbering Then
-			dcArgument.Paragraphs.Last.Range.InsertParagraphAfter
-			dcArgument.Paragraphs.Last.Style = wdStyleNormal
+				For lContador = rgStory.Paragraphs.Count - 1 To 1 Step -1
+					Set pCurrent = rgStory.Paragraphs(lContador)
+					' No se añaden párrafos de separación a los pies de imagen o el interior de tablas
+					If pCurrent.Range.Tables.Count = 0 Then
+						If pCurrent.Next.Range.Tables.Count = 0 Then
+							If Not (pCurrent.style = dcArgument.styles(wdStyleCaption) _
+								And pCurrent.Next.style = pCurrent.style) _
+							Then
+								iSize = GetSeparacionTamaño(pCurrent)
+								iSizeNext = GetSeparacionTamaño(pCurrent.Next)
+								pCurrent.Range.InsertParagraphAfter
+								' Se mantiene el estilo actual si los párrafos adyacentes lo requieren, en caso contrario se asigna estilo Normal
+								If (pCurrent.style = dcArgument.styles(wdStyleBlockQuotation) _
+									Or pCurrent.style = dcArgument.styles(wdStyleQuote) _
+									Or pCurrent.style = dcArgument.styles(wdStyleHeading1)) _
+									And pCurrent.Next(2).style = pCurrent.style _
+								Then
+									pCurrent.Next.style = pCurrent.style
+									' Separación de 10 puntos entre "Tema n" y el nombre del tema en Títulos 1
+									If pCurrent.style = dcArgument.styles(wdStyleHeading1) Then
+										iSize = 10
+										iSizeNext = 10
+									End If
+								Else
+									pCurrent.Next.style = wdStyleNormal
+								End If
+								If iSizeNext > iSize Then
+									pCurrent.Next.Range.Font.Size = iSizeNext
+								Else
+									pCurrent.Next.Range.Font.Size = iSize
+								End If
+							End If
+						End If	
+					End If
+				Next lContador
+				If iStory = 5 And Not rgStory.NextStoryRange Is Nothing Then
+					Set rgStory = rgStory.NextStoryRange
+				Else
+					Exit Do
+				End If
+			Loop
+		Else
+			On Error GoTo 0
 		End If
-
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Style = wdStyleList
-		.Replacement.Text = "SEP_4^13\1SEP_4^13"
-		.Execute Replace:=wdReplaceAll
-
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Style = wdStyleList2
-		.Replacement.Text = "SEP_4^13\1SEP_4^13"
-		.Execute Replace:=wdReplaceAll
-
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Style = wdStyleList3
-		.Replacement.Text = "SEP_4^13\1SEP_4^13"
-		.Execute Replace:=wdReplaceAll
-
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Style = wdStyleListBullet
-		.Replacement.Text = "SEP_4^13\1SEP_4^13"
-		.Execute Replace:=wdReplaceAll
-
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Style = wdStyleListBullet2
-		.Replacement.Text = "SEP_4^13\1SEP_4^13"
-		.Execute Replace:=wdReplaceAll
-
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Style = wdStyleListBullet3
-		.Replacement.Text = "SEP_4^13\1SEP_4^13"
-		.Execute Replace:=wdReplaceAll
-
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Style = wdStyleListBullet4
-		.Replacement.Text = "SEP_4^13\1SEP_4^13"
-		.Execute Replace:=wdReplaceAll
-
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Style = wdStyleListBullet5
-		.Replacement.Text = "SEP_4^13\1SEP_4^13"
-		.Execute Replace:=wdReplaceAll
-
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Style = wdStyleListContinue
-		.Replacement.Text = "SEP_4^13\1SEP_4^13"
-		.Execute Replace:=wdReplaceAll
-
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Style = wdStyleListContinue2
-		.Replacement.Text = "SEP_4^13\1SEP_4^13"
-		.Execute Replace:=wdReplaceAll
-
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Style = wdStyleListContinue3
-		.Replacement.Text = "SEP_4^13\1SEP_4^13"
-		.Execute Replace:=wdReplaceAll
-
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Style = wdStyleListContinue4
-		.Replacement.Text = "SEP_4^13\1SEP_4^13"
-		.Execute Replace:=wdReplaceAll
-
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Style = wdStyleListContinue5
-		.Replacement.Text = "SEP_4^13\1SEP_4^13"
-		.Execute Replace:=wdReplaceAll
-
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Style = wdStyleListNumber
-		.Replacement.Text = "SEP_4^13\1SEP_4^13"
-		.Execute Replace:=wdReplaceAll
-
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Style = wdStyleListNumber2
-		.Replacement.Text = "SEP_4^13\1SEP_4^13"
-		.Execute Replace:=wdReplaceAll
-
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Style = wdStyleListNumber3
-		.Replacement.Text = "SEP_4^13\1SEP_4^13"
-		.Execute Replace:=wdReplaceAll
-
-
-
-		' Convertir marcas a estilo Normal
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Text = "(SEP_[0-9]{1;2}^13)"
-		.Replacement.Style = wdStyleNormal
-		.Replacement.Text = "\1"
-		.Execute Replace:=wdReplaceAll
-
-
-
-		' Seleccionar la marca de mayor tamaño, cuando coinciden 2
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Format = False
-
-		' Prevalece la segunda
-		.Text = "(SEP_4^13)(SEP_4^13)"
-		.Replacement.Text = "\2"
-		.Execute Replace:=wdReplaceAll
-
-		.Text = "(SEP_4^13)(SEP_5^13)"
-		.Replacement.Text = "\2"
-		.Execute Replace:=wdReplaceAll
-
-		.Text = "(SEP_4^13)(SEP_6^13)"
-		.Replacement.Text = "\2"
-		.Execute Replace:=wdReplaceAll
-
-		.Text = "(SEP_4^13)(SEP_8^13)"
-		.Replacement.Text = "\2"
-		.Execute Replace:=wdReplaceAll
-
-		.Text = "(SEP_4^13)(SEP_11^13)"
-		.Replacement.Text = "\2"
-		.Execute Replace:=wdReplaceAll
-
-		.Text = "(SEP_5^13)(SEP_5^13)"
-		.Replacement.Text = "\2"
-		.Execute Replace:=wdReplaceAll
-
-		.Text = "(SEP_5^13)(SEP_6^13)"
-		.Replacement.Text = "\2"
-		.Execute Replace:=wdReplaceAll
-
-		.Text = "(SEP_5^13)(SEP_8^13)"
-		.Replacement.Text = "\2"
-		.Execute Replace:=wdReplaceAll
-
-		.Text = "(SEP_5^13)(SEP_11^13)"
-		.Replacement.Text = "\2"
-		.Execute Replace:=wdReplaceAll
-
-		.Text = "(SEP_6^13)(SEP_6^13)"
-		.Replacement.Text = "\2"
-		.Execute Replace:=wdReplaceAll
-
-		.Text = "(SEP_6^13)(SEP_8^13)"
-		.Replacement.Text = "\2"
-		.Execute Replace:=wdReplaceAll
-
-		.Text = "(SEP_6^13)(SEP_11^13)"
-		.Replacement.Text = "\2"
-		.Execute Replace:=wdReplaceAll
-
-		.Text = "(SEP_8^13)(SEP_8^13)"
-		.Replacement.Text = "\2"
-		.Execute Replace:=wdReplaceAll
-
-		.Text = "(SEP_8^13)(SEP_11^13)"
-		.Replacement.Text = "\2"
-		.Execute Replace:=wdReplaceAll
-
-		.Text = "(SEP_11^13)(SEP_11^13)"
-		.Replacement.Text = "\2"
-		.Execute Replace:=wdReplaceAll
-
-
-		' Prevalece la primera
-		.Text = "(SEP_11^13)(SEP_8^13)"
-		.Replacement.Text = "\1"
-		.Execute Replace:=wdReplaceAll
-
-		.Text = "(SEP_11^13)(SEP_6^13)"
-		.Replacement.Text = "\1"
-		.Execute Replace:=wdReplaceAll
-
-		.Text = "(SEP_11^13)(SEP_5^13)"
-		.Replacement.Text = "\1"
-		.Execute Replace:=wdReplaceAll
-
-		.Text = "(SEP_11^13)(SEP_4^13)"
-		.Replacement.Text = "\1"
-		.Execute Replace:=wdReplaceAll
-
-		.Text = "(SEP_8^13)(SEP_6^13)"
-		.Replacement.Text = "\1"
-		.Execute Replace:=wdReplaceAll
-
-		.Text = "(SEP_8^13)(SEP_5^13)"
-		.Replacement.Text = "\1"
-		.Execute Replace:=wdReplaceAll
-
-		.Text = "(SEP_8^13)(SEP_4^13)"
-		.Replacement.Text = "\1"
-		.Execute Replace:=wdReplaceAll
-
-		.Text = "(SEP_6^13)(SEP_5^13)"
-		.Replacement.Text = "\1"
-		.Execute Replace:=wdReplaceAll
-
-		.Text = "(SEP_6^13)(SEP_4^13)"
-		.Replacement.Text = "\1"
-		.Execute Replace:=wdReplaceAll
-
-		.Text = "(SEP_5^13)(SEP_4^13)"
-		.Replacement.Text = "\1"
-		.Execute Replace:=wdReplaceAll
-
-
-
-		' Redimensionado de párrafo y borrado de marca
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Format = True
-		.Replacement.Font.Size = 4
-		.Text = "SEP_4(^13)"
-		.Replacement.Text = "\1"
-		.Execute Replace:=wdReplaceAll
-
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Replacement.Font.Size = 5
-		.Text = "SEP_5(^13)"
-		.Replacement.Text = "\1"
-		.Execute Replace:=wdReplaceAll
-
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Replacement.Font.Size = 6
-		.Text = "SEP_6(^13)"
-		.Replacement.Text = "\1"
-		.Execute Replace:=wdReplaceAll
-
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Replacement.Font.Size = 8
-		.Text = "SEP_8(^13)"
-		.Replacement.Text = "\1"
-		.Execute Replace:=wdReplaceAll
-
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Replacement.Font.Size = 11
-		.Text = "SEP_11(^13)"
-		.Replacement.Text = "\1"
-		.Execute Replace:=wdReplaceAll
-	End With
-	RaMacros.FindAndReplaceClearParameters
+	Next iStory
+	Application.ScreenUpdating = True
 End Sub
+Function GetSeparacionTamaño(pArgument As Paragraph) As Integer
+' Devuelve el tamaño de separación propio del tipo de párrafo pasado como argumento
+'
+	Dim dcParent As Document
+	Set dcParent = pArgument.Parent
+	With dcParent
+		Select Case pArgument.style
+			Case dcParent.Styles(wdStyleHeading1), dcParent.Styles(wdStyleHeading2)
+				GetSeparacionTamaño = 11
+			Case dcParent.Styles(wdStyleHeading3), dcParent.Styles(wdStyleHeading4)
+				GetSeparacionTamaño = 8
+			Case dcParent.Styles(wdStyleHeading5) To dcParent.Styles(wdStyleHeading9)
+				GetSeparacionTamaño = 6
+			Case dcParent.Styles(wdStyleNormal), dcParent.Styles(wdStyleCaption)
+				GetSeparacionTamaño = 5
+			Case dcParent.Styles(wdStyleQuote), dcParent.Styles(wdStyleBlockQuotation), _
+					dcParent.Styles(wdStyleListParagraph), _
+					dcParent.Styles(wdStyleList) To dcParent.Styles(wdStyleList5), _
+					dcParent.Styles(wdStyleListBullet) To dcParent.Styles(wdStyleListBullet5), _
+					dcParent.Styles(wdStyleListNumber) To dcParent.Styles(wdStyleListNumber5), _
+					dcParent.Styles(wdStyleListContinue) To dcParent.Styles(wdStyleListContinue5)
+				GetSeparacionTamaño = 4
+			' Estilos desconocidos
+			Case Else
+				GetSeparacionTamaño = 5
+		End Select
+	End With
+End Function
 
 Sub TablasParrafosSeparacion(dcArgument As Document)
 ' Inserta un párrafo vacío y marcado antes de cada tabla
@@ -1058,6 +816,7 @@ Sub TablasParrafosSeparacion(dcArgument As Document)
 	Dim rgTable As Range
 	Dim tbCurrent As Table
 
+	Application.ScreenUpdating = False
 	For iCounter = 1 To dcArgument.Tables.Count Step 1
 		Set tbCurrent = dcArgument.Tables(iCounter)
 		If tbCurrent.NestingLevel = 1 Then
@@ -1081,13 +840,15 @@ Sub TablasParrafosSeparacion(dcArgument As Document)
 			End If
 		End If
 	Next iCounter
+	Application.ScreenUpdating = True
 End Sub
 
 Sub ParrafosConversionStory(dcArgument As Document)
 ' Conversion de Word impreso a formato para Storyline
 '
-	RaMacros.FindAndReplaceClearParameters
 
+	Application.ScreenUpdating = False
+	RaMacros.FindAndReplaceClearParameters
 	' Cambio del tamaño de Titulo 2 de 16 a 17
 	With dcArgument.Styles(wdstyleheading2).Font
 		.Name = "Swis721 Lt BT"
@@ -1215,8 +976,8 @@ Sub ParrafosConversionStory(dcArgument As Document)
 		.Replacement.Text = "^13"
 		.Execute Replace:=wdReplaceAll
 	End With
-
 	RaMacros.FindAndReplaceClearParameters
+	Application.ScreenUpdating = True
 End Sub
 
 
@@ -1226,28 +987,37 @@ End Sub
 Sub TitulosConTresEspacios(dcArgument As Document)
 ' Sustituye la tabulación en los títulos por 3 espacios
 '
-	With dcArgument.Range.Find
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Forward = True
-		.Wrap = wdFindContinue
-		.Format = True
-		.MatchCase = False
-		.MatchWholeWord = False
-		.MatchAllWordForms = False
-		.MatchSoundsLike = False
-		.MatchWildcards = True
-		.Text = "([0-9].)^t"
-		.Replacement.Text = "\1   "
-		.Style = wdstyleheading2
-		.Execute Replace:=wdReplaceAll
-		.Style = wdstyleheading3
-		.Execute Replace:=wdReplaceAll
-		.Style = wdstyleheading4
-		.Execute Replace:=wdReplaceAll
+	Dim lstLevel As ListLevel
 
+	' With dcArgument.Range.Find
+	' 	.ClearFormatting
+	' 	.Replacement.ClearFormatting
+	' 	.Forward = True
+	' 	.Wrap = wdFindContinue
+	' 	.Format = True
+	' 	.MatchCase = False
+	' 	.MatchWholeWord = False
+	' 	.MatchAllWordForms = False
+	' 	.MatchSoundsLike = False
+	' 	.MatchWildcards = True
+	' 	.Text = "([0-9].)^t"
+	' 	.Replacement.Text = "\1   "
+	' 	.Style = wdstyleheading2
+	' 	.Execute Replace:=wdReplaceAll
+	' 	.Style = wdstyleheading3
+	' 	.Execute Replace:=wdReplaceAll
+	' 	.Style = wdstyleheading4
+	' 	.Execute Replace:=wdReplaceAll
+	' End With
+	' RaMacros.FindAndReplaceClearParameters
+
+	For Each lstLevel In dcStory.Styles("iniseg-lista_titulos").ListTemplate.ListLevels
+		If lstLevel.NumberStyle <> wdListNumberStyleNone Then
+			lstLevel.TrailingCharacter = wdTrailingNone
+			lstLevel.NumberFormat = lstLevel.NumberFormat & "   "
+		End If
 	End With
-	RaMacros.FindAndReplaceClearParameters
+
 End Sub
 
 
@@ -1301,7 +1071,6 @@ Sub TitulosDivididos(dcArgument As Document)
 		' .Replacement.Text = "\1^13"
 		' .Style = wdstyleheading5
 		' .Execute Replace:=wdReplaceAll
-
 	End With
 	RaMacros.FindAndReplaceClearParameters
 End Sub
@@ -1310,7 +1079,7 @@ End Sub
 
 
 
-Sub NotasPieMarcas(dcArgument As Document, bExportar As Boolean)
+Sub NotasPieMarcas(dcArgument As Document, ByVal bExportar As Boolean)
 ' Convierte las referencias de notas al pie al texto "NOTA_PIE-numNota"
 	' para poder automatizar externamente su conversión en el .story
 '
@@ -1324,9 +1093,10 @@ Sub NotasPieMarcas(dcArgument As Document, bExportar As Boolean)
 		.Superscript = True
 	End With
 
-	For lContadorNotas = ActiveDocument.Footnotes.Count To 1 Step -1
-		lReferencia = ActiveDocument.Footnotes.StartingNumber + ActiveDocument.Footnotes(lContadorNotas).Index - 1
-		Set rgFootNote = ActiveDocument.Footnotes(lContadorNotas).Reference
+	Application.ScreenUpdating = False
+	For lContadorNotas = dcArgument.Footnotes.Count To 1 Step -1
+		'lReferencia = dcArgument.Footnotes.StartingNumber + dcArgument.Footnotes(lContadorNotas).Index - 1
+		Set rgFootNote = dcArgument.Footnotes(lContadorNotas).Reference
 		If bExportar Then
 			rgFootNote.Text = "NOTA_PIE-" & lReferencia
 		Else
@@ -1334,99 +1104,183 @@ Sub NotasPieMarcas(dcArgument As Document, bExportar As Boolean)
 		End If
 		rgFootNote.Font = oEstiloNota
 	Next lContadorNotas
+	Application.ScreenUpdating = True
 End Sub
 
-
-
-
-
-
-Sub NotasPieExportar(dcArgument As Document)
+Sub NotasPieExportar(dcArgument As Document, ByVal bDivide As Boolean, _
+					Optional ByVal stSuffix As String = "Footnotes", _
+					Optional ByVal stSectionSuffix As String = "Section", _
+					Optional ByVal stTitle As String = "Footnotes")
 ' Exporta las notas a un archivo separado
+' Args:
+	' dcArgument: file from which the notes need to be extracted from
+	' bDivide: if True, the notes of each section get exported to different files
+	' Optional stSuffix As String = "Footnotes", _
+	' Optional stSectionSuffix As String = "Section"
+	' Optional stTitle As String = "Footnotes")
+
 ' ToDo:
 	' Convertir esta subrutina en una función de uso general:
+		' cambiar idioma
 		' Retornar el archivo de notas
+		' Implementar los argumentos opcionales
 '
-	Dim dcNotas As Document, stFilename As String, stOriginalName As String, stOriginalExtension As String
-	Dim lNotasNuevasInicio As Long, rgNotasNuevas As Range
+	Dim dcNotas As Document
+	Dim stFilename As String, stOriginalName As String, stOriginalExtension As String
+	Dim rgFind As Range
+	Dim fnCurrent As Footnote
+	Dim scCurrent As Section
+	Dim bFirst As Boolean
+	Dim lCounter As Long
 
-	With dcArgument
-		stOriginalName = Left(.Name, InStrRev(.Name, ".") - 1)
-		stOriginalExtension = Right(.Name, Len(.Name) - InStrRev(.Name, ".") + 1)
-		stFileName = .Path & Application.PathSeparator & "NOTAS " & stOriginalName & stOriginalExtension
-	End With
+	stOriginalName = Left(dcArgument.Name, InStrRev(dcArgument.Name, ".") - 1)
+	stOriginalExtension = Right(dcArgument.Name, Len(dcArgument.Name) - InStrRev(dcArgument.Name, ".") + 1)
+	bFirst = True
 
-	If Dir(stFileName) > "" Then
-		Set dcNotas = Documents.Open(FileName:=stFileName, ConfirmConversions:=False, ReadOnly:=False, Revert:=False)
-		RaMacros.CopySecurity dcNotas, "0-", ""
-	Else
-		Set dcNotas = RaMacros.SaveAsNewFile(dcArgument, "NOTAS ", "", False)
-		dcNotas.Content.Text = "Notas al pie"
-		With activedocument.Content.Paragraphs(1)
-			.Style = wdStyleTitle
-			.Alignment = wdAlignParagraphCenter
-		End With
-	End If
+	For Each scCurrent In dcArgument.Sections
+		If scCurrent.Range.Footnotes.Count > 0 Then
+			If bDivide Then
+				' Asigna el número de tema
+				Set rgFind = scCurrent.Range
+				RaMacros.FindAndReplaceClearParameters
+				rgFind.Find.Execute FindText:="TEMA [0-9][0-9]", MatchWildcards:= True
+				If Not rgFind.Find.Found Then rgFind.Find.Execute FindText:="TEMA [0-9]", MatchWildcards:= True
 
-	dcNotas.Content.InsertParagraphAfter
-	Set rgNotasNuevas = dcNotas.Content.Paragraphs.Last.Range
-	dcArgument.StoryRanges(wdFootnotesStory).Copy
-	dcNotas.Content.Paragraphs.Last.Range.Paste
-	rgNotasNuevas.EndOf wdStory, wdExtend
+				If rgFind.Find.Found Then
+					stFileName = rgFind.Text & " "
+				Else
+					Beep
+					stFileName = InputBox("Nombre (número) de tema no encontrado, completar", _
+										"NOTAS", "TEMA " & scCurrent.Index)
+					stFileName = stFileName & " "
+				End If
+			End If
 
-	RaMacros.CleanBasic dcNotas
-	rgNotasNuevas.Style = wdStyleListContinue
+			If bDivide Or bFirst Then
+				stFileName = dcArgument.Path & Application.PathSeparator & "NOTAS " _
+							& stFileName & stOriginalName & stOriginalExtension
+			End If
 
-	With rgNotasNuevas.Find
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Forward = True
-		.Wrap = wdFindStop
-		.Format = True
-		.MatchCase = False
-		.MatchWholeWord = False
-		.MatchWildcards = False
-		.MatchSoundsLike = False
-		.MatchAllWordForms = False
-		.Font.Superscript = True
-		.Text = ""
-		.Replacement.Style = wdStyleList
-		.Replacement.Text = "marca_notas_pie"
-		.Execute Replace:=wdReplaceAll
+			If bDivide = False And bFirst And Dir(stFileName) > "" Then
+				Set dcNotas = Documents.Open(FileName:=stFileName, ConfirmConversions:=False, _
+											ReadOnly:=False, Revert:=False, Visible:=False)
+				RaMacros.CopySecurity dcNotas, "0-", ""
+			ElseIf bDivide Or (bFirst And bDivide = False) Then
+				Set dcNotas = Documents.Add _
+						(Template:= "C:\Users\Ra\Documents\Plantillas personalizadas de Office\iniseg.dotm", _
+						Visible:= False)
+				dcNotas.SaveAs2 stFilename
+				Iniseg.HeaderCopy dcArgument, dcNotas, 1
+				dcNotas.Content.Text = "Notas al pie"
+				With dcNotas.Content.Paragraphs(1)
+					.Style = wdStyleTitle
+					.Alignment = wdAlignParagraphCenter
+				End With
+			End If
+				
+			If bDivide Or bFirst Then
+				With dcNotas.Styles(wdStyleListContinue)
+					.ParagraphFormat.SpaceAfter = 2
+					.ParagraphFormat.SpaceBefore = 2
+					.ParagraphFormat.Alignment = wdAlignParagraphLeft
+					.NoSpaceBetweenParagraphsOfSameStyle = True
+				End With
+				With dcNotas.Styles(wdStyleList)
+					.ParagraphFormat.SpaceAfter = 0
+					.ParagraphFormat.SpaceBefore = 5
+					.ParagraphFormat.Alignment = wdAlignParagraphLeft
+					.NoSpaceBetweenParagraphsOfSameStyle = False
+				End With
+			End If
+			
+			' Iteraration with a for each bugs out
+			For lCounter = 1 To scCurrent.Range.Footnotes.Count
+				Set fnCurrent = scCurrent.Range.Footnotes(lCounter)
+				dcNotas.Content.InsertParagraphAfter
+				Set rgFind = dcNotas.Content.Paragraphs.Last.Range
+				rgFind.FormattedText = fnCurrent.Range.FormattedText
+				rgFind.Style = wdStyleListContinue
+				rgFind.Paragraphs(1).Style = wdStyleList
+			Next lCounter
+			bFirst = False
+		End If
+		If Not dcNotas Is Nothing And (bDivide Or scCurrent.Index = dcArgument.Sections.Count) Then
+			RaMacros.CleanBasic dcNotas, 1
+			Iniseg.AutoFormateo dcNotas
+			RaMacros.HyperlinksFormatting dcNotas, 3, 1
+			RaMacros.StylesNoDirectFormatting dcNotas
+			dcNotas.Content.Select
+			Selection.ClearCharacterDirectFormatting
+			Selection.ClearParagraphDirectFormatting
+			Do While dcNotas.Paragraphs.Last.Range.Text = vbCr
+				If dcNotas.Paragraphs.Last.Range.Delete = 0 Then Exit Do
+			Loop
+			stFileName = Left(stFileName, InStrRev(stFileName, ".") - 1) & ".pdf"
+			dcNotas.Save
+			dcNotas.ExportAsFixedFormat OutputFileName:=stFileName, ExportFormat:=wdExportFormatPDF, OpenAfterExport:=False, _
+				OptimizeFor:=wdExportOptimizeForPrint, Range:=wdExportAllDocument, Item:=wdExportDocumentWithMarkup, _
+				CreateBookmarks:=wdExportCreateHeadingBookmarks
+			dcNotas.Close wdDoNotSaveChanges
+		End If
+	Next scCurrent
 
-		.Format = False
-		.Replacement.ClearFormatting
-		.Text = "marca_notas_pie"
-		.Replacement.Text = ""
-		.Execute Replace:=wdReplaceAll
-	End With
+	' THIS METHOD IS FASTER BUT LESS RELIABLE
+	' dcNotas.Content.InsertParagraphAfter
+	' Set rgFind = dcNotas.Content.Paragraphs.Last.Range
+	' rgFind.FormattedText = dcArgument.StoryRanges(wdFootnotesStory).FormattedText
+	' RaMacros.CleanBasic dcNotas, 1
+	' rgFind.Style = wdStyleListContinue
 
-	With dcNotas.Styles(wdStyleListContinue)
-		.ParagraphFormat.SpaceAfter = 2
-		.ParagraphFormat.SpaceBefore = 2
-		.ParagraphFormat.Alignment = wdAlignParagraphLeft
-		.NoSpaceBetweenParagraphsOfSameStyle = True
-	End With
-	With dcNotas.Styles(wdStyleList)
-		.ParagraphFormat.SpaceAfter = 0
-		.ParagraphFormat.SpaceBefore = 5
-		.ParagraphFormat.Alignment = wdAlignParagraphLeft
-		.NoSpaceBetweenParagraphsOfSameStyle = False
-	End With
+	' With rgFind.Find
+	' 	.ClearFormatting
+	' 	.Replacement.ClearFormatting
+	' 	.Forward = True
+	' 	.Wrap = wdFindStop
+	' 	.Format = True
+	' 	.MatchCase = False
+	' 	.MatchWholeWord = False
+	' 	.MatchWildcards = False
+	' 	.MatchSoundsLike = False
+	' 	.MatchAllWordForms = False
+	' 	.Font.Superscript = True
+	' 	.Text = ""
+	' 	.Replacement.Style = wdStyleList
+	' 	.Replacement.Text = "marca_notas_pie"
+	' 	.Execute Replace:=wdReplaceAll
 
-	RaMacros.CleanBasic dcNotas
-	Iniseg.AutoFormateo dcNotas
-	RaMacros.HyperlinksFormatting dcNotas, 3, 0
-	Do While dcNotas.Paragraphs.Last.Range.Text = vbCr
-		dcNotas.Paragraphs.Last.Range.Delete
-	Loop
+	' 	.Format = False
+	' 	.Replacement.ClearFormatting
+	' 	.Text = "marca_notas_pie"
+	' 	.Replacement.Text = ""
+	' 	.Execute Replace:=wdReplaceAll
+	' End With
 
-	dcNotas.Save
-	stFileName = dcNotas.Path & Application.PathSeparator & "NOTAS " & stOriginalName & ".pdf"
-	dcNotas.ExportAsFixedFormat OutputFileName:=stFileName, ExportFormat:=wdExportFormatPDF, OpenAfterExport:=False, _
-		OptimizeFor:=wdExportOptimizeForPrint, Range:=wdExportAllDocument, Item:=wdExportDocumentWithMarkup, _
-		CreateBookmarks:=wdExportCreateHeadingBookmarks
-	dcNotas.Close wdSaveChanges
+	' With dcNotas.Styles(wdStyleListContinue)
+	' 	.ParagraphFormat.SpaceAfter = 2
+	' 	.ParagraphFormat.SpaceBefore = 2
+	' 	.ParagraphFormat.Alignment = wdAlignParagraphLeft
+	' 	.NoSpaceBetweenParagraphsOfSameStyle = True
+	' End With
+	' With dcNotas.Styles(wdStyleList)
+	' 	.ParagraphFormat.SpaceAfter = 0
+	' 	.ParagraphFormat.SpaceBefore = 5
+	' 	.ParagraphFormat.Alignment = wdAlignParagraphLeft
+	' 	.NoSpaceBetweenParagraphsOfSameStyle = False
+	' End With
+
+	' RaMacros.CleanBasic dcNotas, 1
+	' Iniseg.AutoFormateo dcNotas
+	' RaMacros.HyperlinksFormatting dcNotas, 3, 1
+	' Do While dcNotas.Paragraphs.Last.Range.Text = vbCr
+	' 	If dcNotas.Paragraphs.Last.Range.Delete = 0 Then Exit Do
+	' Loop
+
+	' dcNotas.Save
+	' stFileName = Left(stFileName, InStrRev(stFileName, ".") - 1) & ".pdf"
+	' dcNotas.ExportAsFixedFormat OutputFileName:=stFileName, ExportFormat:=wdExportFormatPDF, OpenAfterExport:=False, _
+	' 	OptimizeFor:=wdExportOptimizeForPrint, Range:=wdExportAllDocument, Item:=wdExportDocumentWithMarkup, _
+	' 	CreateBookmarks:=wdExportCreateHeadingBookmarks
+	' dcNotas.Close wdSaveChanges
 End Sub
 
 
@@ -1437,10 +1291,11 @@ End Sub
 Sub BibliografiaSaltosDePagina(dcArgument As Document)
 ' Inserta un salto de página antes de cada bibliografía
 '
-	Dim scCurrentSection As Section, rgFindRange As Range
+	Dim scCurrent As Section, rgFindRange As Range
 
-	For Each scCurrentSection In dcArgument.Sections
-		Set rgFindRange = scCurrentSection.Range
+	Application.ScreenUpdating = False
+	For Each scCurrent In dcArgument.Sections
+		Set rgFindRange = scCurrent.Range
 		With rgFindRange.Find
 			.ClearFormatting
 			.Replacement.ClearFormatting
@@ -1475,17 +1330,18 @@ Sub BibliografiaSaltosDePagina(dcArgument As Document)
 					End If
 				End If
 			End If
-	Next scCurrentSection
+	Next scCurrent
+	Application.ScreenUpdating = True
 End Sub
 
 Sub BibliografiaExportar(dcArgument As Document)
 ' Exporta la bibliografía en archivos separados y la borra de dcArgument
 '
-	Dim dcBibliografia As Document, scCurrentSection As Section
+	Dim dcBibliografia As Document, scCurrent As Section
 	Dim rgFindRange As Range, rgTitulo As Range, stNombre As String
 
-	For Each scCurrentSection In dcArgument.Sections
-		Set rgFindRange = scCurrentSection.Range
+	For Each scCurrent In dcArgument.Sections
+		Set rgFindRange = scCurrent.Range
 		With rgFindRange.Find
 			.ClearFormatting
 			.Replacement.ClearFormatting
@@ -1507,14 +1363,14 @@ Sub BibliografiaExportar(dcArgument As Document)
 			End If
 		End With
 		If rgFindRange.Find.Found Then
-			' Set dcBibliografia = Documents.Add("C:\Users\Ra\Documents\Plantillas personalizadas de Office\iniseg.dotm")
+			' Set dcBibliografia = Documents.Add("C:\Users\Ra\Documents\Plantillas personalizadas de Office\iniseg.dotm", Visible:= False)
 			' Iniseg.HeaderCopy dcArgument, dcBibliografia, 1
-			' rgFindRange.End = scCurrentSection.Range.End
+			' rgFindRange.End = scCurrent.Range.End
 			' dcBibliografia.Content.FormattedText = rgFindRange
-			' rgFindRange.End = scCurrentSection.Range.End - 1
+			' rgFindRange.End = scCurrent.Range.End - 1
 			' rgFindRange.Delete
 
-			' Set rgFindRange = scCurrentSection.Range
+			' Set rgFindRange = scCurrent.Range
 			' With rgFindRange.Find
 			' 	.MatchWildcards = True
 			' 	.Execute FindText:="TEMA [0-9][0-9]"
@@ -1524,7 +1380,7 @@ Sub BibliografiaExportar(dcArgument As Document)
 			' 			& "BIBLIOGRAFÍA " & rgFindRange.Text
 			' 	Else
 			' 		Beep
-			' 		stNombre = InputBox("Número de tema no encontrado, completar", "Bibliografía", "TEMA " & scCurrentSection.Index)
+			' 		stNombre = InputBox("Número de tema no encontrado, completar", "Bibliografía", "TEMA " & scCurrent.Index)
 			' 		stNombre = dcArgument.Path & Application.PathSeparator _
 			' 			& "BIBLIOGRAFÍA " & stNombre
 			' 	End If
@@ -1533,7 +1389,7 @@ Sub BibliografiaExportar(dcArgument As Document)
 			' dcBibliografia.Close wdSaveChanges
 
 			' Asigna el número de tema
-			Set rgTitulo = scCurrentSection.Range
+			Set rgTitulo = scCurrent.Range
 			With rgTitulo.Find
 				.MatchWildcards = True
 				.Execute FindText:="TEMA [0-9][0-9]"
@@ -1543,14 +1399,14 @@ Sub BibliografiaExportar(dcArgument As Document)
 						& "BIBLIOGRAFÍA " & rgTitulo.Text & ".pdf"
 				Else
 					Beep
-					stNombre = InputBox("Número de tema no encontrado, completar", "Bibliografía", "TEMA " & scCurrentSection.Index)
+					stNombre = InputBox("Número de tema no encontrado, completar", "Bibliografía", "TEMA " & scCurrent.Index)
 					stNombre = dcArgument.Path & Application.PathSeparator _
 						& "BIBLIOGRAFÍA " & stNombre & ".pdf"
 				End If
 			End With
 
 			' Exporta el pdf
-			rgFindRange.End = scCurrentSection.Range.End - 1
+			rgFindRange.End = scCurrent.Range.End - 1
 			rgFindRange.ExportAsFixedFormat2 _
 				stNombre,wdExportFormatPDF,False,wdExportOptimizeForPrint,True, _
 				wdExportDocumentWithMarkup,True,,wdExportCreateNoBookmarks,True,False,False,True
@@ -1558,7 +1414,7 @@ Sub BibliografiaExportar(dcArgument As Document)
 			' Borra la bibliografía de dcStory
 			rgFindRange.Delete
 		End If
-	Next scCurrentSection
+	Next scCurrent
 End Sub
 
 
@@ -1670,4 +1526,25 @@ Sub ColoresCorrectos(dcArgument As Document)
 			On Error GoTo 0
 		End If
 	Next iStory
+End Sub
+
+
+
+
+
+
+Sub ListasParaStory(dcArgument As Document)
+' Convierte las listas de letras o números romanos a listas de números y les añade 
+' una marca para poder cambiarlas externamente y de forma automatizada en el Story
+'
+	With dcArgument.Styles("iniseg-list_mixta").ListTemplate
+		.ListLevels(2).NumberStyle = wdListNumberStyleArabic
+		.ListLevels(2).NumberFormat = "A%2."
+		.ListLevels(3).NumberStyle = wdListNumberStyleArabic
+		.ListLevels(3).NumberFormat = "I%3."
+		.ListLevels(4).NumberStyle = wdListNumberStyleArabic
+		.ListLevels(4).NumberFormat = "a%4."
+		.ListLevels(5).NumberStyle = wdListNumberStyleArabic
+		.ListLevels(5).NumberFormat = "i%5."
+	End With
 End Sub

@@ -15,9 +15,9 @@ Sub uiHeadersFootersRemove()
     RaMacros.HeadersFootersRemove ActiveDocument
 End Sub
 
-Sub uiListsToText()
-    RaMacros.ListsToText ActiveDocument
-End Sub
+' Sub uiListsToText()
+'     RaMacros.ListsToText ActiveDocument
+' End Sub
 
 Sub uiHeadingsNoPunctuation()
 	RaMacros.HeadingsNoPunctuation ActiveDocument
@@ -27,22 +27,23 @@ Sub uiHeadingsNoNumeration()
     RaMacros.HeadingsNoNumeration ActiveDocument
 End Sub
 
-Sub uiHyperlinksAddressToText()
+Sub uiHyperlinksCompleteAddress()
 ' Chages the texttodisplay property of the selected hyperlinks to their complete address
 '
     Dim hlCurrent As Hyperlink
-
     For Each hlCurrent In Selection.Hyperlinks
-        hlCurrent.TextToDisplay = hlCurrent.Address
-    Next hlCurrent
+		If hlCurrent.Type = 0 Then
+			hlCurrent.TextToDisplay = hlCurrent.Address
+		End If
+	Next hlCurrent
 End Sub
 
-Sub uiHyperlinksFormatting()
-    RaMacros.HyperlinksFormatting ActiveDocument
+Sub uiHyperlinksCorrectFormating()
+    RaMacros.HyperlinksFormatting ActiveDocument, 1
 End Sub
 
 Sub uiHyperlinksOnlyDomain()
-	RaMacros.HyperlinksOnlyDomain ActiveDocument
+	RaMacros.HyperlinksFormatting ActiveDocument, 2
 End Sub
 
 Sub uiImagesToCenteredInLine()
