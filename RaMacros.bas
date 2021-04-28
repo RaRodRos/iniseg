@@ -1,6 +1,52 @@
 Attribute VB_Name = "RaMacros"
 Option Explicit
 
+Function SaveAsNewFile(Optional stPrefix As String, _
+                        Optional stSuffix As String = "noSuffix", _
+                        Optional bClose As Boolean = True)
+' SaveAsNewFile Function
+' Guarda una copia del archivo actual, manteniendo el original abierto y sin guardarlo
+'
+    Dim stOriginalName As String, stOriginalExtension As String, stNewFullName As String, dcNewDocument As Document
+    
+    With ActiveDocument
+        stOriginalName = Left(.Name, InStrRev(.Name, ".") - 1)
+        stOriginalExtension = Right(.Name, Len(.Name) - InStrRev(.Name, ".") + 1)
+
+        If stSuffix = "noSuffix" Then stSuffix = "-" & RaMacros.GetFormattedDateAndTime(1)
+        
+        stNewFullName = .Path & Application.PathSeparator & stPrefix & stOriginalName & stSuffix & stOriginalExtension
+        Set dcNewDocument = Documents.Add(.FullName)
+    End With
+
+    dcNewDocument.SaveAs2 FileName:=stNewFullName
+
+    If bClose = True Then
+        dcNewDocument.Close
+    Else
+        SaveAsNewFile = dcNewDocument
+    End If
+
+End Function
+
+Function GetFormattedDateAndTime(Optional chosedInfo As Integer = 1) As String
+' GetDateAndHour Function
+' Devuelve un string con la fecha y hora en formato yymmdd, hhmm o yymmdd_hhmm, según requerido
+
+    Dim formatedInfo As String
+
+    Select Case chosedInfo
+        Case 1
+            GetFormattedDateAndTime = Format(Date, "yymmdd")
+        Case 2
+            GetFormattedDateAndTime = Format(Time, "hhnn")
+        Case 3
+            GetFormattedDateAndTime = Format(Date, "yymmdd") & "_" & Format(Time, "hhnn")
+        Case Else
+            Err.Raise Number:=513, Description:="Incorrect argument"
+    End Select
+End Function
+
 Sub RemoveHeadAndFoot()
 
 ' RemoveHeadAndFoot Function
@@ -73,6 +119,8 @@ Function LimpiarEspacios()
     ' Espacios justo antes de marcas de párrafo, puntos, paréntesis, etc.
     ' Espacios justo después de marcas de párrafo
 '
+    Application.Run "RaMacros.LimpiarFindAndReplaceParameters"
+    
     With ActiveDocument.Range.Find
         .ClearFormatting
         .Replacement.ClearFormatting
@@ -95,7 +143,7 @@ Function LimpiarEspacios()
         .Execute Replace:=wdReplaceAll
     End With
     
-    RaMacros.LimpiarFindAndReplaceParameters
+    Application.Run "RaMacros.LimpiarFindAndReplaceParameters"
     
 End Function
 
@@ -114,7 +162,9 @@ Function NoParrafosVacios()
     
     Set MyRange = ActiveDocument.Paragraphs.Last.Range
     If MyRange.Text = vbCr Then MyRange.Delete
-
+    
+    Application.Run "RaMacros.LimpiarFindAndReplaceParameters"
+    
     With ActiveDocument.Range.Find
         .ClearFormatting
         .Replacement.ClearFormatting
@@ -131,7 +181,7 @@ Function NoParrafosVacios()
         .Execute Replace:=wdReplaceAll
     End With
 
-    RaMacros.LimpiarFindAndReplaceParameters
+    Application.Run "RaMacros.LimpiarFindAndReplaceParameters"
     
 End Function
 
@@ -143,11 +193,9 @@ Sub LimpiezaBasica()
 '
     Application.ScreenUpdating = False
     
-    LimpiarEspacios
-
-    NoParrafosVacios
-
-    LimpiarFindAndReplaceParameters
+    Application.Run "RaMacros.LimpiarEspacios"
+    Application.Run "RaMacros.NoParrafosVacios"
+    Application.Run "RaMacros.LimpiarFindAndReplaceParameters"
     
     Application.ScreenUpdating = True
     
@@ -172,7 +220,6 @@ Sub TitulosQuitarPuntacionFinal()
     signos(3) = ":"
 
     Application.Run "LimpiarFindAndReplaceParameters"
-    Selection.HomeKey Unit:=wdStory
     
     With ActiveDocument.Range.Find
         For signoActual = 0 To 3 Step 1
@@ -195,7 +242,6 @@ Sub TitulosQuitarPuntacionFinal()
     End With
      
     Application.Run "LimpiarFindAndReplaceParameters"
-    Selection.HomeKey Unit:=wdStory
     
 End Sub
 
@@ -210,7 +256,6 @@ Sub TitulosQuitarNumeracion()
     titulo = -2
     
     Application.Run "LimpiarFindAndReplaceParameters"
-    Selection.HomeKey Unit:=wdStory
     
     With ActiveDocument.Range.Find
         For titulo = -2 To -10 Step -1
@@ -237,7 +282,7 @@ Sub TitulosQuitarNumeracion()
     End With
     
     Application.Run "LimpiarFindAndReplaceParameters"
-    Selection.HomeKey Unit:=wdStory
+
 End Sub
 
 Sub HipervinculosFormatear()
@@ -385,10 +430,13 @@ Sub ComillasRectasAInglesas()
 '
 ' ComillasRectasAInglesas Macro
 ' Cambia las comillas problemáticas (" y ') por comillas inglesas
+    ' Este método elimina las variables no configurables de Document.Autoformat
 '
     Dim bSmtQt As Boolean
     bSmtQt = Options.AutoFormatAsYouTypeReplaceQuotes
     Options.AutoFormatAsYouTypeReplaceQuotes = True
+    
+    Application.Run "RaMacros.LimpiarFindAndReplaceParameters"
     
     With ActiveDocument.Range.Find
         .ClearFormatting
@@ -410,65 +458,6 @@ Sub ComillasRectasAInglesas()
     End With
     
     Options.AutoFormatAsYouTypeReplaceQuotes = bSmtQt
-
-
-        ' Con el siguiente método se haría mediante las acciones de autocorrección, pero cambian cosas ocultas,
-            ' ( borrar algunos párrafos, etc.)
-
-    ' Dim optAutoformatValores(14) As Boolean
-
-    ' With Options
-
-    '     optAutoformatValores(0) = .AutoFormatApplyBulletedLists
-    '     optAutoformatValores(1) = .AutoFormatApplyFirstIndents
-    '     optAutoformatValores(2) = .AutoFormatApplyHeadings
-    '     optAutoformatValores(3) = .AutoFormatApplyLists
-    '     optAutoformatValores(4) = .AutoFormatApplyOtherParas
-    '     optAutoformatValores(5) = .AutoFormatPlainTextWordMail
-    '     optAutoformatValores(6) = .AutoFormatMatchParentheses
-    '     optAutoformatValores(7) = .AutoFormatPreserveStyles
-    '     optAutoformatValores(8) = .AutoFormatReplaceFarEastDashes
-    '     optAutoformatValores(9) = .AutoFormatReplaceFractions
-    '     optAutoformatValores(10) = .AutoFormatReplaceHyperlinks
-    '     optAutoformatValores(11) = .AutoFormatReplaceOrdinals
-    '     optAutoformatValores(12) = .AutoFormatReplacePlainTextEmphasis
-    '     optAutoformatValores(13) = .AutoFormatReplaceQuotes
-    '     optAutoformatValores(14) = .AutoFormatReplaceSymbols
-
-    '     .AutoFormatApplyBulletedLists = False
-    '     .AutoFormatApplyFirstIndents = False
-    '     .AutoFormatApplyHeadings = False
-    '     .AutoFormatApplyLists = False
-    '     .AutoFormatApplyOtherParas = False
-    '     .AutoFormatPlainTextWordMail = False
-    '     .AutoFormatMatchParentheses = True
-    '     .AutoFormatPreserveStyles = True
-    '     .AutoFormatReplaceFarEastDashes = True
-    '     .AutoFormatReplaceFractions = True
-    '     .AutoFormatReplaceOrdinals = True
-    '     .AutoFormatReplaceHyperlinks = True
-    '     .AutoFormatReplacePlainTextEmphasis = True
-    '     .AutoFormatReplaceQuotes = True
-    '     .AutoFormatReplaceSymbols = True
-
-    '     ActiveDocument.Range.AutoFormat
-
-    '     .AutoFormatApplyBulletedLists = optAutoformatValores(0)
-    '     .AutoFormatApplyFirstIndents = optAutoformatValores(1)
-    '     .AutoFormatApplyHeadings = optAutoformatValores(2)
-    '     .AutoFormatApplyLists = optAutoformatValores(3)
-    '     .AutoFormatApplyOtherParas = optAutoformatValores(4)
-    '     .AutoFormatPlainTextWordMail = optAutoformatValores(5)
-    '     .AutoFormatMatchParentheses = optAutoformatValores(6)
-    '     .AutoFormatPreserveStyles = optAutoformatValores(7)
-    '     .AutoFormatReplaceFarEastDashes = optAutoformatValores(8)
-    '     .AutoFormatReplaceFractions = optAutoformatValores(9)
-    '     .AutoFormatReplaceHyperlinks = optAutoformatValores(10)
-    '     .AutoFormatReplaceOrdinals = optAutoformatValores(11)
-    '     .AutoFormatReplacePlainTextEmphasis = optAutoformatValores(12)
-    '     .AutoFormatReplaceQuotes = optAutoformatValores(13)
-    '     .AutoFormatReplaceSymbols = optAutoformatValores(14)
-    ' End With
 
 End Sub
 
@@ -494,6 +483,8 @@ Sub DirectFormattingToStyles()
     arrstStylesToApply(12) = wdStyleListNumber2
     arrstStylesToApply(13) = wdStyleListNumber3
 
+    Application.Run "RaMacros.LimpiarFindAndReplaceParameters"
+    
     With ActiveDocument.Range.Find
         .ClearFormatting
         .Text = ""
@@ -536,7 +527,33 @@ Sub DirectFormattingToStyles()
         .Execute Replace:=wdReplaceAll
 
     End With
-
+    
+    Application.Run "RaMacros.LimpiarFindAndReplaceParameters"
+    
 End Sub
 
+Sub HyperlinksOnlyDomain()
+'
+' Sub HyperlinksOnlyDomain Macro
+'
+' Limpia los hipervínculos para que no limpien la URL completa y muestren solo el dominio
+'
+
+    Dim hlCurrent As Hyperlink, stPatron As String, stResultadoPatron As String, rgexUrlRegEx As RegExp
+
+    stPatron = "(?:https?:(?://)?(?:www\.)?|//|www\.)([a-zA-Z\-]+?\.[a-zA-Z\-\.]+)(?:/[\S]+)?"
+        ' Este es más exacto (sin puntos o guiones a principio o final del dominio), pero VBA no permite lookbehinds
+    ' (?:https?:(?://)?(?:www\.)?|//|www\.)?((?:[a-zA-Z]|(?<=[a-zA-Z])-(?=[a-zA-Z]))+?\.(?:[a-zA-Z]|(?<=[a-zA-Z])[\.\-](?=[a-zA-Z]))+)(/[\S]+)?
+    Set rgexUrlRegEx = New RegExp
+    rgexUrlRegEx.Pattern = stPatron
+    rgexUrlRegEx.IgnoreCase = True
+    rgexUrlRegEx.Global = True
+
+    For Each hlCurrent In ActiveDocument.Hyperlinks
+        If hlCurrent.Type = 0 And rgexUrlRegEx.Test(hlCurrent.TextToDisplay) = True Then
+            hlCurrent.TextToDisplay = rgexUrlRegEx.Replace(hlCurrent.TextToDisplay, "$1")
+        End If
+    Next hlCurrent
+
+End Sub
 

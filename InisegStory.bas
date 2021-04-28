@@ -7,6 +7,9 @@ Private Function ConversionParrafos()
 ' Conversion de Word impreso a formato para Storyline
 '
     ' Cambio del tamaño de Titulo 1 de 16 a 17
+    
+    Application.Run "RaMacros.LimpiarFindAndReplaceParameters"
+    
     With ActiveDocument.Styles(wdStyleHeading1).Font
         .Name = "Swis721 Lt BT"
         .Size = 17
@@ -137,34 +140,6 @@ Private Function ConversionParrafos()
     End With
 
     ' Meter salto de página antes de cada Heading 1 y Title
-    ' With ActiveDocument.Range.Find
-    '     .ClearFormatting
-    '     .Replacement.ClearFormatting
-    '     .Forward = True
-    '     .Wrap = wdFindContinue
-    '     .Format = True
-    '     .MatchCase = False
-    '     .MatchWholeWord = False
-    '     .MatchAllWordForms = False
-    '     .MatchSoundsLike = False
-    '     .MatchWildcards = True
-    '   .Style = ActiveDocument.Styles(wdStyleHeading1)
-    '     .Text = "(*^13)"
-    '     .Replacement.Text = "GROMENAUER^13^m^13\1"
-    '     .Execute Replace:=wdReplaceAll
-    '     .Text = "(TEMA*^13)"
-    '   .Style = ActiveDocument.Styles(wdStyleTitle)
-    '     .Execute Replace:=wdReplaceAll
-    '     .ClearFormatting
-    '     .Replacement.ClearFormatting
-    '     .MatchWildcards = True
-    '     .Text = "GROMENAUER^13^m^13"
-    '   .Replacement.Style = ActiveDocument.Styles(wdStyleNormal)
-    '     .Replacement.Text = "^m^13"
-    '     .Execute Replace:=wdReplaceAll
-
-    ' End With
-
     Dim prParrafoActual As Paragraph, index As Integer
 
     For index = 1 To ActiveDocument.Paragraphs.Count - 1
@@ -262,7 +237,6 @@ Sub Iniseg5NotasPieATexto()
         .Superscript = True
     End With
     
-    Selection.HomeKey Unit:=wdStory
     Application.Run "RaMacros.LimpiarFindAndReplaceParameters"
     
     Do While bSeguir = True
@@ -292,8 +266,7 @@ Sub Iniseg5NotasPieATexto()
         End With
         
     Loop
-    
-    Selection.HomeKey Unit:=wdStory
+
     Application.Run "RaMacros.LimpiarFindAndReplaceParameters"
     
 End Sub

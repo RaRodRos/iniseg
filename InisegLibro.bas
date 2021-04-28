@@ -1,6 +1,75 @@
 Attribute VB_Name = "InisegLibro"
 Option Explicit
 
+Private Function InisegAutoFormateo()
+'
+' InisegAutoFormateo Function
+' Convierte las URL de texto plano a hiperenlaces
+' Da viñeta a las listas que no tienen
+' Da estilo de lista a las listas
+' Hace que los paréntesis tengan principio y cierre
+' Convierte dos guiones seguidos en un guión largo
+'
+    ' Cambian cosas que no se pueden desactivar:
+        ' Borra párrafos vacíos
+'
+    Dim optAutoformatValores(14) As Boolean
+
+    With Options
+
+        optAutoformatValores(0) = .AutoFormatApplyBulletedLists
+        optAutoformatValores(1) = .AutoFormatApplyFirstIndents
+        optAutoformatValores(2) = .AutoFormatApplyHeadings
+        optAutoformatValores(3) = .AutoFormatApplyLists
+        optAutoformatValores(4) = .AutoFormatApplyOtherParas
+        optAutoformatValores(5) = .AutoFormatPlainTextWordMail
+        optAutoformatValores(6) = .AutoFormatMatchParentheses
+        optAutoformatValores(7) = .AutoFormatPreserveStyles
+        optAutoformatValores(8) = .AutoFormatReplaceFarEastDashes
+        optAutoformatValores(9) = .AutoFormatReplaceFractions
+        optAutoformatValores(10) = .AutoFormatReplaceHyperlinks
+        optAutoformatValores(11) = .AutoFormatReplaceOrdinals
+        optAutoformatValores(12) = .AutoFormatReplacePlainTextEmphasis
+        optAutoformatValores(13) = .AutoFormatReplaceQuotes
+        optAutoformatValores(14) = .AutoFormatReplaceSymbols
+
+        .AutoFormatApplyBulletedLists = True
+        .AutoFormatApplyFirstIndents = False
+        .AutoFormatApplyHeadings = False
+        .AutoFormatApplyLists = False
+        .AutoFormatApplyOtherParas = False
+        .AutoFormatPlainTextWordMail = False
+        .AutoFormatMatchParentheses = True
+        .AutoFormatPreserveStyles = True
+        .AutoFormatReplaceFarEastDashes = False
+        .AutoFormatReplaceFractions = False
+        .AutoFormatReplaceOrdinals = False
+        .AutoFormatReplaceHyperlinks = True
+        .AutoFormatReplacePlainTextEmphasis = False
+        .AutoFormatReplaceQuotes = False
+        .AutoFormatReplaceSymbols = True
+
+        ActiveDocument.Range.AutoFormat
+
+        .AutoFormatApplyBulletedLists = optAutoformatValores(0)
+        .AutoFormatApplyFirstIndents = optAutoformatValores(1)
+        .AutoFormatApplyHeadings = optAutoformatValores(2)
+        .AutoFormatApplyLists = optAutoformatValores(3)
+        .AutoFormatApplyOtherParas = optAutoformatValores(4)
+        .AutoFormatPlainTextWordMail = optAutoformatValores(5)
+        .AutoFormatMatchParentheses = optAutoformatValores(6)
+        .AutoFormatPreserveStyles = optAutoformatValores(7)
+        .AutoFormatReplaceFarEastDashes = optAutoformatValores(8)
+        .AutoFormatReplaceFractions = optAutoformatValores(9)
+        .AutoFormatReplaceHyperlinks = optAutoformatValores(10)
+        .AutoFormatReplaceOrdinals = optAutoformatValores(11)
+        .AutoFormatReplacePlainTextEmphasis = optAutoformatValores(12)
+        .AutoFormatReplaceQuotes = optAutoformatValores(13)
+        .AutoFormatReplaceSymbols = optAutoformatValores(14)
+    End With
+
+End Function
+
 Private Function InisegInterlineado()
 '
 ' InterlineadoSinEspaciado Macro
@@ -177,12 +246,13 @@ Sub Iniseg1Limpieza()
 '
 ' Ejecuta limpieza de espacios innecesarios y estilos:
 '
-    Application.Run "InisegInterlineado"
-    Application.Run "RaMacros.LimpiezaBasica"
+    Application.Run "InisegLibro.InisegAutoFormateo"
+    Application.Run "RaMacros.HyperlinksOnlyDomain"
+    Application.Run "RaMacros.LimpiarEspacios"
+    Application.Run "RaMacros.LimpiarFindAndReplaceParameters"
     Application.Run "RaMacros.RemoveHeadAndFoot"
     Application.Run "DeleteUnusedStyles.DeleteUnusedStyles"
-    Application.Run "RaMacros.LimpiarFindAndReplaceParameters"
-    
+
 End Sub
 
 Sub Iniseg2Formatos()
@@ -198,10 +268,10 @@ Sub Iniseg2Formatos()
     Application.Run "RaMacros.TitulosQuitarNumeracion"
     Application.Run "RaMacros.LimpiezaBasica"
     Application.Run "RaMacros.HipervinculosFormatear"
-    Application.Run "InisegComillas"
+    Application.Run "InisegLibro.InisegComillas"
     Application.Run "RaMacros.DirectFormattingToStyles"
-    Application.Run "InisegImagenes"
-    Application.Run "InisegInterlineado"
+    Application.Run "InisegLibro.InisegImagenes"
+    Application.Run "InisegLibro.InisegInterlineado"
     Application.Run "RaMacros.NoParrafosVacios"
     Application.Run "RaMacros.LimpiarFindAndReplaceParameters"
     
