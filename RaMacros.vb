@@ -182,7 +182,6 @@ Sub StylesNoDirectFormatting(dcArgument As Document, Optional bUnderlineDelete A
 	arrstStylesToApply(12) = wdStyleListNumber2
 	arrstStylesToApply(13) = wdStyleListNumber3
 
-	Application.ScreenUpdating = False
 
 	Do
 		Set rgFind = RaMacros.GetStoryNext(dcArgument)
@@ -237,7 +236,6 @@ Sub StylesNoDirectFormatting(dcArgument As Document, Optional bUnderlineDelete A
 		End With
 	Loop While Not rgFind Is Nothing
 	RaMacros.FindAndReplaceClearParameters
-	Application.ScreenUpdating = True
 End Sub
 
 
@@ -414,7 +412,6 @@ Sub HeadersFootersRemove(dcArgument As Document)
 '
 	Dim scCurrent As Section, hfCurrentHF As HeaderFooter
 
-	Application.ScreenUpdating = False
 	For Each scCurrent In dcArgument.Sections
 		For Each hfCurrentHF In scCurrent.Headers
 			If hfCurrentHF.Exists Then hfCurrentHF.Range.Delete
@@ -424,12 +421,11 @@ Sub HeadersFootersRemove(dcArgument As Document)
 			If hfCurrentHF.Exists Then hfCurrentHF.Range.Delete
 		Next hfCurrentHF
 	Next scCurrent
-	Application.ScreenUpdating = True
 End Sub
 
 
 
-	
+
 
 
 Sub ListsNoExtraNumeration(dcArgument As Document, Optional ByVal iStory As Integer = 0)
@@ -459,7 +455,6 @@ Sub ListsNoExtraNumeration(dcArgument As Document, Optional ByVal iStory As Inte
 	rgexNumeration.IgnoreCase = True
 	rgexNumeration.Global = False
 
-	Application.ScreenUpdating = False
 	For iStory = iStory To iMaxCount Step 1
 		On Error Resume Next
 		Set rgStory = dcArgument.StoryRanges(iStory)
@@ -479,7 +474,6 @@ Sub ListsNoExtraNumeration(dcArgument As Document, Optional ByVal iStory As Inte
 			On Error GoTo 0
 		End If
 	Next iStory
-	Application.ScreenUpdating = True
 End Sub
 
 
@@ -565,7 +559,6 @@ Sub CleanSpaces(dcArgument As Document, Optional ByVal iStory As Integer = 0, _
 	bFound1 = False
 	bFound2 = False
 
-	Application.ScreenUpdating = False
 	For iStory = iStory To iMaxCount Step 1
 		On Error Resume Next
 		Set rgFind = dcArgument.StoryRanges(iStory)
@@ -607,9 +600,9 @@ Sub CleanSpaces(dcArgument As Document, Optional ByVal iStory As Integer = 0, _
 			End With
 			Do
 				With rgFind.Find
+					.Replacement.Text = " "
 					If bTabs Then	
 						.Text = "[^t]"
-						.Replacement.Text = " "
 						.Execute Replace:=wdReplaceAll
 						If .Found Then bFound1 = True
 					End IF
@@ -709,7 +702,6 @@ Sub CleanSpaces(dcArgument As Document, Optional ByVal iStory As Integer = 0, _
 			On Error GoTo 0
 		End If
 	Next iStory
-	Application.ScreenUpdating = True
 End Sub
 
 Sub CleanEmptyParagraphs(dcArgument As Document, Optional ByVal iStory As Integer = 0, _
@@ -740,7 +732,6 @@ Sub CleanEmptyParagraphs(dcArgument As Document, Optional ByVal iStory As Intege
 		iMaxCount = iStory
 	End If
 
-	Application.ScreenUpdating = False
 	For iStory = iStory To iMaxCount Step 1
 		On Error Resume Next
 		Set rgStory = dcArgument.StoryRanges(iStory)
@@ -944,7 +935,6 @@ Sub CleanEmptyParagraphs(dcArgument As Document, Optional ByVal iStory As Intege
 			On Error GoTo 0
 		End If
 	Next iStory
-	Application.ScreenUpdating = True
 End Sub
 
 
@@ -962,7 +952,6 @@ Sub HeadingsNoPunctuation(dcArgument As Document)
 	signos(2) = ";"
 	signos(3) = ":"
 
-	Application.ScreenUpdating = False
 	With dcArgument.Range.Find
 		.Forward = True
 		.Wrap = wdFindContinue
@@ -988,7 +977,6 @@ Sub HeadingsNoPunctuation(dcArgument As Document)
 		Next signoActual
 	End With
 	RaMacros.FindAndReplaceClearParameters
-	Application.ScreenUpdating = True
 End Sub
 
 Sub HeadingsNoNumeration(dcArgument As Document)
@@ -1002,7 +990,6 @@ Sub HeadingsNoNumeration(dcArgument As Document)
 	rgexNumeracion.IgnoreCase = True
 	rgexNumeracion.Global = False
 
-	Application.ScreenUpdating = False
 	RaMacros.FindAndReplaceClearParameters
 	For iTitulo = -2 To -10 Step -1
 		Set rgFind = dcArgument.Content
@@ -1032,7 +1019,6 @@ Sub HeadingsNoNumeration(dcArgument As Document)
 		Loop While bFound
 	Next iTitulo
 	RaMacros.FindAndReplaceClearParameters
-	Application.ScreenUpdating = True
 End Sub
 
 Sub HeadingsChangeCase(dcArgument As Document, ByVal iHeading As Integer, ByVal iCase As Integer)
@@ -1063,7 +1049,6 @@ Sub HeadingsChangeCase(dcArgument As Document, ByVal iHeading As Integer, ByVal 
 		Err.Raise Number:=514, Description:="Argument out of range it must be between 0 and 9"
 	End If
 
-	Application.ScreenUpdating = False
 	For iCurrentHeading = iLowerHeading To iHeading Step -1
 		Set rgFind = dcArgument.Content
 		Do
@@ -1097,7 +1082,6 @@ Sub HeadingsChangeCase(dcArgument As Document, ByVal iHeading As Integer, ByVal 
 			End With
 		Loop While bFound
 	Next
-	Application.ScreenUpdating = True
 End Sub
 
 
@@ -1139,7 +1123,6 @@ Sub HyperlinksFormatting(dcArgument As Document, ByVal iPurpose As Integer, _
 		rgexUrlRegEx.Global = True
 	End If
 
-	Application.ScreenUpdating = False
 	For iStory = iStory To iMaxCount Step 1
 		On Error Resume Next
 		Set rgStory = dcArgument.StoryRanges(iStory)
@@ -1161,7 +1144,6 @@ Sub HyperlinksFormatting(dcArgument As Document, ByVal iPurpose As Integer, _
 			On Error GoTo 0
 		End If
 	Next iStory
-	Application.ScreenUpdating = True
 End Sub
 
 
@@ -1354,7 +1336,6 @@ Sub SectionBreakBeforeHeading(dcArgument As Document, _
 
 	Set rgFind = dcArgument.Content
 
-	Application.ScreenUpdating = False
 	Do
 		bFound = False
 		With rgFind.Find
@@ -1393,8 +1374,92 @@ Sub SectionBreakBeforeHeading(dcArgument As Document, _
 		End With
 	Loop While bFound
 	RaMacros.FindAndReplaceClearParameters
-	Application.ScreenUpdating = True
 End Sub
+
+Function SectionGetFirstFootnoteNumber(dcArgument As Document, lIndex As Long) As Long
+' Returns the number of the first footnote of the section or 0 if there is none
+' Args:
+	' lIndex: the index of the section containing the footnote
+'
+	Dim scCurrent As Section
+	Dim lFirstFootnote As Long
+
+	Set scCurrent = dcArgument.Sections(lIndex)
+
+	If scCurrent.Range.Footnotes.Count > 0 Then
+		lFirstFootnote = scCurrent.Range.Footnotes(1).index
+		If scCurrent.Range.FootnoteOptions.NumberingRule = wdRestartContinuous Then
+			If scCurrent.Range.FootnoteOptions.StartingNumber = 1 Then
+				SectionGetFirstFootnoteNumber = lFirstFootnote
+			ElseIf lFirstFootnote = 1 Then
+				SectionGetFirstFootnoteNumber = scCurrent.Range.FootnoteOptions.StartingNumber
+			Else
+				SectionGetFirstFootnoteNumber = lFirstFootnote + scCurrent.Range.FootnoteOptions.StartingNumber - 1
+			End If
+		ElseIf scCurrent.Range.FootnoteOptions.NumberingRule = wdRestartSection Then
+			SectionGetFirstFootnoteNumber = scCurrent.Range.FootnoteOptions.StartingNumber
+		End If
+	Else
+		SectionGetFirstFootnoteNumber = 0
+	End If
+End Function
+
+Function SectionsExportEachToFiles(dcArgument As Document, _
+							Optional ByVal bClose As Boolean = True, _
+							Optional ByVal bMaintainFootnotesNumeration As Boolean = True, _
+							Optional ByVal bMaintainPagesNumeration As Boolean = True, _
+							Optional ByVal stPrefix As String, _
+							Optional ByVal stSuffix As String)
+' Exports each section of the document to a separate file
+' ToDo: if bClose false then devolver array con los documentos generados
+	Dim iCounter As Integer
+	Dim lStartingPage As Long, lFirstFootnote As Long
+	Dim scCurrent As Section
+	Dim dcNewDocument As Document
+
+	lFirstFootnote = 1
+
+	For Each scCurrent In dcArgument.Sections
+		Set dcNewDocument = RaMacros.SaveAsNewFile(dcArgument, stPrefix, _
+			stSuffix & scCurrent.index, True, False)
+
+		' Delete all sections of new document except the one to be saved
+		For iCounter = dcNewDocument.Sections.Count To 1 Step -1
+			If iCounter <> scCurrent.index Then
+				dcNewDocument.Sections(iCounter).Range.Delete
+			End If
+		Next iCounter
+
+		' Delete section break and last empty paragraph
+		If dcNewDocument.Sections.Count = 2 Then
+			dcNewDocument.Sections(1).Range.Characters.Last.Delete
+			dcNewDocument.Sections(1).Range.Characters.Last.Delete
+		End If
+
+		' Correct footnote starting number
+		If bMaintainFootnotesNumeration Then
+			If scCurrent.Range.Footnotes.Count > 0 Then
+				lFirstFootnote = RaMacros.SectionGetFirstFootnoteNumber(dcArgument, scCurrent.Index)
+				dcNewDocument.Footnotes.StartingNumber = lFirstFootnote
+				' This remembers the footnote index of the last section, in case the
+				' next has none, but BE AWARE that inserting new footnotes in the
+				' exported files would require to readjust all following files!!!
+				lFirstFootnote = lFirstFootnote + dcNewDocument.Footnotes.Count
+			Else
+				dcNewDocument.Footnotes.StartingNumber = lFirstFootnote
+			End If
+		End If
+
+		' Correct page starting number
+		If bMaintainPagesNumeration Then
+			lStartingPage = scCurrent.Range.Characters(1).Information(wdActiveEndAdjustedPageNumber)
+			dcNewDocument.Sections(1).Footers(wdHeaderFooterFirstPage).PageNumbers.RestartNumberingAtSection = True
+			dcNewDocument.Sections(1).Footers(wdHeaderFooterFirstPage).PageNumbers.StartingNumber = lStartingPage
+		End If
+
+		dcNewDocument.Close wdSaveChanges
+	Next
+End Function
 
 Sub SectionsFillBlankPages(dcArgument As Document, _
 							Optional ByVal stFillerText As String = "", _
@@ -1407,7 +1472,6 @@ Sub SectionsFillBlankPages(dcArgument As Document, _
 '
 	Dim iEvenOrOdd As Integer, scCurrent As Section, rgLastParagraph As Range
 
-	Application.ScreenUpdating = False
 	For Each scCurrent In dcArgument.Sections
 		If scCurrent.index > 1 _
 				And (scCurrent.PageSetup.SectionStart = 4 Or scCurrent.PageSetup.SectionStart = 3) _
@@ -1445,74 +1509,35 @@ Sub SectionsFillBlankPages(dcArgument As Document, _
 			End If
 		End If
 	Next scCurrent
-	Application.ScreenUpdating = True
 End Sub
 
-Function SectionsExportEachToFiles(dcArgument As Document, _
-							Optional ByVal stPrefix As String, _
-							Optional ByVal stSuffix As String = "-section_", _
-							Optional ByVal bClose As Boolean = True)
-' Exports each section of the document to a separate file
-' ToDo: if bClose false then devolver array con los documentos generados
-	Dim iCounter As Integer, lStartingPage As Long, lFirstFootnote As Long, scCurrent As Section, dcNewDocument As Document
 
-	lFirstFootnote = 0
 
-	For Each scCurrent In dcArgument.Sections
-		Set dcNewDocument = RaMacros.SaveAsNewFile(dcArgument, , stSuffix & scCurrent.index, True, False)
 
-		' Delete all sections of new document except the one to be saved
-		For iCounter = dcNewDocument.Sections.Count To 1 Step -1
-			If iCounter <> scCurrent.index Then
-				dcNewDocument.Sections(iCounter).Range.Delete
-			End If
-		Next iCounter
 
-		' Delete section break and last empty paragraph
-		If dcNewDocument.Sections.Count = 2 Then
-			dcNewDocument.Sections(1).Range.Characters.Last.Delete
-			dcNewDocument.Sections(1).Range.Characters.Last.Delete
+
+
+Sub TablesConvertToImage(dcArgument As Document, _
+						Optional ByVal iPlacement As Integer = wdInLine)
+' Convert each table to an inline image
+' Args:
+	' iPlacement: WdOLEPlacement enum
+		' 0: wdInLine
+		' 1: wdFloatOverText
+'
+	Dim iTable As Integer
+	Dim rgTable
+
+	For iTable = dcArgument.Tables.Count To 1 Step -1
+		If dcArgument.Tables(iTable).NestingLevel = 1 Then
+			Set rgTable = dcArgument.Tables(iTable).Range
+			rgTable.Select
+			rgTable.CopyAsPicture
+			dcArgument.Tables(iTable).Delete
+			rgTable.PasteSpecial DataType:=wdPasteEnhancedMetafile, Placement:=iPlacement
 		End If
-
-		' Correct footnote starting number
-		If scCurrent.Range.Footnotes.Count > 0 _
-			And scCurrent.Range.Footnotes.NumberingRule = wdRestartContinuous _
-		Then
-			lFirstFootnote = scCurrent.Range.Footnotes(1).index
-			If scCurrent.Range.Footnotes.StartingNumber = 1 Then
-				dcNewDocument.Footnotes.StartingNumber = lFirstFootnote
-			ElseIf lFirstFootnote = 1 Then
-				dcNewDocument.Footnotes.StartingNumber = scCurrent.Range.Footnotes.StartingNumber
-			Else
-				lFirstFootnote = lFirstFootnote + scCurrent.Range.Footnotes.StartingNumber - 1
-				dcNewDocument.Footnotes.StartingNumber = lFirstFootnote
-			End If
-			' This remembers the footnote index of the last section, in case the
-			' next has none, but BE AWARE that inserting new footnotes in the exported
-			' files would require to readjust all following files!!!
-			lFirstFootnote = scCurrent.Range.Footnotes.Count
-			lFirstFootnote = scCurrent.Range.Footnotes(lFirstFootnote).index + 1
-		ElseIf lFirstFootnote <> 0 _
-			And scCurrent.Range.Footnotes.NumberingRule = wdRestartContinuous _
-		Then
-			dcNewDocument.Footnotes.StartingNumber = lFirstFootnote
-		ElseIf scCurrent.Range.Footnotes.NumberingRule = wdRestartSection Then
-			dcNewDocument.Footnotes.StartingNumber = scCurrent.Range.Footnotes.StartingNumber
-		End If
-
-		' Correct page starting number
-		lStartingPage = scCurrent.Range.Characters(1).Information(wdActiveEndAdjustedPageNumber)
-		dcNewDocument.Sections(1).Footers(wdHeaderFooterFirstPage).PageNumbers.RestartNumberingAtSection = True
-		dcNewDocument.Sections(1).Footers(wdHeaderFooterFirstPage).PageNumbers.StartingNumber = lStartingPage
-
-		dcNewDocument.Close wdSaveChanges
-	Next
-End Function
-
-
-
-
-
+	Next iTable
+End Sub
 
 Sub TablesExportToPdf(dcArgument As Document, Optional ByVal stSuffix As String = "Table ", _
 	Optional ByVal bDelete As Boolean = False, Optional ByVal stReplacementText As String = "Link to ", _
@@ -1541,7 +1566,6 @@ Sub TablesExportToPdf(dcArgument As Document, Optional ByVal stSuffix As String 
 		stAddress = dcArgument.Path & Application.PathSeparator
 	End If
 
-	Application.ScreenUpdating = False
 	For iCounter = dcArgument.Tables.Count To 1 Step -1
 		Set tbCurrent = dcArgument.Tables(iCounter)
 		If tbCurrent.NestingLevel = 1 Then
@@ -1573,9 +1597,29 @@ Sub TablesExportToPdf(dcArgument As Document, Optional ByVal stSuffix As String 
 			End If
 		End If
 	Next iCounter
-	Application.ScreenUpdating = True
 End Sub
 
+Sub TablesKeepTogether(dcArgument As Document, _
+						Optional ByVal iPlacement As Integer = wdInLine)
+' Convert each table to an inline image
+' Args:
+	' iPlacement: WdOLEPlacement enum
+		' 0: wdInLine
+		' 1: wdFloatOverText
+'
+	Dim iTable As Integer
+	Dim rgTable
+
+	For iTable = dcArgument.Tables.Count To 1 Step -1
+		If dcArgument.Tables(iTable).NestingLevel = 1 Then
+			With dcArgument.Tables(iTable).Range
+				.CopyAsPicture
+				.Delete
+				.PasteSpecial DataType:=wdPasteEnhancedMetafile, Placement:=iPlacement
+			End With
+		End If
+	Next iTable
+End Sub
 
 
 
@@ -1633,7 +1677,6 @@ Sub FootnotesHangingIndentation(dcArgument As Document, _
 '
 	sIndentation = CentimetersToPoints(sIndentation)
 
-	Application.ScreenUpdating = False
 	With dcArgument.Styles(wdStyleFootnoteText).ParagraphFormat
 		If .TabStops.Count > 0 Then
 			Do Until .TabStops(1).Position >= sIndentation
@@ -1659,17 +1702,18 @@ Sub FootnotesHangingIndentation(dcArgument As Document, _
 		.MatchSoundsLike = False
 		.MatchWildcards = True
 		
+		Do
+			.Text = "(^2)[ ^t]@"
+			.Replacement.Text = "\1"
+			.Execute Replace:=wdReplaceAll
+		Loop While .Found
 		.Text = "(^2)"
-		.Replacement.Text = "\1^t"
-		.Execute Replace:=wdReplaceAll		
-		.Text = "(^2)[ ^t]@"
 		.Replacement.Text = "\1^t"
 		.Execute Replace:=wdReplaceAll
 		.Text = "(^13)([!^2])"
 		.Replacement.Text = "\1^t\2"
 		.Execute Replace:=wdReplaceAll
 	End With
-	Application.ScreenUpdating = True
 End Sub
 
 Sub FootnotesSameNumberingRule(dcArgument As Document, _
@@ -1689,24 +1733,26 @@ Sub FootnotesSameNumberingRule(dcArgument As Document, _
 	If iNumberingRule < 0 Or iNumberingRule > 3 Then
 		Err.Raise Number:=514, Description:="iNumberingRule must be between 0 and 3"
 	End If
-	If iStartingNumber < 1 And iStartingNumber <> -501 Then
-		Err.Raise Number:=514, Description:="iStartingNumber cannot be below 0"
+	If iStartingNumber < 0 And iStartingNumber <> -501 Then
+		Err.Raise Number:=514, Description:="iStartingNumber not in range"
 	End If
 
 	Dim scCurrent As Section
 
 	If iNumberingRule = 3 Then
-		iNumberingRule = dcArgument.Sections(1).Range.Footnotes.NumberingRule
+		iNumberingRule = dcArgument.Sections(1).Range.FootnoteOptions.NumberingRule
 	End If
 	If iStartingNumber = 0 Then
-		iStartingNumber = dcArgument.Sections(1).Range.Footnotes.StartingNumber
+		iStartingNumber = dcArgument.Sections(1).Range.FootnoteOptions.StartingNumber
 	End If
 
 	For Each scCurrent In dcArgument.Sections
-		scCurrent.Range.Footnotes.NumberingRule = iNumberingRule
-		If iStartingNumber <> -501 Then
-			scCurrent.Range.Footnotes.StartingNumber = iStartingNumber
+		If iNumberingRule <> wdRestartContinuous Then
+			scCurrent.Range.FootnoteOptions.StartingNumber = 1
+		ElseIf iStartingNumber <> -501 Then
+			scCurrent.Range.FootnoteOptions.StartingNumber = iStartingNumber
 		End If
+		scCurrent.Range.FootnoteOptions.NumberingRule = iNumberingRule
 	Next scCurrent
 End Sub
 
