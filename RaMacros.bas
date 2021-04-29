@@ -208,7 +208,7 @@ Sub StylesNoDirectFormatting(dcArgument As Document, Optional rgArgument As Rang
 	Set rgFind = rgArgument
 	If rgFind Is Nothing Then
 		bAllStoryRanges = True
-		Set rgFind = RaMacros.GetStoryNext(dcArgument)
+		Set rgFind = RaMacros.GetStoryNext(dcArgument, True)
 	End If
 
 	Do While Not rgFind Is Nothing
@@ -260,12 +260,11 @@ Sub StylesNoDirectFormatting(dcArgument As Document, Optional rgArgument As Rang
 			.Replacement.Style = wdStyleFootnoteReference
 			.Execute Replace:=wdReplaceAll
 
-			Set rgFind = Nothing
-			If bAllStoryRanges Then
-				Set rgFind = RaMacros.GetStoryNext(dcArgument)
-				If rgFind Is Nothing Then Exit Do
-			End If
 		End With
+		Set rgFind = Nothing
+		If bAllStoryRanges Then
+			Set rgFind = RaMacros.GetStoryNext(dcArgument)
+		End If
 	Loop
 	RaMacros.FindAndReplaceClearParameters
 End Sub
@@ -1816,7 +1815,7 @@ Function ClearHiddenText(dcArgument As Document, _
 						Optional styWarning As Style, _
 						Optional bMaintainHidden As Boolean = False, _
 						Optional bShowHidden As Integer = 0) _
-						As Boolean()
+	As Boolean()
 ' Deletes or apply a warning style to all hidden text in the document.
 ' Returns: array of booleans for each story range
 ' Args:
@@ -1858,9 +1857,8 @@ Function ClearHiddenText(dcArgument As Document, _
 	End If
 
 	dcArgument.ActiveWindow.View.ShowHiddenText = True
-	Do
-		Set rgFind = RaMacros.GetStoryNext(dcArgument)
-		If rgFind Is Nothing Then Exit Do
+	Set rgFind = RaMacros.GetStoryNext(dcArgument, True)
+	Do While Not rgFind Is Nothing
 		With rgFind.Find
 			.ClearFormatting
 			.Replacement.ClearFormatting
@@ -1882,6 +1880,7 @@ Function ClearHiddenText(dcArgument As Document, _
 			.Execute Replace:=wdReplaceAll
 			If .Found Then bFound(rgFind.StoryType - 1) = True
 		End With
+		Set rgFind = RaMacros.GetStoryNext(dcArgument)
 	Loop
 	dcArgument.ActiveWindow.View.ShowHiddenText = bShowOption
 
