@@ -209,9 +209,10 @@ Function StyleSubstitution(dcArgument As Document, _
 
 	Dim rgFind As Range
 
-	Set rgFind = RaMacros.GetStoryNext(dcArgument, True)
+	' Set rgFind = RaMacros.GetStoryNext(dcArgument, True)
 	RaMacros.FindAndReplaceClearParameters
-	Do While Not rgFind Is Nothing
+	' Do While Not rgFind Is Nothing
+	For Each
 		With rgFind.Find
 			.ClearFormatting
 			.Replacement.ClearFormatting
@@ -228,8 +229,8 @@ Function StyleSubstitution(dcArgument As Document, _
 			.Replacement.Style = stSubstitute
 			.Execute Replace:=wdReplaceAll
 		End With
-		Set rgFind = RaMacros.GetStoryNext(dcArgument)
-	Loop
+		' Set rgFind = RaMacros.GetStoryNext(dcArgument)
+	' Loop
 
 	If bDelete Then
 		If dcArgument.Styles(stOriginal).BuiltIn Then
@@ -254,6 +255,7 @@ Sub StylesNoDirectFormatting(dcArgument As Document, _
 	' rgArgument: if nothing the sub works over all the story ranges
 	' bUnderlineDelete: if true all underlined text reverts to normal
 '
+	Dim bAllStories As Boolean
 	Dim iCounter As Integer
 	Dim rgFind As Range
 	Dim stStylesToApply(13) As WdBuiltinStyle
@@ -274,62 +276,72 @@ Sub StylesNoDirectFormatting(dcArgument As Document, _
 	stStylesToApply(13) = wdStyleListNumber3
 
 	For Each rgFind In dcArgument.StoryRanges
-		If Not rgArgument Is Nothing Then Set rgFind = rgArgument
-		With rgFind.Find
-			.ClearFormatting
-			.Text = ""
-			.Replacement.Text = ""
-			.Forward = True
-			.Wrap = wdFindStop
-			.Format = True
-			.MatchCase = False
-			.MatchWholeWord = False
-			.MatchAllWordForms = False
-			.MatchSoundsLike = False
-			.MatchWildcards = False
+		If Not rgArgument Is Nothing Then
+			Set rgFind = rgArgument
+			bAllStories = True
+		End If
+		Do
+			With rgFind.Find
+				.ClearFormatting
+				.Text = ""
+				.Replacement.Text = ""
+				.Forward = True
+				.Wrap = wdFindStop
+				.Format = True
+				.MatchCase = False
+				.MatchWholeWord = False
+				.MatchAllWordForms = False
+				.MatchSoundsLike = False
+				.MatchWildcards = False
 
-			.Style = wdStyleQuote
-			.Font.Bold = True
-			.Replacement.Style = wdStyleStrong
-			.Execute Replace:=wdReplaceAll
-
-			For iCounter = 0 To UBound(stStylesToApply)
-				.Style = stStylesToApply(iCounter)
+				.Style = wdStyleQuote
 				.Font.Bold = True
-				.Font.Italic = True
-				.Replacement.Style = wdStyleIntenseEmphasis
-				.Execute Replace:=wdReplaceAll
-
-				.Font.Bold = True
-				.Font.Italic = False
 				.Replacement.Style = wdStyleStrong
 				.Execute Replace:=wdReplaceAll
 
-				.Font.Bold = False
-				.Font.Italic = True
-				.Replacement.Style = wdStyleEmphasis
-				.Execute Replace:=wdReplaceAll
-
-				.Font.Bold = False
-				.Font.Italic = True
-				.Replacement.Style = wdStyleEmphasis
-				.Execute Replace:=wdReplaceAll
-
-				If bUnderlineDelete Then
-					.Font.Underline = True
-					.Replacement.Font.Underline = False
+				For iCounter = 0 To UBound(stStylesToApply)
+					.Style = stStylesToApply(iCounter)
+					.Font.Bold = True
+					.Font.Italic = True
+					.Replacement.Style = wdStyleIntenseEmphasis
 					.Execute Replace:=wdReplaceAll
-				End If
-			Next iCounter
 
-			.ClearFormatting
-			.Text = "^f"
-			.Replacement.Style = wdStyleFootnoteReference
-			.Execute Replace:=wdReplaceAll
-		End With
-		If Not rgArgument Is Nothing Then Exit For
+					.Font.Bold = True
+					.Font.Italic = False
+					.Replacement.Style = wdStyleStrong
+					.Execute Replace:=wdReplaceAll
+
+					.Font.Bold = False
+					.Font.Italic = True
+					.Replacement.Style = wdStyleEmphasis
+					.Execute Replace:=wdReplaceAll
+
+					.Font.Bold = False
+					.Font.Italic = True
+					.Replacement.Style = wdStyleEmphasis
+					.Execute Replace:=wdReplaceAll
+
+					If bUnderlineDelete Then
+						.Font.Underline = True
+						.Replacement.Font.Underline = False
+						.Execute Replace:=wdReplaceAll
+					End If
+				Next iCounter
+
+				.ClearFormatting
+				.Text = "^f"
+				.Replacement.Style = wdStyleFootnoteReference
+				.Execute Replace:=wdReplaceAll
+			End With
+
+			If bAllStories Then Exit For
+			If rgFind.StoryType = 5 Then
+				Set rgFind = rgFind.NextStoryRange
+			Else
+				Set rgFind = Nothing
+			End If
+		Loop Until rgFind Is Nothing
 	Next rgFind
-	
 	RaMacros.FindAndReplaceClearParameters
 End Sub
 
@@ -1922,31 +1934,39 @@ Function ClearHiddenText(dcArgument As Document, _
 
 	dcArgument.ActiveWindow.View.ShowHiddenText = True
 	For Each rgStory In dcArgument.StoryRanges
-		With rgStory.Find
-			.ClearFormatting
-			.Replacement.ClearFormatting
-			.Forward = True
-			.Format = True
-			.MatchCase = False
-			.MatchWholeWord = False
-			.MatchAllWordForms = False
-			.MatchSoundsLike = False
-			.MatchWildcards = False
-			.Font.Hidden = True
-			.Text = ""
-			If bDelete Then
-				.Replacement.Text = ""
-			Else 
-				.Replacement.Style = styWarning
-				.Replacement.Font.Hidden = bMaintainHidden
+		Do
+			With rgStory.Find
+				.ClearFormatting
+				.Replacement.ClearFormatting
+				.Forward = True
+				.Format = True
+				.MatchCase = False
+				.MatchWholeWord = False
+				.MatchAllWordForms = False
+				.MatchSoundsLike = False
+				.MatchWildcards = False
+				.Font.Hidden = True
+				.Text = ""
+				If bDelete Then
+					.Replacement.Text = ""
+				Else 
+					.Replacement.Style = styWarning
+					.Replacement.Font.Hidden = bMaintainHidden
+				End If
+				.Execute Replace:=wdReplaceAll
+				If .Found Then
+					On Error GoTo EmptybFound
+					ReDim Preserve bFound(UBound(bFound) + 1)
+					bFound(UBound(bFound)) = rgStory.StoryType
+				End If
+			End With
+
+			If rgStory.StoryType = 5 Then
+				Set rgStory = rgStory.NextStoryRange
+			Else
+				Set rgStory = Nothing
 			End If
-			.Execute Replace:=wdReplaceAll
-			If .Found Then
-				On Error GoTo EmptybFound
-				ReDim Preserve bFound(UBound(bFound) + 1)
-				bFound(UBound(bFound)) = rgStory.StoryType
-			End If
-		End With
+		Loop Until rgStory Is Nothing
 	Next rgStory
 	dcArgument.ActiveWindow.View.ShowHiddenText = bShowOption
 	ClearHiddenText = bFound
