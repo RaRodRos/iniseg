@@ -940,53 +940,12 @@ Sub ParrafosConversionStory(dcArgument As Document)
 	End With
 
 	' Cambio de tamaño de parrafos de separacion
-	For i = 0 To 4
+	For i = 0 To uBound(iLibro)
 		stLibro = "iniseg_separacion" & iLibro(i)
 		stStory = "iniseg_separacion" & iStory(i)
 		If RaMacros.StyleSubstitution(dcArgument, stLibro, stStory, True) = 2 Then
 			dcArgument.Styles(stLibro).Font.Size = iStory(i)
 			dcArgument.Styles(stLibro).NameLocal = stStory
-		End If
-
-
-
-
-
-
-
-
-
-		If RaMacros.StyleExists(dcArgument, "iniseg_separacion" & iLibro(i)) Then
-		
-			dcArgument.Styles("iniseg_separacion" & iLibro(i)).Font.Size = iStory(i)
-
-			If RaMacros.StyleExists(dcArgument, "iniseg_separacion" & iStory(i)) Then
-				Set rgFind = RaMacros.GetStoryNext(dcArgument, True)
-				Do While Not rgFind Is Nothing
-					With rgFind.Find
-						.ClearFormatting
-						.Replacement.ClearFormatting
-						.Forward = True
-						.Format = True
-						.MatchCase = False
-						.MatchWholeWord = False
-						.MatchAllWordForms = False
-						.MatchSoundsLike = False
-						.MatchWildcards = False
-						.Text = ""
-						.Style = "iniseg_separacion" & iLibro(i)
-						.Replacement.Style = "iniseg_separacion" & iStory(i)
-						.Execute Replace:=wdReplaceAll
-					End With
-					Set rgFind = RaMacros.GetStoryNext(dcArgument)
-				Loop
-
-				dcArgument.Styles("iniseg_separacion" & iLibro(i)).Delete
-			Else
-
-				dcArgument.Styles("iniseg_separacion" & iLibro(i)).NameLocal = _
-					"iniseg_separacion" & iStory(i)
-			End If
 		End If
 	Next i
 End Sub
