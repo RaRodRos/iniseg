@@ -353,64 +353,6 @@ End Sub
 
 
 
-Function JARL(dcArgument As Document, Optional bReset As Boolean) As Range
-' Each time the function is executed it returns the next storyrange available
-' (until 5, text frames). When it has finally looped through all of them it returns 
-' an empty range (Nothing)
-' Args:
-	' bReset: if True the count is restarted
-' iCount indicates the current story:
-	' wdMainTextStory	1
-	' wdFootnotesStory	2
-	' wdEndnotesStory	3
-	' wdCommentsStory	4
-	' wdTextFrameStory	5
-'
-	Static rgCurrentStory As Range
-	Static iCount As Integer
-	Static dcCurrent As Document
-
-	If bReset Or dcCurrent Is Nothing Then
-		iCount = 0
-		Set dcCurrent = dcArgument
-	ElseIf dcArgument <> dcCurrent Then
-		Err.Raise Number:=516, Description:="dcArgument was change without " _
-			& "resetting the function"
-	End If
-
-	Do While iCount < 5
-		iCount = iCount + 1
-		On Error Resume Next
-		Set rgCurrentStory = dcCurrent.StoryRanges(iCount)
-		If Err.Number = 0 Then
-			On Error GoTo 0
-			Set JARL = rgCurrentStory
-			Exit Function
-		' Resetting the static variables
-		ElseIf iCount = 5 Then
-			On Error GoTo 0
-			iCount = 0
-			Set rgCurrentStory = Nothing
-			Set JARL = Nothing
-			Set dcCurrent = Nothing
-			Exit Function
-		End If
-	Loop
-
-	' This is only executed when iCount = 5
-	Set rgCurrentStory = rgCurrentStory.NextStoryRange
-	If rgCurrentStory Is Nothing Then
-		iCount = 0
-		Set dcCurrent = Nothing
-	End If
-	Set JARL = rgCurrentStory
-End Function
-
-
-
-
-
-
 Sub CopySecurity(dcArgument As Document, _
 				Optional ByVal stPrefix As String, _
 				Optional ByVal stSuffix As String)
