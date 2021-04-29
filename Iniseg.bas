@@ -883,6 +883,8 @@ Sub ParrafosConversionStory(dcArgument As Document)
 ' Conversion de Word impreso a formato para Storyline
 '
 	Dim iLibro(5) As Integer, iStory(5) As Integer, i As Integer
+	Dim rgFind As Range
+	Dim stLibro As String, stStory As String
 
 	iLibro(0) = 4
 	iLibro(1) = 5
@@ -939,11 +941,49 @@ Sub ParrafosConversionStory(dcArgument As Document)
 
 	' Cambio de tamaño de parrafos de separacion
 	For i = 0 To 4
+		stLibro = "iniseg_separacion" & iLibro(i)
+		stStory = "iniseg_separacion" & iStory(i)
+		If RaMacros.StyleSubstitution(dcArgument, stLibro, stStory, True) = 2 Then
+			dcArgument.Styles(stLibro).Font.Size = iStory(i)
+			dcArgument.Styles(stLibro).NameLocal = stStory
+		End If
+
+
+
+
+
+
+
+
+
 		If RaMacros.StyleExists(dcArgument, "iniseg_separacion" & iLibro(i)) Then
+		
 			dcArgument.Styles("iniseg_separacion" & iLibro(i)).Font.Size = iStory(i)
+
 			If RaMacros.StyleExists(dcArgument, "iniseg_separacion" & iStory(i)) Then
+				Set rgFind = RaMacros.GetStoryNext(dcArgument, True)
+				Do While Not rgFind Is Nothing
+					With rgFind.Find
+						.ClearFormatting
+						.Replacement.ClearFormatting
+						.Forward = True
+						.Format = True
+						.MatchCase = False
+						.MatchWholeWord = False
+						.MatchAllWordForms = False
+						.MatchSoundsLike = False
+						.MatchWildcards = False
+						.Text = ""
+						.Style = "iniseg_separacion" & iLibro(i)
+						.Replacement.Style = "iniseg_separacion" & iStory(i)
+						.Execute Replace:=wdReplaceAll
+					End With
+					Set rgFind = RaMacros.GetStoryNext(dcArgument)
+				Loop
+
 				dcArgument.Styles("iniseg_separacion" & iLibro(i)).Delete
 			Else
+
 				dcArgument.Styles("iniseg_separacion" & iLibro(i)).NameLocal = _
 					"iniseg_separacion" & iStory(i)
 			End If
