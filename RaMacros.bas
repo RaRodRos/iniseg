@@ -339,7 +339,7 @@ End Sub
 
 
 
-Function GetStoryNext(dcArgument As Document, Optional bReset As Boolean) As Range
+Function JARL(dcArgument As Document, Optional bReset As Boolean) As Range
 ' Each time the function is executed it returns the next storyrange available
 ' (until 5, text frames). When it has finally looped through all of them it returns 
 ' an empty range (Nothing)
@@ -370,14 +370,14 @@ Function GetStoryNext(dcArgument As Document, Optional bReset As Boolean) As Ran
 		Set rgCurrentStory = dcCurrent.StoryRanges(iCount)
 		If Err.Number = 0 Then
 			On Error GoTo 0
-			Set GetStoryNext = rgCurrentStory
+			Set JARL = rgCurrentStory
 			Exit Function
 		' Resetting the static variables
 		ElseIf iCount = 5 Then
 			On Error GoTo 0
 			iCount = 0
 			Set rgCurrentStory = Nothing
-			Set GetStoryNext = Nothing
+			Set JARL = Nothing
 			Set dcCurrent = Nothing
 			Exit Function
 		End If
@@ -389,7 +389,7 @@ Function GetStoryNext(dcArgument As Document, Optional bReset As Boolean) As Ran
 		iCount = 0
 		Set dcCurrent = Nothing
 	End If
-	Set GetStoryNext = rgCurrentStory
+	Set JARL = rgCurrentStory
 End Function
 
 
@@ -1880,9 +1880,9 @@ Function ClearHiddenText(dcArgument As Document, _
 						Optional styWarning As Style, _
 						Optional bMaintainHidden As Boolean = False, _
 						Optional bShowHidden As Integer = 0) _
-	As Boolean()
+	As Integer()
 ' Deletes or apply a warning style to all hidden text in the document.
-' Returns: array of booleans for each story range
+' Returns: array of integers of the story ranges containing hidden text
 ' Args:
 	' bDelete: true deletes all hidden text
 	' styWarning: defines the style for the hidden text
@@ -1892,9 +1892,10 @@ Function ClearHiddenText(dcArgument As Document, _
 		' 1: stays hidden
 		' 2: stays visible
 '
-	Dim rgFind As Range
-	Dim bFound(4) As Boolean, bShowOption As Boolean
+	Dim rgStory As Range
+	Dim bFound() As Boolean, bShowOption As Boolean
 
+	If Not bDelete And styWarning Is Nothing And bMaintainHidden Then Exit Function
 	If bShowHidden < 0 Or bShowHidden > 2 Then
 		Err.Raise Number:=514, Description:="bShowHidden out of range it must be between 0 and 2"
 	ElseIf bShowHidden = 0 Then
@@ -1922,9 +1923,8 @@ Function ClearHiddenText(dcArgument As Document, _
 	End If
 
 	dcArgument.ActiveWindow.View.ShowHiddenText = True
-	Set rgFind = RaMacros.GetStoryNext(dcArgument, True)
-	Do While Not rgFind Is Nothing
-		With rgFind.Find
+	For Each rgStory In dcArgument.StoryRanges
+		With rgStory.Find
 			.ClearFormatting
 			.Replacement.ClearFormatting
 			.Forward = True
@@ -1938,16 +1938,24 @@ Function ClearHiddenText(dcArgument As Document, _
 			.Text = ""
 			If bDelete Then
 				.Replacement.Text = ""
-			Else
+			Else 
 				.Replacement.Style = styWarning
+				.Replacement.Font.Hidden = bMaintainHidden
 			End If
-			.Replacement.Font.Hidden = bMaintainHidden
 			.Execute Replace:=wdReplaceAll
-			If .Found Then bFound(rgFind.StoryType - 1) = True
+			If .Found Then
+				On Error GoTo EmptybFound
+				ReDim Preserve bFound(UBound(bFound) + 1)
+				bFound(UBound(bFound)) = rgStory.StoryType
+			End If
 		End With
-		Set rgFind = RaMacros.GetStoryNext(dcArgument)
-	Loop
+	Next rgStory
 	dcArgument.ActiveWindow.View.ShowHiddenText = bShowOption
-
 	ClearHiddenText = bFound
+	
+	Exit Function
+EmptybFound:
+	On Error Goto 0
+	ReDim bFound(0)
+	Resume Next
 End Function
