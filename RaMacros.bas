@@ -184,9 +184,8 @@ End Function
 Function StyleSubstitution(dcArgument As Document, _
 						stOriginal As String, _
 						stSubstitute As String, _
-						Optional ByVal bDelete As Boolean = False _
-						) _
-	As Integer
+						Optional ByVal bDelete As Boolean _
+	) As Integer
 ' Substitute one style with another one.
 ' Args:
 	' stOriginal: name of the style to be substituted
@@ -207,30 +206,33 @@ Function StyleSubstitution(dcArgument As Document, _
 	End If
 	If StyleSubstitution > 0 Then Exit Function
 
-	Dim rgFind As Range
+	Dim rgStory As Range
 
-	' Set rgFind = RaMacros.GetStoryNext(dcArgument, True)
-	RaMacros.FindAndReplaceClearParameters
-	' Do While Not rgFind Is Nothing
-	For Each
-		With rgFind.Find
-			.ClearFormatting
-			.Replacement.ClearFormatting
-			.Wrap = wdFindStop
-			.Forward = True
-			.Format = True
-			.MatchCase = False
-			.MatchWholeWord = False
-			.MatchAllWordForms = False
-			.MatchSoundsLike = False
-			.MatchWildcards = False
-			.Text = ""
-			.Style = stOriginal
-			.Replacement.Style = stSubstitute
-			.Execute Replace:=wdReplaceAll
-		End With
-		' Set rgFind = RaMacros.GetStoryNext(dcArgument)
-	' Loop
+	For Each rgStory In dcArgument.StoryRanges
+		Do
+			With rgStory.Find
+				.ClearFormatting
+				.Replacement.ClearFormatting
+				.Wrap = wdFindStop
+				.Forward = True
+				.Format = True
+				.MatchCase = False
+				.MatchWholeWord = False
+				.MatchAllWordForms = False
+				.MatchSoundsLike = False
+				.MatchWildcards = False
+				.Text = ""
+				.Style = stOriginal
+				.Replacement.Style = stSubstitute
+				.Execute Replace:=wdReplaceAll
+			End With
+			If rgStory.StoryType = 5 Then
+				Set rgStory = rgStory.NextStoryRange
+			Else
+				Set rgStory = Nothing
+			End If
+		Loop Until rgStory Is Nothing
+	Next rgStory
 
 	If bDelete Then
 		If dcArgument.Styles(stOriginal).BuiltIn Then
@@ -239,6 +241,7 @@ Function StyleSubstitution(dcArgument As Document, _
 			dcArgument.Styles(stOriginal).Delete
 		End If
 	End If
+	RaMacros.FindAndReplaceClearParameters
 	StyleSubstitution = 0
 End Function
 
