@@ -186,29 +186,30 @@ Function StyleSubstitution(dcArgument As Document, _
 						stSubstitute As String, _
 						Optional ByVal bDelete As Boolean = False _
 						) _
-	As Boolean
-' Substitute one style with another one. If one of them doesn't exist it returns False
+	As Integer
+' Substitute one style with another one.
 ' Args:
 	' stOriginal: name of the style to be substituted
 	' stSubstitute: name of the substitute style 
 	' bDelete: if True, stOriginal will be deleted
+' Returns:
+	' 0: all good
+	' 1: stOriginal doesn't exist
+	' 2: stSubstitute doesn't exist
+	' 3: neither stOriginal nor stSubstitute exists
 '
 
 	If Not RaMacros.StyleExists(dcArgument, stOriginal) Then
-		Debug.Print "stOriginal Doesn't exist"
-		StyleSubstitution = False
-		End Function
+		StyleSubstitution = 1
 	End If
 	If Not RaMacros.StyleExists(dcArgument, stSubstitute) Then
-		Debug.Print "stSubstitute Doesn't exist"
-		StyleSubstitution = False
-		End Function
+		StyleSubstitution = StyleSubstitution + 2
 	End If
+	If StyleSubstitution > 0 Then Exit Function
 
 	Dim rgFind As Range
 
 	Set rgFind = RaMacros.GetStoryNext(dcArgument, True)
-
 	RaMacros.FindAndReplaceClearParameters
 	Do While Not rgFind Is Nothing
 		With rgFind.Find
@@ -237,7 +238,7 @@ Function StyleSubstitution(dcArgument As Document, _
 			dcArgument.Styles(stOriginal).Delete
 		End If
 	End If
-	StyleSubstitution = True
+	StyleSubstitution = 0
 End Function
 
 
