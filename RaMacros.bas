@@ -226,11 +226,7 @@ Function StyleSubstitution(dcArgument As Document, _
 				.Replacement.Style = stSubstitute
 				.Execute Replace:=wdReplaceAll
 			End With
-			If rgStory.StoryType = 5 Then
-				Set rgStory = rgStory.NextStoryRange
-			Else
-				Set rgStory = Nothing
-			End If
+			Set rgStory = rgStory.NextStoryRange
 		Loop Until rgStory Is Nothing
 	Next rgStory
 
@@ -338,11 +334,7 @@ Sub StylesNoDirectFormatting(dcArgument As Document, _
 			End With
 
 			If bAllStories Then Exit For
-			If rgFind.StoryType = 5 Then
-				Set rgFind = rgFind.NextStoryRange
-			Else
-				Set rgFind = Nothing
-			End If
+			Set rgFind = rgFind.NextStoryRange
 		Loop Until rgFind Is Nothing
 	Next rgFind
 	RaMacros.FindAndReplaceClearParameters
@@ -1905,12 +1897,7 @@ Function ClearHiddenText(dcArgument As Document, _
 					bFound(UBound(bFound)) = rgStory.StoryType
 				End If
 			End With
-
-			If rgStory.StoryType = 5 Then
-				Set rgStory = rgStory.NextStoryRange
-			Else
-				Set rgStory = Nothing
-			End If
+			Set rgStory = rgStory.NextStoryRange
 		Loop Until rgStory Is Nothing
 	Next rgStory
 	dcArgument.ActiveWindow.View.ShowHiddenText = bShowOption
