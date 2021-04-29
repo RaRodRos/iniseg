@@ -246,37 +246,35 @@ End Function
 
 
 
-Sub StylesNoDirectFormatting(dcArgument As Document, Optional rgArgument As Range, _
+Sub StylesNoDirectFormatting(dcArgument As Document, _
+							Optional rgArgument As Range, _
 							Optional ByVal bUnderlineDelete As Boolean)
-' Convierte los estilos directos de negritas y cursivas a los estilos Strong y Emphasis, respectivamente
+' Converts bold and italic direct style formatting into Strong and Emphasis
+' Args:
+	' rgArgument: if nothing the sub works over all the story ranges
+	' bUnderlineDelete: if true all underlined text reverts to normal
 '
-	Dim bAllStoryRanges As Boolean
 	Dim iCounter As Integer
-	Dim arrstStylesToApply(13) As WdBuiltinStyle
 	Dim rgFind As Range
+	Dim stStylesToApply(13) As WdBuiltinStyle
 	
-	arrstStylesToApply(0) = wdStyleNormal
-	arrstStylesToApply(1) = wdStyleCaption
-	arrstStylesToApply(2) = wdStyleList
-	arrstStylesToApply(3) = wdStyleList2
-	arrstStylesToApply(4) = wdStyleList3
-	arrstStylesToApply(5) = wdStyleListBullet
-	arrstStylesToApply(6) = wdStyleListBullet2
-	arrstStylesToApply(7) = wdStyleListBullet3
-	arrstStylesToApply(8) = wdStyleListBullet3
-	arrstStylesToApply(9) = wdStyleListBullet4
-	arrstStylesToApply(10) = wdStyleListBullet5
-	arrstStylesToApply(11) = wdStyleListNumber
-	arrstStylesToApply(12) = wdStyleListNumber2
-	arrstStylesToApply(13) = wdStyleListNumber3
+	stStylesToApply(0) = wdStyleNormal
+	stStylesToApply(1) = wdStyleCaption
+	stStylesToApply(2) = wdStyleList
+	stStylesToApply(3) = wdStyleList2
+	stStylesToApply(4) = wdStyleList3
+	stStylesToApply(5) = wdStyleListBullet
+	stStylesToApply(6) = wdStyleListBullet2
+	stStylesToApply(7) = wdStyleListBullet3
+	stStylesToApply(8) = wdStyleListBullet3
+	stStylesToApply(9) = wdStyleListBullet4
+	stStylesToApply(10) = wdStyleListBullet5
+	stStylesToApply(11) = wdStyleListNumber
+	stStylesToApply(12) = wdStyleListNumber2
+	stStylesToApply(13) = wdStyleListNumber3
 
-	Set rgFind = rgArgument
-	If rgFind Is Nothing Then
-		bAllStoryRanges = True
-		Set rgFind = RaMacros.GetStoryNext(dcArgument, True)
-	End If
-
-	Do While Not rgFind Is Nothing
+	For Each rgFind In dcArgument.StoryRanges
+		If Not rgArgument Is Nothing Then Set rgFind = rgArgument
 		With rgFind.Find
 			.ClearFormatting
 			.Text = ""
@@ -295,24 +293,28 @@ Sub StylesNoDirectFormatting(dcArgument As Document, Optional rgArgument As Rang
 			.Replacement.Style = wdStyleStrong
 			.Execute Replace:=wdReplaceAll
 
-			For iCounter = 0 To 13
-				.Style = arrstStylesToApply(iCounter)
+			For iCounter = 0 To UBound(stStylesToApply)
+				.Style = stStylesToApply(iCounter)
 				.Font.Bold = True
 				.Font.Italic = True
 				.Replacement.Style = wdStyleIntenseEmphasis
 				.Execute Replace:=wdReplaceAll
+
 				.Font.Bold = True
 				.Font.Italic = False
 				.Replacement.Style = wdStyleStrong
 				.Execute Replace:=wdReplaceAll
+
 				.Font.Bold = False
 				.Font.Italic = True
 				.Replacement.Style = wdStyleEmphasis
 				.Execute Replace:=wdReplaceAll
+
 				.Font.Bold = False
 				.Font.Italic = True
 				.Replacement.Style = wdStyleEmphasis
 				.Execute Replace:=wdReplaceAll
+
 				If bUnderlineDelete Then
 					.Font.Underline = True
 					.Replacement.Font.Underline = False
@@ -324,13 +326,10 @@ Sub StylesNoDirectFormatting(dcArgument As Document, Optional rgArgument As Rang
 			.Text = "^f"
 			.Replacement.Style = wdStyleFootnoteReference
 			.Execute Replace:=wdReplaceAll
-
 		End With
-		Set rgFind = Nothing
-		If bAllStoryRanges Then
-			Set rgFind = RaMacros.GetStoryNext(dcArgument)
-		End If
-	Loop
+		If Not rgArgument Is Nothing Then Exit For
+	Next rgFind
+	
 	RaMacros.FindAndReplaceClearParameters
 End Sub
 
