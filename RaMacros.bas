@@ -181,6 +181,70 @@ End Function
 
 
 
+Function StyleSubstitution(dcArgument As Document, _
+						stOriginal As String, _
+						stSubstitute As String, _
+						Optional ByVal bDelete As Boolean = False _
+						) _
+	As Boolean
+' Substitute one style with another one. If one of them doesn't exist it returns False
+' Args:
+	' stOriginal: name of the style to be substituted
+	' stSubstitute: name of the substitute style 
+	' bDelete: if True, stOriginal will be deleted
+'
+
+	If Not RaMacros.StyleExists(dcArgument, stOriginal) Then
+		Debug.Print "stOriginal Doesn't exist"
+		StyleSubstitution = False
+		End Function
+	End If
+	If Not RaMacros.StyleExists(dcArgument, stSubstitute) Then
+		Debug.Print "stSubstitute Doesn't exist"
+		StyleSubstitution = False
+		End Function
+	End If
+
+	Dim rgFind As Range
+
+	Set rgFind = RaMacros.GetStoryNext(dcArgument, True)
+
+	RaMacros.FindAndReplaceClearParameters
+	Do While Not rgFind Is Nothing
+		With rgFind.Find
+			.ClearFormatting
+			.Replacement.ClearFormatting
+			.Wrap = wdFindStop
+			.Forward = True
+			.Format = True
+			.MatchCase = False
+			.MatchWholeWord = False
+			.MatchAllWordForms = False
+			.MatchSoundsLike = False
+			.MatchWildcards = False
+			.Text = ""
+			.Style = stOriginal
+			.Replacement.Style = stSubstitute
+			.Execute Replace:=wdReplaceAll
+		End With
+		Set rgFind = RaMacros.GetStoryNext(dcArgument)
+	Loop
+
+	If bDelete Then
+		If dcArgument.Styles(stOriginal).BuiltIn Then
+			Debug.Print stOriginal & " is a built in style and cannot be deleted"
+		Else
+			dcArgument.Styles(stOriginal).Delete
+		End If
+	End If
+	StyleSubstitution = True
+End Function
+
+
+
+
+
+
 Sub StylesNoDirectFormatting(dcArgument As Document, Optional rgArgument As Range, _
 							Optional ByVal bUnderlineDelete As Boolean)
 ' Convierte los estilos directos de negritas y cursivas a los estilos Strong y Emphasis, respectivamente
