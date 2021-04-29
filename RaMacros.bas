@@ -1895,7 +1895,6 @@ Function ClearHiddenText(dcArgument As Document, _
 	Dim rgStory As Range
 	Dim bFound() As Boolean, bShowOption As Boolean
 
-	If Not bDelete And styWarning Is Nothing And bMaintainHidden Then Exit Function
 	If bShowHidden < 0 Or bShowHidden > 2 Then
 		Err.Raise Number:=514, Description:="bShowHidden out of range it must be between 0 and 2"
 	ElseIf bShowHidden = 0 Then
