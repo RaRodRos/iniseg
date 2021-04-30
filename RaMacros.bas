@@ -1824,9 +1824,9 @@ End Sub
 
 
 Function ClearHiddenText(dcArgument As Document, _
-						Optional bDelete As Boolean = False, _
+						Optional bDelete As Boolean, _
 						Optional styWarning As Style, _
-						Optional bMaintainHidden As Boolean = False, _
+						Optional bMaintainHidden As Boolean, _
 						Optional bShowHidden As Integer = 0) _
 	As Integer()
 ' Deletes or apply a warning style to all hidden text in the document.
@@ -1837,8 +1837,8 @@ Function ClearHiddenText(dcArgument As Document, _
 	' bMaintainHidden: if true the text maintains its hidden attribute
 	' bShowHidden: changes if the hidden text is displayed
 		' 0: maintains the current configuration
-		' 1: stays hidden
-		' 2: stays visible
+		' 1: hidden
+		' 2: visible
 '
 	Dim rgStory As Range
 	Dim bFound() As Integer, bShowOption As Boolean
@@ -1894,6 +1894,7 @@ Function ClearHiddenText(dcArgument As Document, _
 				If .Found Then
 					On Error GoTo EmptybFound
 					ReDim Preserve bFound(UBound(bFound) + 1)
+					On Error GoTo 0
 					bFound(UBound(bFound)) = rgStory.StoryType
 				End If
 			End With

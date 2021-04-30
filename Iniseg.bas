@@ -29,20 +29,15 @@ Sub Iniseg1Limpieza()
 '
 	Dim dcOriginalFile As Document, dcLibro As Document
 	Dim rgRangoActual As Range
-	Dim stTextoOcultoMsg As String, stStoryRanges(4) As String, stFileName As String
+	Dim stTextoOcultoMsg As String, stFileName As String
 	Dim i As Integer, iDeleteAnswer As Integer
 	Dim lEstilosBorrados As Long, lPrimeraNotaAlPie As Long
-	Dim bTextosOcultos() As Boolean
+	Dim iTextosOcultos() As Integer
 
 	Set dcOriginalFile = ActiveDocument
 	Set rgRangoActual = dcOriginalFile.Content
 	stFileName = dcOriginalFile.FullName
 	lPrimeraNotaAlPie = 0
-	stStoryRanges(0) = "Texto principal"
-	stStoryRanges(1) = "Notas a pie de página"
-	stStoryRanges(2) = "Notas al final"
-	stStoryRanges(3) = "Comentarios"
-	stStoryRanges(4) = "Frames de texto"
 
 	' Borrar contenido innecesario
 	iDeleteAnswer = MsgBox("¿Borrar contenido hasta el punto seleccionado?", vbYesNoCancel, "Borrar contenido")
@@ -92,14 +87,27 @@ Sub Iniseg1Limpieza()
 	Debug.Print "7.1/14 - Dando colores adecuados al texto"
 	Iniseg.ColoresCorrectos dcOriginalFile
 	Debug.Print "7.2/14 - Borrando texto oculto"
-	bTextosOcultos = RaMacros.ClearHiddenText(dcOriginalFile, True,,,1)
-	stTextoOcultoMsg = "Texto oculto en:"
-	For i = 0 To 4
-		If bTextosOcultos(i) Then
-			stTextoOcultoMsg = stTextoOcultoMsg & vbCrLf & vbTab & "- " & stStoryRanges(i)
-		End If
-	Next i
-	If stTextoOcultoMsg = "Texto oculto en:" Then stTextoOcultoMsg = "No hay texto oculto"
+	iTextosOcultos = RaMacros.ClearHiddenText(dcOriginalFile, True,,,1)
+	stTextoOcultoMsg = "No hay texto oculto"
+	On Error GoTo NoTextosOcultos
+	If iTextosOcultos(0) <> -501 Then
+		On Error GoTo 0
+		Dim stStoryRanges(4) As String
+		stStoryRanges(0) = "Texto principal"
+		stStoryRanges(1) = "Notas a pie de página"
+		stStoryRanges(2) = "Notas al final"
+		stStoryRanges(3) = "Comentarios"
+		stStoryRanges(4) = "Frames de texto"
+		stTextoOcultoMsg = "Texto oculto en:"
+		For i = 0 To UBound(iTextosOcultos)
+			stTextoOcultoMsg = stTextoOcultoMsg & vbCrLf & vbTab & "- "
+			If iTextosOcultos(i) - 1 < 4 Then
+				stTextoOcultoMsg = stTextoOcultoMsg & stStoryRanges(iTextosOcultos(i) - 1)
+			Else
+				stTextoOcultoMsg = stTextoOcultoMsg & iTextosOcultos(i)
+			End If
+		Next i
+	End If
 	Debug.Print stTextoOcultoMsg
 
 	Debug.Print "8/14 - Borrando estilos sin uso"
@@ -131,6 +139,11 @@ Sub Iniseg1Limpieza()
 	Beep
 	MsgBox lEstilosBorrados & " Estilos borrados" & vbCrLf _
 		& "Revisar numeración de notas al pie, aplicar estilos y ejecutar Iniseg2"
+
+	Exit Sub
+NoTextosOcultos:
+	On Error GoTo 0
+	iTextosOcultos(0) = -501
 End Sub
 
 Sub Iniseg2LibroYStory()
