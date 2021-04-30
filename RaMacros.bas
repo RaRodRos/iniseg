@@ -1,4 +1,4 @@
-Attribute VB_Name = "RaMacros"
+' Attribute VB_Name = "RaMacros"
 Option Explicit
 
 Function RangeInField(dcArgument As Document, rgArgument As Range) As Boolean
