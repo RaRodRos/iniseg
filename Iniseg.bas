@@ -146,24 +146,31 @@ NoTextosOcultos:
 	iTextosOcultos(0) = -501
 End Sub
 
+
+
+
+
+
+
 Sub Iniseg2LibroYStory()
 ' Llama a las macros de ConversionLibro e ConversionStory y da un aviso para seguir trabajando
 	' Organizado de esta forma las macros de libro y story se pueden llamar por separado
 '
 	Dim dcLibro As Document, dcStory As Document
-	Dim iNotasReiniciar As Integer
+	Dim iNotasContinuas As Integer
 	Dim iNotasExportar As Integer
 	Dim iNotasSeparadas As Integer
 
 	Set dcLibro = ActiveDocument
 
 	If dcLibro.Footnotes.Count > 0 Then
-		iNotasReiniciar = MsgBox("¿Mantener constante la numeración de notas en cada tema?", _
-			vbYesNoCancel, "Opciones notas")
-		If iNotasReiniciar = vbCancel Then Exit Sub
+		iNotasContinuas = SetNotasOpciones(dcLibro)
+		If iNotasContinuas = vbCancel Then Exit Function
+
 		iNotasExportar = MsgBox("¿Exportar notas al pie de página a pdf?", _
 			vbYesNoCancel, "Opciones notas")
 		If iNotasExportar = vbCancel Then Exit Sub
+
 		If iNotasExportar = vbYes Then
 			iNotasSeparadas = MsgBox("¿Exportar notas al pie de página de cada tema en archivos separados?", _
 				vbYesNoCancel, "Opciones notas")
@@ -172,12 +179,12 @@ Sub Iniseg2LibroYStory()
 			iNotasSeparadas = vbNo
 		End If
 	Else
-		iNotasReiniciar = vbNo
+		iNotasContinuas = 3
 		iNotasExportar = vbNo
 		iNotasSeparadas = vbNo
 	End If
 
-	Set dcLibro = Iniseg.ConversionLibro(dcLibro, iNotasReiniciar)
+	Set dcLibro = Iniseg.ConversionLibro(dcLibro, iNotasContinuas)
 	Debug.Print "A/4 - Archivo libro: salvando"
 	dcLibro.Save
 
@@ -194,6 +201,12 @@ Sub Iniseg2LibroYStory()
 	Beep
 	MsgBox "Revisar formato libro (viudas/huérfanas, tamaño de imágenes o tablas...), exportar material necesario y ejecutar iniseg 3"
 End Sub
+
+
+
+
+
+
 
 Sub Iniseg3PaginasVaciasVisibles()
 ' Exporta cada tema de libro a archivos separados e introduce páginas en blanco 
@@ -228,21 +241,22 @@ End Sub
 
 
 Function ConversionLibro(dcLibro As Document, _
-						Optional ByVal iNotasReiniciar As Integer = 0) _
+						Optional iNotasContinuas As Integer = 0) _
 	As Document
 ' Realiza la limpieza necesaria y formatea correctamente
+' Args:
+	' iNotasContinuas:
+		' 0: default (se preguntará)
+		' 6: vbYes
+		' 7: vbNo
 '
 	Dim iContador As Integer, iUltima As Integer
 
-	If dcLibro.Footnotes.Count > 0 Then
-		If iNotasReiniciar = 0 Then
-			iNotasReiniciar = MsgBox("¿Mantener constante la numeración de notas para cada tema?", _
-				vbYesNoCancel, "Opciones notas")
-			If iNotasReiniciar = vbCancel Then Exit Function
-		ElseIf iNotasReiniciar < 6 Or iNotasReiniciar > 7 Then
-			Err.Raise Number:=513, Description:="iNotasReiniciar out of range"
-		End If
-		iNotasReiniciar = iNotasReiniciar - 6
+	If iNotasContinuas = 0 Then
+		iNotasContinuas = SetNotasOpciones(dcLibro)
+		If iNotasContinuas = vbCancel Then Exit Function
+	ElseIf iNotasContinuas < 6 Or iNotasContinuas > 7 Then
+		Err.Raise Number:=513, Description:="iNotasContinuas out of range"
 	End If
 
 	iUltima = 17
@@ -300,7 +314,7 @@ Function ConversionLibro(dcLibro As Document, _
 	RaMacros.SectionBreakBeforeHeading dcLibro, False, 4, 1
 	If dcLibro.Sections.Count > 1 Then
 		Debug.Print "15.2/" & iUltima & " - Archivo libro: mismo numbering rule de notas al pie en todas las secciones"
-		RaMacros.FootnotesSameNumberingRule dcLibro, iNotasReiniciar, -501
+		RaMacros.FootnotesSameNumberingRule dcLibro, iNotasContinuas, -501
 	End If
 	Debug.Print "16/" & iUltima & " - Archivo libro: añadiendo saltos de página antes de Títulos de bibliografía"
 	Iniseg.BibliografiaSaltosDePagina dcLibro
@@ -313,6 +327,47 @@ Function ConversionLibro(dcLibro As Document, _
 	Debug.Print iUltima & "/" & iUltima & " - Conversión a libro terminada"
 	Set ConversionLibro = dcLibro
 End Function
+
+Function SetNotasOpciones(dcArgument As Document, iPregunta As Integer)
+' Pregunta para adjudicar valores a las variables para las notas al pie
+' Args:
+	' iPregunta: escoge qué pregunta hacer
+		' 0: iNotasContinuas (integer)
+		' 1: iNotasExportar (boolean)
+		' 2: iNotasSeparadas (boolean)
+'
+	If dcArgument.Footnotes.Count < 1 Then
+		SetNotasOpciones = False
+		If iPregunta = 0 Then SetNotasOpciones = 3
+		Exit Function
+	End If
+	
+	If iPregunta < 0 Or iPregunta > 2 Then
+		Err.Raise 513, "iPregunta fuera de rango, debe estar entre 0 y 2"
+	End If
+
+	Dim stTextoPregunta As String(2)
+	Dim iRespuesta As Integer
+
+	stTextoPregunta(0) = "¿Mantener constante la numeración de notas para cada tema?"
+	stTextoPregunta(1) = "¿Exportar notas al pie de página a pdf?"
+	stTextoPregunta(2) = "¿Exportar notas al pie de página de cada tema en archivos separados?"
+
+	iRespuesta = MsgBox(stTextoPregunta(iPregunta), vbYesNoCancel, "Opciones notas")
+	If iRespuesta = vbCancel Then End
+
+	If iPregunta = 0 Then
+		SetNotasOpciones = iRespuesta - 6
+	Else
+		SetNotasOpciones = False
+		If iRespuesta = vbYes Then SetNotasOpciones = True
+	End If
+End Function
+
+
+
+
+
 
 Function ConversionStory(dcLibro As Document, _
 						Optional ByVal iNotasExportar As Integer = 0, _
