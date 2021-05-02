@@ -158,37 +158,20 @@ Sub Iniseg2LibroYStory()
 '
 	Dim dcLibro As Document, dcStory As Document
 	Dim iNotasContinuas As Integer
-	Dim iNotasExportar As Integer
-	Dim iNotasSeparadas As Integer
+	Dim bNotasExportar As Boolean
+	Dim bNotasSeparadas As Boolean
 
 	Set dcLibro = ActiveDocument
 
-	If dcLibro.Footnotes.Count > 0 Then
-		iNotasContinuas = SetNotasOpciones(dcLibro)
-		If iNotasContinuas = vbCancel Then Exit Function
-
-		iNotasExportar = MsgBox("¿Exportar notas al pie de página a pdf?", _
-			vbYesNoCancel, "Opciones notas")
-		If iNotasExportar = vbCancel Then Exit Sub
-
-		If iNotasExportar = vbYes Then
-			iNotasSeparadas = MsgBox("¿Exportar notas al pie de página de cada tema en archivos separados?", _
-				vbYesNoCancel, "Opciones notas")
-			If iNotasSeparadas = vbCancel Then Exit Sub
-		Else
-			iNotasSeparadas = vbNo
-		End If
-	Else
-		iNotasContinuas = 3
-		iNotasExportar = vbNo
-		iNotasSeparadas = vbNo
-	End If
+	iNotasContinuas = Iniseg.SetNotasOpciones(dcLibro, 0)
+	bNotasExportar = Iniseg.SetNotasOpciones(dcLibro, 1)
+	If bNotasExportar Then bNotasSeparadas = Iniseg.SetNotasOpciones(dcLibro, 2)
 
 	Set dcLibro = Iniseg.ConversionLibro(dcLibro, iNotasContinuas)
 	Debug.Print "A/4 - Archivo libro: salvando"
 	dcLibro.Save
 
-	Set dcStory = Iniseg.ConversionStory(dcLibro, iNotasExportar, iNotasSeparadas)
+	Set dcStory = Iniseg.ConversionStory(dcLibro, bNotasExportar, bNotasSeparadas, False)
 	Debug.Print "B/4 - Archivo story: salvando"
 	dcStory.Save
 
@@ -241,22 +224,24 @@ End Sub
 
 
 Function ConversionLibro(dcLibro As Document, _
-						Optional iNotasContinuas As Integer = 0) _
+						Optional iNotasContinuas As Integer = -501) _
 	As Document
 ' Realiza la limpieza necesaria y formatea correctamente
 ' Args:
 	' iNotasContinuas:
-		' 0: default (se preguntará)
-		' 6: vbYes
-		' 7: vbNo
+		' -501: default (se preguntará)
+		' 0: wdRestartContinuous
+		' 1: wdRestartSection
+		' 3: copia el numbering rule de la primera sección en las demás
 '
 	Dim iContador As Integer, iUltima As Integer
 
-	If iNotasContinuas = 0 Then
-		iNotasContinuas = SetNotasOpciones(dcLibro)
-		If iNotasContinuas = vbCancel Then Exit Function
-	ElseIf iNotasContinuas < 6 Or iNotasContinuas > 7 Then
-		Err.Raise Number:=513, Description:="iNotasContinuas out of range"
+	If Not (iNotasContinuas = 0 Or iNotasContinuas = 3 Or iNotasContinuas = 2) Then
+		If iNotasContinuas = -501 Then
+			iNotasContinuas = Iniseg.SetNotasOpciones(dcLibro, 0)
+		Else
+			Err.Raise 513, "iNotasContinuas fuera de rango"
+		End If
 	End If
 
 	iUltima = 17
@@ -328,92 +313,34 @@ Function ConversionLibro(dcLibro As Document, _
 	Set ConversionLibro = dcLibro
 End Function
 
-Function SetNotasOpciones(dcArgument As Document, iPregunta As Integer)
-' Pregunta para adjudicar valores a las variables para las notas al pie
-' Args:
-	' iPregunta: escoge qué pregunta hacer
-		' 0: iNotasContinuas (integer)
-		' 1: iNotasExportar (boolean)
-		' 2: iNotasSeparadas (boolean)
-'
-	If dcArgument.Footnotes.Count < 1 Then
-		SetNotasOpciones = False
-		If iPregunta = 0 Then SetNotasOpciones = 3
-		Exit Function
-	End If
-	
-	If iPregunta < 0 Or iPregunta > 2 Then
-		Err.Raise 513, "iPregunta fuera de rango, debe estar entre 0 y 2"
-	End If
-
-	Dim stTextoPregunta As String(2)
-	Dim iRespuesta As Integer
-
-	stTextoPregunta(0) = "¿Mantener constante la numeración de notas para cada tema?"
-	stTextoPregunta(1) = "¿Exportar notas al pie de página a pdf?"
-	stTextoPregunta(2) = "¿Exportar notas al pie de página de cada tema en archivos separados?"
-
-	iRespuesta = MsgBox(stTextoPregunta(iPregunta), vbYesNoCancel, "Opciones notas")
-	If iRespuesta = vbCancel Then End
-
-	If iPregunta = 0 Then
-		SetNotasOpciones = iRespuesta - 6
-	Else
-		SetNotasOpciones = False
-		If iRespuesta = vbYes Then SetNotasOpciones = True
-	End If
-End Function
-
 
 
 
 
 
 Function ConversionStory(dcLibro As Document, _
-						Optional ByVal iNotasExportar As Integer = 0, _
-						Optional ByVal iNotasSeparadas As Integer = 0) _
-	As Document
+						Optional ByVal bNotasExportar As Boolean, _
+						Optional ByVal bNotasSeparadas As Boolean, _
+						Optional ByVal bPreguntar As Boolean = True _
+	) As Document
 ' Da el tamaño correcto a párrafos, imágenes y formatea marcas de pie de página
 '
 	Dim dcStory As Document
 	Dim dcBibliografia As Document
 	Dim iUltima As Integer
-	Dim bNotasSeparadas As Boolean
 
-	If dcLibro.Footnotes.Count = 0 Then
-		iNotasExportar = vbNo
-		iNotasSeparadas = vbNo
-	Else
-		If iNotasExportar = 0 Then
-			iNotasExportar = MsgBox("¿Exportar notas al pie de página?", vbYesNoCancel, "Opciones exportar")
-			If iNotasExportar = vbCancel Then Exit Function
-		ElseIf iNotasExportar < 6 Or iNotasExportar > 7 Then
-			Err.Raise Number:=513, Description:="iNotasExportar out of range"
-		End If
-		If dcLibro.Sections.Count > 1 Then
-			If iNotasExportar = vbYes Then
-				If iNotasSeparadas = 0 Then
-					iNotasSeparadas = MsgBox("¿Exportar las notas al pie de cada tema en archivos separados?", _
-						vbYesNoCancel, "Opciones notas al pie")
-				ElseIf iNotasSeparadas < 6 Or iNotasSeparadas > 7 Then
-					Err.Raise Number:=513, Description:="iNotasSeparadas out of range"
-				End If
-				If iNotasSeparadas = vbCancel Then
-					Exit Function
-				ElseIf iNotasSeparadas = vbYes Then
-					bNotasSeparadas = True
-				Else
-					bNotasSeparadas = False
-				End If
-			End If
-		Else
-			bNotasSeparadas = False
-		End If
+	If bPreguntar _
+		And Not bNotasExportar _
+		And Not bNotasSeparadas _
+		And dcLibro.FootNotes.Count > 0 _
+	Then
+		bNotasExportar = Iniseg.SetNotasOpciones(dcLibro, 1)
+		If bNotasExportar Then bNotasSeparadas = Iniseg.SetNotasOpciones(dcLibro, 2)
 	End If
 
-	iUltima = 10
-	If iNotasExportar = vbYes Then iUltima = iUltima + 1
-	If bNotasSeparadas Then iUltima = iUltima + 1
+	iUltima = 9
+	If bNotasExportar Then iUltima = iUltima + 1
+	If dcLibro.Sections.Count > 1 Then iUltima = iUltima + 1
 
 	Debug.Print "1/" & iUltima & " - Archivo story: creando"
 	Set dcStory = RaMacros.SaveAsNewFile(dcLibro, "2-", "", True, True)
@@ -456,8 +383,8 @@ Function ConversionStory(dcLibro As Document, _
 	Iniseg.ParrafosConversionStory dcStory
 	Iniseg.TitulosConTresEspacios dcStory
 
-	Debug.Print "7/" & iUltima & " - Archivo story: transformando/exportando tablas"
 	If dcStory.Tables.Count > 0 Then
+		Debug.Print "7/" & iUltima & " - Archivo story: transformando/exportando tablas"
 		RaMacros.TablesConvertToImage dcStory
 		' RaMacros.TablesExportToPdf dcStory, "Tabla ", True, "Enlace a ", True, _
 		' 	dcStory.Name, wdStyleBlockQuotation, 17
@@ -477,31 +404,75 @@ Function ConversionStory(dcLibro As Document, _
 		' 	.Execute Replace:=wdReplaceAll
 		' End With
 	Else
-		Debug.Print "--- No hay tablas ---"
+		Debug.Print "7/" & iUltima & "--- No hay tablas ---"
 	End If
 	Debug.Print "8/" & iUltima & " - Archivo story: formateando imágenes"
 	Iniseg.ImagenesStory dcStory
 	Debug.Print "9/" & iUltima & " - Archivo story: corrigiendo interlineado"
 	Iniseg.InterlineadoCorregido dcStory
 
-	If iNotasExportar = vbYes Then
-		Debug.Print iUltima - 2 & ".1/" & iUltima & " - Exportando notas a archivo externo"
-		Iniseg.NotasPieExportar dcLibro, bNotasSeparadas
-		Debug.Print iUltima - 2 & ".2/" & iUltima & " - Archivo story: formateando notas"
-		Iniseg.NotasPieMarcas dcStory, True
-	Else
-		Debug.Print iUltima - 2 & "/" & iUltima & " - Archivo story: formateando notas"
-		Iniseg.NotasPieMarcas dcStory, False
+	If dcLibro.Footnotes.Count > 0 Then
+		If bNotasExportar Then
+			Debug.Print "10.1/" & iUltima & " - Exportando notas a archivo/s externo"
+			Iniseg.NotasPieExportar dcLibro, bNotasSeparadas
+			Debug.Print "10.2/" & iUltima & " - Archivo story: formateando notas"
+		Else
+			Debug.Print "10/" & iUltima & " - Archivo story: formateando notas"
+		End If
+		Iniseg.NotasPieMarcas dcStory, bNotasExportar
 	End If
 
 	If dcLibro.Sections.Count > 1 Then
-		Debug.Print iUltima - 1 & "/" & iUltima & " - Archivo story: exportando en archivos separados"
+		Debug.Print iUltima & "/" & iUltima & " - Archivo story: exportando en archivos separados"
 		RaMacros.SectionsExportEachToFiles dcStory, False, True, False,, "-tema_"
 	End If
 
-	Debug.Print iUltima & "/" & iUltima & " - Conversión para story terminada"
+	Debug.Print "Conversión para story terminada"
 	Set ConversionStory = dcStory
 End Function
+
+
+
+
+
+
+
+Function SetNotasOpciones(dcArgument As Document, iPregunta As Integer)
+' Pregunta para adjudicar valores a las variables para las notas al pie
+' Args:
+	' iPregunta: escoge qué pregunta hacer
+		' 0: iNotasContinuas (integer)
+		' 1: bNotasExportar (boolean)
+		' 2: bNotasSeparadas (boolean)
+'
+	If dcArgument.Footnotes.Count < 1 Then
+		SetNotasOpciones = False
+		If iPregunta = 0 Then SetNotasOpciones = 3
+		Exit Function
+	End If
+	
+	If iPregunta < 0 Or iPregunta > 2 Then
+		Err.Raise 513, "iPregunta fuera de rango, debe estar entre 0 y 2"
+	End If
+
+	Dim stTextoPregunta(2) As String
+	Dim iRespuesta As Integer
+
+	stTextoPregunta(0) = "¿Mantener constante la numeración de notas para cada tema?"
+	stTextoPregunta(1) = "¿Exportar notas al pie de página a pdf?"
+	stTextoPregunta(2) = "¿Exportar notas al pie de página de cada tema en archivos separados?"
+
+	iRespuesta = MsgBox(stTextoPregunta(iPregunta), vbYesNoCancel, "Opciones notas")
+	If iRespuesta = vbCancel Then End
+
+	If iPregunta = 0 Then
+		SetNotasOpciones = iRespuesta - 6
+	Else
+		SetNotasOpciones = False
+		If iRespuesta = vbYes Then SetNotasOpciones = True
+	End If
+End Function
+
 
 
 
