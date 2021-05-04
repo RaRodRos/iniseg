@@ -551,28 +551,23 @@ End Sub
 
 
 
-Sub CleanBasic(dcArgument As Document, Optional ByVal iStory As Integer = 0, _
-	Optional ByVal bTabs As Boolean = True, Optional ByVal bBreakLines As Boolean = False)
+Sub CleanBasic(rgArgument As Range, _
+				Optional ByVal bTabs As Boolean = True, _
+				Optional ByVal bBreakLines As Boolean = False)
 ' CleanSpaces + CleanEmptyParagraphs
 ' It's important to execute the subroutines in the proper order to achieve their optimal effects
 ' Args:
-	' iStory: defines the storyranges that will be cleaned
-		' All (1 to 5)		0
-		' wdMainTextStory	1
-		' wdFootnotesStory	2
-		' wdEndnotesStory	3
-		' wdCommentsStory	4
-		' wdTextFrameStory	5
+	' rgArgument: the range that will be cleaned. If Nothing it will iterate over
+		' all the storyranges of the document
+	' bTabs: if True Tabs are substituted for a single space
+	' bBreakLines: manual break lines get converted to paragraph marks
 '
-	If iStory < 0 Or iStory > 5 Then
-		Err.Raise Number:=514, Description:="iStory out of range it must be between 0 and 5"
-	End If
-	RaMacros.CleanSpaces dcArgument, iStory, bTabs
-	RaMacros.CleanEmptyParagraphs dcArgument, iStory, bBreakLines
+	RaMacros.CleanSpaces rgArgument, bTabs
+	RaMacros.CleanEmptyParagraphs rgArgument, bBreakLines
 	RaMacros.FindAndReplaceClearParameters
 End Sub
 
-Sub CleanSpaces(dcArgument As Document, Optional ByVal iStory As Integer = 0, _
+Sub CleanSpaces(rgArgument As Range, _
 				Optional ByVal bTabs As Boolean = True)
 ' Deletes:
 	' Tabulations
@@ -580,13 +575,8 @@ Sub CleanSpaces(dcArgument As Document, Optional ByVal iStory As Integer = 0, _
 	' Spaces just before paragraph marks, stops, parenthesis, etc.
 	' Spaces just after paragraph marks
 ' Args:
-	' iStory: defines the storyranges that will be cleaned
-		' All (1 to 5)		0
-		' wdMainTextStory	1
-		' wdFootnotesStory	2
-		' wdEndnotesStory	3
-		' wdCommentsStory	4
-		' wdTextFrameStory	5
+	' rgArgument: the range that will be cleaned. If Nothing it will iterate over
+		' all the storyranges of the document
 	' bTabs: if True Tabs are substituted for a single space
 '
 	Dim bFound1 As Boolean, bFound2 As Boolean, iMaxCount As Integer 
@@ -749,17 +739,12 @@ Sub CleanSpaces(dcArgument As Document, Optional ByVal iStory As Integer = 0, _
 	Next iStory
 End Sub
 
-Sub CleanEmptyParagraphs(dcArgument As Document, Optional ByVal iStory As Integer = 0, _
+Sub CleanEmptyParagraphs(rgArgument As Range, _
 						Optional ByVal bBreakLines As Boolean = False)
 ' Deletes empty paragraphs
 ' Args:
-	' iStory: defines the storyranges that will be cleaned
-		' All (1 to 5)		0
-		' wdMainTextStory	1
-		' wdFootnotesStory	2
-		' wdEndnotesStory	3
-		' wdCommentsStory	4
-		' wdTextFrameStory	5
+	' rgArgument: the range that will be cleaned. If Nothing it will iterate over
+		' all the storyranges of the document
 	' bBreakLines: manual break lines get converted to paragraph marks
 '
 	Dim rgStory As Range, rgFind As Range, rgBibliography As Range
