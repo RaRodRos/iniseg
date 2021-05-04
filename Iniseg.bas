@@ -143,7 +143,9 @@ Sub Iniseg1Limpieza()
 	Exit Sub
 NoTextosOcultos:
 	On Error GoTo 0
+	ReDim iTextosOcultos(0)
 	iTextosOcultos(0) = -501
+	Resume
 End Sub
 
 
