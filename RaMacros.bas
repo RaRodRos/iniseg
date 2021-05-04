@@ -551,54 +551,54 @@ End Sub
 
 
 
-Sub CleanBasic(rgArgument As Range, _
+Sub CleanBasic(rgArg As Range, _
 				Optional ByVal bTabs As Boolean = True, _
-				Optional ByVal bBreakLines As Boolean = False)
+				Optional ByVal bBreakLines As Boolean = False, _
+				Optional dcArg As document)
 ' CleanSpaces + CleanEmptyParagraphs
 ' It's important to execute the subroutines in the proper order to achieve their optimal effects
 ' Args:
-	' rgArgument: the range that will be cleaned. If Nothing it will iterate over
+	' rgArg: the range that will be cleaned. If Nothing it will iterate over
 		' all the storyranges of the document
 	' bTabs: if True Tabs are substituted for a single space
 	' bBreakLines: manual break lines get converted to paragraph marks
 '
-	RaMacros.CleanSpaces rgArgument, bTabs
-	RaMacros.CleanEmptyParagraphs rgArgument, bBreakLines
+	RaMacros.CleanSpaces rgArg, bTabs, dcArg
+	RaMacros.CleanEmptyParagraphs rgArg, bBreakLines, dcArg
 	RaMacros.FindAndReplaceClearParameters
 End Sub
 
-Sub CleanSpaces(rgArgument As Range, _
-				Optional ByVal bTabs As Boolean = True)
+Sub CleanSpaces(rgArg As Range, _
+				Optional ByVal bTabs As Boolean = True, _
+				Optional dcArg As document)
 ' Deletes:
 	' Tabulations
 	' More than 1 consecutive spaces
 	' Spaces just before paragraph marks, stops, parenthesis, etc.
 	' Spaces just after paragraph marks
 ' Args:
-	' rgArgument: the range that will be cleaned. If Nothing it will iterate over
+	' rgArg: the range that will be cleaned. If Nothing it will iterate over
 		' all the storyranges of the document
 	' bTabs: if True Tabs are substituted for a single space
 '
-	Dim bFound1 As Boolean, bFound2 As Boolean, iMaxCount As Integer 
-	Dim rgFind As Range, rgFind2 As Range, tbCurrent As Table
+	Dim bFound1 As Boolean, bFound2 As Boolean
+	Dim rgFind As Range, rgFind2 As Range
+	Dim tbCurrent As Table
 
-	If iStory < 0 Or iStory > 5 Then
-		Err.Raise Number:=514, Description:="Argument out of range it must be between 0 and 5"
-	ElseIf iStory = 0 Then
-		iStory = 1
-		iMaxCount = 5
-	Else
-		iMaxCount = iStory
-	End If
+	If rgArg Is Nothing And dcArg Is Nothing Then Err.Raise 516 "There is no target range"
+	If dcArg Is Nothing Then Set dcArg = rgFind.Parent
 
 	bFound1 = False
 	bFound2 = False
 
-	For iStory = iStory To iMaxCount Step 1
-		On Error Resume Next
-		Set rgFind = dcArgument.StoryRanges(iStory)
-		If Err.Number = 0 Then
-			On Error GoTo 0
+	' For iStory = iStory To iMaxCount Step 1
+		' On Error Resume Next
+		' Set rgFind = dcArg.StoryRanges(iStory)
+		' If Err.Number = 0 Then
+		' 	On Error GoTo 0
+	For Each rgFind In dcArg.StoryRanges
+		Do
+			If Not rgArg Is Nothing Then Set rgFind = rgArg.Duplicate
 
 			' Deletting first and last characters if necessary
 			Set rgFind2 = rgFind.Duplicate
@@ -633,6 +633,7 @@ Sub CleanSpaces(rgArgument As Range, _
 				.MatchSoundsLike = False
 				.MatchWildcards = True
 			End With
+
 			Do
 				With rgFind.Find
 					.Replacement.Text = " "
@@ -733,40 +734,38 @@ Sub CleanSpaces(rgArgument As Range, _
 					bFound1 = True
 				End If
 			Loop While bFound1
-		Else
-			On Error GoTo 0
-		End If
-	Next iStory
+			Set rgFind = rgFind.NextStoryRange
+		Loop Until rgFind Is Nothing
+		If Not rgArg Is Nothing Then Exit Sub
+	Next rgFind
 End Sub
 
-Sub CleanEmptyParagraphs(rgArgument As Range, _
-						Optional ByVal bBreakLines As Boolean = False)
+Sub CleanEmptyParagraphs(rgArg As Range, _
+						Optional ByVal bBreakLines As Boolean = False, _
+						Optional dcArg As document)
 ' Deletes empty paragraphs
 ' Args:
-	' rgArgument: the range that will be cleaned. If Nothing it will iterate over
+	' rgArg: the range that will be cleaned. If Nothing it will iterate over
 		' all the storyranges of the document
 	' bBreakLines: manual break lines get converted to paragraph marks
 '
+	Dim bAutoFit As Boolean, bFound As Boolean, bWrap As Boolean
 	Dim rgStory As Range, rgFind As Range, rgBibliography As Range
 	Dim tbCurrent As Table
 	Dim cllCurrentCell As Cell
-	Dim bAutoFit As Boolean, bFound As Boolean, bWrap As Boolean
-	Dim iMaxCount As Integer
 
-	If iStory < 0 Or iStory > 5 Then
-		Err.Raise Number:=514, Description:="Argument out of range it must be between 0 and 5"
-	ElseIf iStory = 0 Then
-		iStory = 1
-		iMaxCount = 5
-	Else
-		iMaxCount = iStory
-	End If
+	If rgArg Is Nothing And dcArg Is Nothing Then Err.Raise 516 "There is no target range"
+	If dcArg Is Nothing Then Set dcArg = rgFind.Parent
 
-	For iStory = iStory To iMaxCount Step 1
-		On Error Resume Next
-		Set rgStory = dcArgument.StoryRanges(iStory)
-		If Err.Number = 0 Then
-			On Error GoTo 0
+	' For iStory = iStory To iMaxCount Step 1
+	' 	On Error Resume Next
+	' 	If Not rgArg Is Nothing Then Set rgFind = rgArg.Duplicate
+	' 	Set rgStory = dcArg.StoryRanges(iStory)
+	' 	If Err.Number = 0 Then
+	' 		On Error GoTo 0
+	For Each rgFind In dcArg.StoryRanges
+		Do
+			If Not rgArg Is Nothing Then Set rgFind = rgArg.Duplicate
 			Do
 				If bBreakLines Then
 					With rgStory.Find
@@ -802,7 +801,7 @@ Sub CleanEmptyParagraphs(rgArgument As Range, _
 				' Deletting empty paragraphs related to tables
 				For each tbCurrent In rgStory.Tables
 					' Check if the table is part of a field (it can get bugged)
-					If Not RangeInField(dcArgument, tbCurrent.Range) Then
+					If Not RangeInField(dcArg, tbCurrent.Range) Then
 						bAutoFit = tbCurrent.AllowAutoFit
 						tbCurrent.AllowAutoFit = False
 						bWrap = tbCurrent.Rows.WrapAroundText
@@ -904,19 +903,9 @@ Sub CleanEmptyParagraphs(rgArgument As Range, _
 							.MatchAllWordForms = False
 							.MatchSoundsLike = False
 							.MatchWildcards = True
-							' If iStory = 4 Then .Text = "[^13^l]{2;}" Else .Text = "[^13^l]@^13^2"
 							.Text = "[^13^l]{2;}"
 						End With
 						If rgFind.Find.Execute Then
-							' ------------------- 1st version
-							' If iStory = 4 Then
-							' 	If Len(rgFind) <= 2 Then rgFind.Collapse wdCollapseStart
-							' 	If rgFind.Delete <> 0 Then bFound = True
-							' ElseIf rgFind.End <> 0 Then
-							' 	rgFind.MoveEnd wdCharacter, -2
-							' 	If rgFind.Delete <> 0 Then bFound = True
-							' End If
-							' ------------------- 2nd version (no loops, unlike 3rd version)
 							If Len(rgFind) = 2 Then
 								rgFind.Collapse wdCollapseStart
 								If rgFind.Delete <> 0 Then bFound = True
@@ -926,12 +915,6 @@ Sub CleanEmptyParagraphs(rgArgument As Range, _
 									If rgFind.Delete <> 0 Then bFound = True
 								End If
 							End If
-							' ------------------- 3rd version
-							' bFound = True
-							' rgFind.Collapse wdCollapseStart
-							' Do While rgFind.Next(wdCharacter, 1).Text = vbCr
-							'     If rgFind.Delete = 0 Then Exit Do
-							' Loop
 						End If
 					Loop While bFound
 				End If
@@ -964,10 +947,15 @@ Sub CleanEmptyParagraphs(rgArgument As Range, _
 					bFound = True
 				End If
 			Loop While bFound
-		Else
-			On Error GoTo 0
-		End If
-	Next iStory
+			Set rgFind = rgFind.NextStoryRange
+		Loop Until rgFind Is Nothing
+		If Not rgArg Is Nothing Then Exit Sub
+	Next rgFind
+
+	' 	Else
+	' 		On Error GoTo 0
+	' 	End If
+	' Next iStory
 End Sub
 
 
