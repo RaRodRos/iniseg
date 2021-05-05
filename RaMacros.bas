@@ -826,9 +826,10 @@ Sub CleanEmptyParagraphs(rgArg As Range, _
 					Do
 						bFound = False
 						Set rgFind = rgStory.Duplicate
-						rgFind.Find.MatchWildcards = True
-						rgFind.Find.Text = "[^13^l]{2;}"
-						If rgFind.Find.Execute Then
+						If rgFind.Find.Execute( _
+							FindText:="[^13^l]{2;}", _
+							MatchWildcards:=True) _
+						Then
 							If Len(rgFind) > 2 Then rgFind.Delete
 							rgFind.Collapse wdCollapseStart
 							If rgFind.Delete <> 0 Then bFound = True
