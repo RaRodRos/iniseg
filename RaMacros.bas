@@ -565,9 +565,11 @@ Sub CleanBasic(rgArg As Range, _
 	' bBreakLines: manual break lines get converted to paragraph marks
 	' dcArg: the target document. Necessary in case rgArg is Nothing
 '
-	If rgArg Is Nothing And dcArg Is Nothing Then Err.Raise 516, "There is no target range"
-	If dcArg Is Nothing Then Set dcArg = rgFind.Parent
-	If rgArg.Parent <> dcArg Then Err.Raise 517, "rgArg is not in dcArg"
+	If rgArg Is Nothing And dcArg Is Nothing Then Err.Raise 516,, "There is no target range"
+	If dcArg Is Nothing Then Set dcArg = rgArg.Parent
+	If Not rgArg Is Nothing Then
+		If rgArg.Parent <> dcArg Then Err.Raise 517,, "rgArg is not in dcArg"
+	End If
 
 	RaMacros.CleanSpaces rgArg, bTabs, dcArg
 	RaMacros.CleanEmptyParagraphs rgArg, bBreakLines, dcArg
@@ -592,9 +594,11 @@ Sub CleanSpaces(rgArg As Range, _
 	Dim rgStory As Range, rgFind As Range
 	Dim tbCurrent As Table
 
-	If rgArg Is Nothing And dcArg Is Nothing Then Err.Raise 516, "There is no target range"
-	If dcArg Is Nothing Then Set dcArg = rgFind.Parent
-	If rgArg.Parent <> dcArg Then Err.Raise 517, "rgArg is not in dcArg"
+	If rgArg Is Nothing And dcArg Is Nothing Then Err.Raise 516,, "There is no target range"
+	If dcArg Is Nothing Then Set dcArg = rgArg.Parent
+	If Not rgArg Is Nothing Then
+		If rgArg.Parent <> dcArg Then Err.Raise 517,, "rgArg is not in dcArg"
+	End If
 
 	bFound1 = False
 	bFound2 = False
@@ -743,9 +747,11 @@ Sub CleanEmptyParagraphs(rgArg As Range, _
 	Dim tbCurrent As Table
 	Dim cllCurrentCell As Cell
 
-	If rgArg Is Nothing And dcArg Is Nothing Then Err.Raise 516, "There is no target range"
-	If dcArg Is Nothing Then Set dcArg = rgFind.Parent
-	If rgArg.Parent <> dcArg Then Err.Raise 517, "rgArg is not in dcArg"
+	If rgArg Is Nothing And dcArg Is Nothing Then Err.Raise 516,, "There is no target range"
+	If dcArg Is Nothing Then Set dcArg = rgArg.Parent
+	If Not rgArg Is Nothing Then
+		If rgArg.Parent <> dcArg Then Err.Raise 517,, "rgArg is not in dcArg"
+	End If
 
 	For Each rgStory In dcArg.StoryRanges
 		If Not rgArg Is Nothing Then Set rgStory = rgArg.Duplicate
@@ -776,7 +782,7 @@ Sub CleanEmptyParagraphs(rgArg As Range, _
 					If rgStory.Paragraphs.First.Range.Delete = 0 Then Exit Do
 				Loop
 				Do While rgStory.Paragraphs.Last.Range.Text = vbCr 
-					If rgFind.StoryType = 2 Or rgFind.StoryType = 3 Or rgFind.StoryType = 4 Then
+					If rgStory.StoryType = 2 Or rgStory.StoryType = 3 Or rgStory.StoryType = 4 Then
 						If rgStory.Paragraphs.Last.Range.Previous(wdCharacter, 1).Delete = 0 Then Exit Do
 					Else
 						If rgStory.Paragraphs.Last.Range.Delete = 0 Then Exit Do
@@ -861,7 +867,7 @@ Sub CleanEmptyParagraphs(rgArg As Range, _
 			Set rgFind = rgFind.NextStoryRange
 		Loop Until rgFind Is Nothing
 		If Not rgArg Is Nothing Then Exit Sub
-	Next rgFind
+	Next rgStory
 End Sub
 
 

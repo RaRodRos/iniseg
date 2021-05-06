@@ -242,7 +242,7 @@ Function ConversionLibro(dcLibro As Document, _
 		If iNotasContinuas = -501 Then
 			iNotasContinuas = Iniseg.SetNotasOpciones(dcLibro, 0)
 		Else
-			Err.Raise 513, "iNotasContinuas fuera de rango"
+			Err.Raise 513,, "iNotasContinuas fuera de rango"
 		End If
 	End If
 
@@ -454,7 +454,7 @@ Function SetNotasOpciones(dcArgument As Document, iPregunta As Integer)
 	End If
 	
 	If iPregunta < 0 Or iPregunta > 2 Then
-		Err.Raise 513, "iPregunta fuera de rango, debe estar entre 0 y 2"
+		Err.Raise 513,, "iPregunta fuera de rango, debe estar entre 0 y 2"
 	End If
 
 	Dim stTextoPregunta(2) As String
