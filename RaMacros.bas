@@ -552,87 +552,72 @@ End Sub
 
 
 
-Sub CleanBasic(dcArgument As Document, Optional ByVal iStory As Integer = 0, _
-	Optional ByVal bTabs As Boolean = True, Optional ByVal bBreakLines As Boolean = False)
+Sub CleanBasic(rgArg As Range, _
+				Optional ByVal bTabs As Boolean = True, _
+				Optional ByVal bBreakLines As Boolean = False, _
+				Optional dcArg As document)
 ' CleanSpaces + CleanEmptyParagraphs
 ' It's important to execute the subroutines in the proper order to achieve their optimal effects
 ' Args:
-	' iStory: defines the storyranges that will be cleaned
-		' All (1 to 5)		0
-		' wdMainTextStory	1
-		' wdFootnotesStory	2
-		' wdEndnotesStory	3
-		' wdCommentsStory	4
-		' wdTextFrameStory	5
+	' rgArg: the range that will be cleaned. If Nothing it will iterate over
+		' all the storyranges of the document
+	' bTabs: if True Tabs are substituted for a single space
+	' bBreakLines: manual break lines get converted to paragraph marks
 '
-	If iStory < 0 Or iStory > 5 Then
-		Err.Raise Number:=514, Description:="iStory out of range it must be between 0 and 5"
-	End If
-	RaMacros.CleanSpaces dcArgument, iStory, bTabs
-	RaMacros.CleanEmptyParagraphs dcArgument, iStory, bBreakLines
+	RaMacros.CleanSpaces rgArg, bTabs, dcArg
+	RaMacros.CleanEmptyParagraphs rgArg, bBreakLines, dcArg
 	RaMacros.FindAndReplaceClearParameters
 End Sub
 
-Sub CleanSpaces(dcArgument As Document, Optional ByVal iStory As Integer = 0, _
-				Optional ByVal bTabs As Boolean = True)
+Sub CleanSpaces(rgArg As Range, _
+				Optional ByVal bTabs As Boolean = True, _
+				Optional dcArg As document)
 ' Deletes:
 	' Tabulations
 	' More than 1 consecutive spaces
 	' Spaces just before paragraph marks, stops, parenthesis, etc.
 	' Spaces just after paragraph marks
 ' Args:
-	' iStory: defines the storyranges that will be cleaned
-		' All (1 to 5)		0
-		' wdMainTextStory	1
-		' wdFootnotesStory	2
-		' wdEndnotesStory	3
-		' wdCommentsStory	4
-		' wdTextFrameStory	5
+	' rgArg: the range that will be cleaned. If Nothing it will iterate over
+		' all the storyranges of the document
 	' bTabs: if True Tabs are substituted for a single space
 '
-	Dim bFound1 As Boolean, bFound2 As Boolean, iMaxCount As Integer 
-	Dim rgFind As Range, rgFind2 As Range, tbCurrent As Table
+	Dim bFound1 As Boolean, bFound2 As Boolean
+	Dim rgStory As Range, rgFind As Range
+	Dim tbCurrent As Table
 
-	If iStory < 0 Or iStory > 5 Then
-		Err.Raise Number:=514, Description:="Argument out of range it must be between 0 and 5"
-	ElseIf iStory = 0 Then
-		iStory = 1
-		iMaxCount = 5
-	Else
-		iMaxCount = iStory
-	End If
+	If rgArg Is Nothing And dcArg Is Nothing Then Err.Raise 516 "There is no target range"
+	If dcArg Is Nothing Then Set dcArg = rgFind.Parent
 
 	bFound1 = False
 	bFound2 = False
 
-	For iStory = iStory To iMaxCount Step 1
-		On Error Resume Next
-		Set rgFind = dcArgument.StoryRanges(iStory)
-		If Err.Number = 0 Then
-			On Error GoTo 0
+	For Each rgStory In dcArg.StoryRanges
+		If Not rgArg Is Nothing Then Set rgStory = rgArg.Duplicate
 
-			' Deletting first and last characters if necessary
-			Set rgFind2 = rgFind.Duplicate
-			rgFind2.Collapse wdCollapseStart
-			Do While rgFind.Characters.First.Text = " " _
-					Or rgFind.Characters.First.Text = vbTab _
-					Or rgFind.Characters.First.Text = "," _
-					Or rgFind.Characters.First.Text = "." _
-					Or rgFind.Characters.First.Text = ";" _
-					Or rgFind.Characters.First.Text = ":"
-				If rgFind2.Delete = 0 Then Exit Do
-			Loop
-			Set rgFind2 = rgFind.Duplicate
-			rgFind2.Collapse wdCollapseEnd
-			rgFind2.MoveStart wdCharacter, -1
-			Do While rgFind2.Text = " " _
-					Or rgFind.Characters.Last.Text = vbTab
-				rgFind2.Collapse wdCollapseStart
-				If rgFind2.Delete = 0 Then Exit Do
-				rgFind2.MoveStart wdCharacter, -1
-			Loop
+		' Deletting first and last characters if necessary
+		Set rgFind = rgStory.Duplicate
+		rgFind.Collapse wdCollapseStart
+		Do While rgStory.Characters.First.Text = " " _
+				Or rgStory.Characters.First.Text = vbTab _
+				Or rgStory.Characters.First.Text = "," _
+				Or rgStory.Characters.First.Text = "." _
+				Or rgStory.Characters.First.Text = ";" _
+				Or rgStory.Characters.First.Text = ":"
+			If rgFind.Delete = 0 Then Exit Do
+		Loop
+		Set rgFind = rgStory.Duplicate
+		rgFind.Collapse wdCollapseEnd
+		rgFind.MoveStart wdCharacter, -1
+		Do While rgFind.Text = " " _
+				Or rgStory.Characters.Last.Text = vbTab
+			rgFind.Collapse wdCollapseStart
+			If rgFind.Delete = 0 Then Exit Do
+			rgFind.MoveStart wdCharacter, -1
+		Loop
 
-			With rgFind.Find
+		Do
+			With rgStory.Find
 				.ClearFormatting
 				.Replacement.ClearFormatting
 				.Forward = True
@@ -644,8 +629,12 @@ Sub CleanSpaces(dcArgument As Document, Optional ByVal iStory As Integer = 0, _
 				.MatchSoundsLike = False
 				.MatchWildcards = True
 			End With
+
+			' This loop is placed to catch the characters the may be shuffling
+			' around because of the cleaning
 			Do
-				With rgFind.Find
+				bFound1 = False
+				With rgStory.Find
 					.Replacement.Text = " "
 					If bTabs Then	
 						.Text = "[^t]"
@@ -658,157 +647,127 @@ Sub CleanSpaces(dcArgument As Document, Optional ByVal iStory As Integer = 0, _
 					If .Found Then bFound1 = True
 				End With
 
-				' Deletting spaces before paragraph marks before tables (there is a bug that prevents
-					' them to be erased through find and replace)
-				For each tbCurrent In rgFind.Tables
+				' Deletting spaces before paragraph marks before tables (there is
+				' a bug that prevents them to be erased through find and replace)
+				For each tbCurrent In rgStory.Tables
 					If tbCurrent.Range.Start <> 0 Then
-						Set rgFind2 = tbCurrent.Range.Previous(wdParagraph,1)
-						rgFind2.MoveEnd wdCharacter, -1
-						rgFind2.Start = rgFind2.End - 1
-						If rgFind2.Text = " " Then
+						Set rgFind = tbCurrent.Range.Previous(wdParagraph,1)
+						rgFind.MoveEnd wdCharacter, -1
+						rgFind.Start = rgFind.End - 1
+						If rgFind.Text = " " Then
 							bFound2 = False
-							Do While rgFind2.Previous(wdCharacter, 1).Text = " "
-								rgFind2.Start = rgFind2.Start - 1
+							Do While rgFind.Previous(wdCharacter, 1).Text = " "
+								rgFind.Start = rgFind.Start - 1
 								bFound2 = True
 							Loop
-							If bFound2 Then rgFind2.Delete
-							rgFind2.Collapse wdCollapseStart
-							rgFind2.Delete
+							If bFound2 Then rgFind.Delete
+							rgFind.Collapse wdCollapseStart
+							rgFind.Delete
 						End If
 
-						Set rgFind2 = tbCurrent.Range.Next(wdParagraph,1).Characters.First
-							rgFind2.collapse wdCollapseStart
-						Do While rgFind2.Text = " "
-							If rgFind2.Delete = 0 Then Exit Do
+						Set rgFind = tbCurrent.Range.Next(wdParagraph,1).Characters.First
+							rgFind.collapse wdCollapseStart
+						Do While rgFind.Text = " "
+							If rgFind.Delete = 0 Then Exit Do
 						Loop
 					End If
 				Next tbCurrent
 				
-				bFound1 = False
-				With rgFind.Find
-					If iStory <> 2 Then
-						.Text = " @([^13^l,.;:\]\)\}])"
-						.Replacement.Text = "\1"
-						.Execute Replace:=wdReplaceAll
-						If .Found Then bFound1 = True
-					Else
-						Set rgFind2 = rgFind.Duplicate
-						Do While rgFind2.Find.Execute( _
-														FindText:=" @[^13^l,.;:\]\)\}]", _
-														MatchWildcards:=True, Wrap:=wdFindStop)
-							Do While rgFind2.Characters.First = " "
-								rgFind2.Collapse wdCollapseStart
-								rgFind2.Delete
-							Loop
-							rgFind2.EndOf wdStory, wdExtend
-						Loop
-					End If
+				' Due to a bug is necessary to follow a different cleaning
+				' process for endnotes and footnotes
+				If rgStory.StoryType <> 2 Or rgStory.StoryType <> 3 Then
+					rgStory.Find.Text = " @([^13^l,.;:\]\)\}])"
+					rgStory.Find.Replacement.Text = "\1"
+					rgStory.Find.Execute Replace:=wdReplaceAll
+					If rgStory.Find.Found Then bFound1 = True
 
-					If iStory <> 2 Then
-						.Text = "([^13^l])[ ,.;:]@"
-						.Execute Replace:=wdReplaceAll
-						If .Found Then bFound1 = True
-					Else
-						Set rgFind2 = rgFind.Duplicate
-						Do While rgFind2.Find.Execute( _
-														FindText:="[^13^l][ ,.;:]@", _
-														MatchWildcards:=True, Wrap:=wdFindStop)
-							rgFind2.Collapse wdCollapseStart
-							rgFind2.Move wdCharacter, 1
-							Do While rgFind2.Characters.Last = " " _
-									Or rgFind2.Characters.Last = "," _
-									Or rgFind2.Characters.Last = "." _
-									Or rgFind2.Characters.Last = ";" _
-									Or rgFind2.Characters.Last = ":"
-								If rgFind2.Delete = 0 Then Exit Do
-							Loop
-							rgFind2.EndOf wdStory, wdExtend
+					rgStory.Find.Text = "([^13^l])[ ,.;:]@"
+					rgStory.Find.Execute Replace:=wdReplaceAll
+					If rgStory.Find.Found Then bFound1 = True
+				Else
+					Set rgFind = rgStory.Duplicate
+					Do While rgFind.Find.Execute( _
+								FindText:=" @[^13^l,.;:\]\)\}]", _
+								MatchWildcards:=True, _
+								Wrap:=wdFindStop)
+						Do While rgFind.Characters.First = " "
+							rgFind.Collapse wdCollapseStart
+							rgFind.Delete
 						Loop
-					End If
-				End With
+						rgFind.EndOf wdStory, wdExtend
+					Loop
 
-				If iStory = 5 And Not bFound1 And Not rgFind.NextStoryRange Is Nothing Then
-					Set rgFind = rgFind.NextStoryRange
-					With rgFind.Find
-						.ClearFormatting
-						.Replacement.ClearFormatting
-						.Forward = True
-						.Wrap = wdFindContinue
-						.Format = False
-						.MatchCase = False
-						.MatchWholeWord = False
-						.MatchAllWordForms = False
-						.MatchSoundsLike = False
-						.MatchWildcards = True
-					End With
-					bFound1 = True
+					Set rgFind = rgStory.Duplicate
+					Do While rgFind.Find.Execute( _
+								FindText:="[^13^l][ ,.;:]@", _
+								MatchWildcards:=True, _
+								Wrap:=wdFindStop)
+						rgFind.Collapse wdCollapseStart
+						rgFind.Move wdCharacter, 1
+						Do While rgFind.Characters.Last = " " _
+								Or rgFind.Characters.Last = "," _
+								Or rgFind.Characters.Last = "." _
+								Or rgFind.Characters.Last = ";" _
+								Or rgFind.Characters.Last = ":"
+							If rgFind.Delete = 0 Then Exit Do
+						Loop
+						rgFind.EndOf wdStory, wdExtend
+					Loop
 				End If
 			Loop While bFound1
-		Else
-			On Error GoTo 0
-		End If
-	Next iStory
+			Set rgStory = rgStory.NextStoryRange
+		Loop Until rgStory Is Nothing
+		If Not rgArg Is Nothing Then Exit Sub
+	Next rgStory
 End Sub
 
-Sub CleanEmptyParagraphs(dcArgument As Document, Optional ByVal iStory As Integer = 0, _
-						Optional ByVal bBreakLines As Boolean = False)
+Sub CleanEmptyParagraphs(rgArg As Range, _
+						Optional ByVal bBreakLines As Boolean = False, _
+						Optional dcArg As document)
 ' Deletes empty paragraphs
 ' Args:
-	' iStory: defines the storyranges that will be cleaned
-		' All (1 to 5)		0
-		' wdMainTextStory	1
-		' wdFootnotesStory	2
-		' wdEndnotesStory	3
-		' wdCommentsStory	4
-		' wdTextFrameStory	5
+	' rgArg: the range that will be cleaned. If Nothing it will iterate over
+		' all the storyranges of the document
 	' bBreakLines: manual break lines get converted to paragraph marks
 '
+	Dim bAutoFit As Boolean, bFound As Boolean, bWrap As Boolean
 	Dim rgStory As Range, rgFind As Range, rgBibliography As Range
 	Dim tbCurrent As Table
 	Dim cllCurrentCell As Cell
-	Dim bAutoFit As Boolean, bFound As Boolean, bWrap As Boolean
-	Dim iMaxCount As Integer
 
-	If iStory < 0 Or iStory > 5 Then
-		Err.Raise Number:=514, Description:="Argument out of range it must be between 0 and 5"
-	ElseIf iStory = 0 Then
-		iStory = 1
-		iMaxCount = 5
-	Else
-		iMaxCount = iStory
-	End If
+	If rgArg Is Nothing And dcArg Is Nothing Then Err.Raise 516 "There is no target range"
+	If dcArg Is Nothing Then Set dcArg = rgFind.Parent
 
-	For iStory = iStory To iMaxCount Step 1
-		On Error Resume Next
-		Set rgStory = dcArgument.StoryRanges(iStory)
-		If Err.Number = 0 Then
-			On Error GoTo 0
+	For Each rgStory In dcArg.StoryRanges
+		If Not rgArg Is Nothing Then Set rgStory = rgArg.Duplicate
+		Do
 			Do
-				If bBreakLines Then
-					With rgStory.Find
-						.ClearFormatting
-						.Replacement.ClearFormatting
-						.Forward = True
-						.Format = False
-						.MatchCase = False
-						.MatchWholeWord = False
-						.MatchAllWordForms = False
-						.MatchSoundsLike = False
-						.MatchWildcards = False
+				bFound = False
+
+				With rgStory.Find
+					.ClearFormatting
+					.Replacement.ClearFormatting
+					.Forward = True
+					.Format = False
+					.Wrap = wdFindStop
+					.MatchCase = False
+					.MatchWholeWord = False
+					.MatchAllWordForms = False
+					.MatchSoundsLike = False
+					.MatchWildcards = False
+					If bBreakLines Then
 						.Text = "^l"
 						.Replacement.Text = "^p"
 						.Execute Replace:=wdReplaceAll
-					End With
-				End If
-
-				bFound = False
+					End If
+				End With
 
 				' Deletting first and last paragraphs, if empty
 				Do While rgStory.Paragraphs.First.Range.Text = vbCr
 					If rgStory.Paragraphs.First.Range.Delete = 0 Then Exit Do
 				Loop
 				Do While rgStory.Paragraphs.Last.Range.Text = vbCr 
-					If iStory = 2 Or iStory = 3 Or iStory = 4 Then
+					If rgFind.StoryType = 2 Or rgFind.StoryType = 3 Or rgFind.StoryType = 4 Then
 						If rgStory.Paragraphs.Last.Range.Previous(wdCharacter, 1).Delete = 0 Then Exit Do
 					Else
 						If rgStory.Paragraphs.Last.Range.Delete = 0 Then Exit Do
@@ -818,58 +777,30 @@ Sub CleanEmptyParagraphs(dcArgument As Document, Optional ByVal iStory As Intege
 				' Deletting empty paragraphs related to tables
 				For each tbCurrent In rgStory.Tables
 					' Check if the table is part of a field (it can get bugged)
-					If Not RangeInField(dcArgument, tbCurrent.Range) Then
+					If Not RangeInField(dcArg, tbCurrent.Range) Then
 						bAutoFit = tbCurrent.AllowAutoFit
 						tbCurrent.AllowAutoFit = False
 						bWrap = tbCurrent.Rows.WrapAroundText
 						tbCurrent.Rows.WrapAroundText = False
 						
 						' Deletting empty paragraphs before tables
-						Do
-							If tbCurrent.Range.Start <> 0 Then
-								Set rgFind = tbCurrent.Range.Previous(wdParagraph,1)
-								If rgFind.Text = vbCr Then
-									If rgFind.Start = 0 Then
-										If rgFind.Delete = 0 Then Exit Do
-										Exit Do
-									Else
-										If rgFind.Previous(wdParagraph, 1).Tables.Count = 0 Then
-											If rgFind.Delete = 0 Then Exit Do
-											Set rgFind = tbCurrent.Range.Previous(wdParagraph,1)
-										Else
-											Exit Do
-										End If
-									End If
-								Else
-									Exit Do
-								End If
-							Else
-								Exit Do
+						Do While tbCurrent.Range.Start <> 0
+							Set rgFind = tbCurrent.Range.Previous(wdParagraph,1)
+							If rgFind.Text <> vbCr Then Exit Do
+							If rgFind.Start <> 0 Then
+								If rgFind.Previous(wdParagraph, 1).Tables.Count > 0 Then Exit Do
 							End If
+							If rgFind.Delete = 0 Then Exit Do
 						Loop
 
 						' Deletting empty paragraphs after tables
-						Do
-							If tbCurrent.Range.End <> rgStory.End Then
-								Set rgFind = tbCurrent.Range.Next(wdParagraph,1)
-								If rgFind.Text = vbCr Then
-									If rgFind.End <> rgStory.End Then
-										If rgFind.Next(wdParagraph, 1).Tables.Count = 0 Then
-											If rgFind.Delete = 0 Then Exit Do
-											Set rgFind = tbCurrent.Range.Next(wdParagraph,1)
-										Else
-											Exit Do
-										End If
-									Else
-										If rgFind.Delete = 0 Then Exit Do
-										Exit Do
-									End If
-								Else
-									Exit Do
-								End If
-							Else
-								Exit Do
+						Do While tbCurrent.Range.End <> rgStory.End
+							Set rgFind = tbCurrent.Range.Next(wdParagraph,1)
+							If rgFind.Text <> vbCr Then Exit Do
+							If rgFind.End <> rgStory.End Then
+								If rgFind.Next(wdParagraph, 1).Tables.Count > 0 Then Exit Do
 							End If
+							If rgFind.Delete = 0 Then Exit Do
 						Loop
 
 						' Deletting empty paragraphs inside non empty cell tables
@@ -892,62 +823,17 @@ Sub CleanEmptyParagraphs(dcArgument As Document, Optional ByVal iStory As Intege
 					End If
 				Next tbCurrent
 
-				With rgStory.Find
-					.ClearFormatting
-					.Replacement.ClearFormatting
-					.Forward = True
-					.Wrap = wdFindStop
-					.Format = False
-					.MatchCase = False
-					.MatchWholeWord = False
-					.MatchAllWordForms = False
-					.MatchSoundsLike = False
-					.MatchWildcards = True
-				End With
-
-				If iStory = 2 Or iStory = 3 Or iStory = 4 Then
+				If rgStory.StoryType > 1 Or rgStory.StoryType < 5 Then
 					Do
 						bFound = False
 						Set rgFind = rgStory.Duplicate
-						With rgFind.Find
-							.ClearFormatting
-							.Replacement.ClearFormatting
-							.Forward = True
-							.Wrap = wdFindStop
-							.Format = False
-							.MatchCase = False
-							.MatchWholeWord = False
-							.MatchAllWordForms = False
-							.MatchSoundsLike = False
-							.MatchWildcards = True
-							' If iStory = 4 Then .Text = "[^13^l]{2;}" Else .Text = "[^13^l]@^13^2"
-							.Text = "[^13^l]{2;}"
-						End With
-						If rgFind.Find.Execute Then
-							' ------------------- 1st version
-							' If iStory = 4 Then
-							' 	If Len(rgFind) <= 2 Then rgFind.Collapse wdCollapseStart
-							' 	If rgFind.Delete <> 0 Then bFound = True
-							' ElseIf rgFind.End <> 0 Then
-							' 	rgFind.MoveEnd wdCharacter, -2
-							' 	If rgFind.Delete <> 0 Then bFound = True
-							' End If
-							' ------------------- 2nd version (no loops, unlike 3rd version)
-							If Len(rgFind) = 2 Then
-								rgFind.Collapse wdCollapseStart
-								If rgFind.Delete <> 0 Then bFound = True
-							Else
-								If rgFind.Delete <> 0 Then
-									rgFind.Collapse wdCollapseStart
-									If rgFind.Delete <> 0 Then bFound = True
-								End If
-							End If
-							' ------------------- 3rd version
-							' bFound = True
-							' rgFind.Collapse wdCollapseStart
-							' Do While rgFind.Next(wdCharacter, 1).Text = vbCr
-							'     If rgFind.Delete = 0 Then Exit Do
-							' Loop
+						If rgFind.Find.Execute( _
+							FindText:="[^13^l]{2;}", _
+							MatchWildcards:=True) _
+						Then
+							If Len(rgFind) > 2 Then rgFind.Delete
+							rgFind.Collapse wdCollapseStart
+							If rgFind.Delete <> 0 Then bFound = True
 						End If
 					Loop While bFound
 				End If
@@ -962,28 +848,11 @@ Sub CleanEmptyParagraphs(dcArgument As Document, Optional ByVal iStory As Intege
 					.Text = "(^l)^13"
 					If .Execute(Replace:=wdReplaceAll) Then bFound = True
 				End With
-
-				If iStory = 5 And Not bFound And Not rgStory.NextStoryRange Is Nothing Then
-					Set rgStory = rgStory.NextStoryRange
-					With rgStory.Find
-						.ClearFormatting
-						.Replacement.ClearFormatting
-						.Forward = True
-						.Wrap = wdFindContinue
-						.Format = False
-						.MatchCase = False
-						.MatchWholeWord = False
-						.MatchAllWordForms = False
-						.MatchSoundsLike = False
-						.MatchWildcards = True
-					End With
-					bFound = True
-				End If
 			Loop While bFound
-		Else
-			On Error GoTo 0
-		End If
-	Next iStory
+			Set rgFind = rgFind.NextStoryRange
+		Loop Until rgFind Is Nothing
+		If Not rgArg Is Nothing Then Exit Sub
+	Next rgFind
 End Sub
 
 
