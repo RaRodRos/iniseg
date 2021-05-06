@@ -923,21 +923,19 @@ End Sub
 Sub ParrafosConversionStory(dcArgument As Document)
 ' Conversion de Word impreso a formato para Storyline
 '
-	Dim iLibro(5) As Integer, iStory(5) As Integer, i As Integer
+	Dim iLibro(3) As Integer, iStory(3) As Integer, i As Integer
 	Dim rgFind As Range
 	Dim stLibro As String, stStory As String
 
 	iLibro(0) = 4
 	iLibro(1) = 5
-	iLibro(2) = 6
-	iLibro(3) = 8
-	iLibro(4) = 11
+	iLibro(2) = 8
+	iLibro(3) = 11
 
 	iStory(0) = 2
 	iStory(1) = 4
 	iStory(2) = 6
-	iStory(3) = 6
-	iStory(4) = 8
+	iStory(3) = 8
 
 	' Cambio del tamaño de Titulo 2 de 16 a 17
 	With dcArgument.Styles(wdstyleheading2).Font
@@ -984,7 +982,7 @@ Sub ParrafosConversionStory(dcArgument As Document)
 	For i = 0 To uBound(iLibro)
 		stLibro = "iniseg_separacion" & iLibro(i)
 		stStory = "iniseg_separacion" & iStory(i)
-		If RaMacros.StyleSubstitution(dcArgument, stLibro, stStory, True) = 2 Then
+		If RaMacros.StyleSubstitution(dcArgument, stLibro, stStory, False) = 2 Then
 			dcArgument.Styles(stLibro).Font.Size = iStory(i)
 			dcArgument.Styles(stLibro).NameLocal = stStory
 		End If
