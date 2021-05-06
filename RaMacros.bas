@@ -248,15 +248,14 @@ End Function
 
 
 
-Sub StylesNoDirectFormatting(dcArgument As Document, _
-							Optional rgArgument As Range, _
+Sub StylesNoDirectFormatting(dcArg As Document, _
+							Optional rgArg As Range, _
 							Optional ByVal bUnderlineDelete As Boolean)
 ' Converts bold and italic direct style formatting into Strong and Emphasis
 ' Args:
-	' rgArgument: if nothing the sub works over all the story ranges
+	' rgArg: if nothing the sub works over all the story ranges
 	' bUnderlineDelete: if true all underlined text reverts to normal
 '
-	Dim bAllStories As Boolean
 	Dim iCounter As Integer
 	Dim rgFind As Range
 	Dim stStylesToApply(13) As WdBuiltinStyle
@@ -276,11 +275,8 @@ Sub StylesNoDirectFormatting(dcArgument As Document, _
 	stStylesToApply(12) = wdStyleListNumber2
 	stStylesToApply(13) = wdStyleListNumber3
 
-	For Each rgFind In dcArgument.StoryRanges
-		If Not rgArgument Is Nothing Then
-			Set rgFind = rgArgument
-			bAllStories = True
-		End If
+	For Each rgFind In dcArg.StoryRanges
+		If Not rgArg Is Nothing Then Set rgFind = rgArg
 		Do
 			With rgFind.Find
 				.ClearFormatting
@@ -326,6 +322,7 @@ Sub StylesNoDirectFormatting(dcArgument As Document, _
 						.Font.Underline = True
 						.Replacement.Font.Underline = False
 						.Execute Replace:=wdReplaceAll
+						RaMacros.HyperlinksFormatting dcArg, 1 ' Aquí hay que meter el rango actual, cuando se refactorice HyperlinksFormatting
 					End If
 				Next iCounter
 
@@ -335,9 +332,9 @@ Sub StylesNoDirectFormatting(dcArgument As Document, _
 				.Execute Replace:=wdReplaceAll
 			End With
 
-			If bAllStories Then Exit For
 			Set rgFind = rgFind.NextStoryRange
 		Loop Until rgFind Is Nothing
+		If Not rgArg Is Nothing Then Exit For
 	Next rgFind
 	RaMacros.FindAndReplaceClearParameters
 End Sub
@@ -347,7 +344,7 @@ End Sub
 
 
 
-Sub CopySecurity(dcArgument As Document, _
+Sub CopySecurity(dcArg As Document, _
 				Optional ByVal stPrefix As String, _
 				Optional ByVal stSuffix As String)
 ' Copies dcArgument adding the suffix and/or prefix passed as arguments. In case
