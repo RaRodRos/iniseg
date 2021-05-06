@@ -983,8 +983,15 @@ Sub ParrafosConversionStory(dcArgument As Document)
 		stLibro = "iniseg_separacion" & iLibro(i)
 		stStory = "iniseg_separacion" & iStory(i)
 		If RaMacros.StyleSubstitution(dcArgument, stLibro, stStory, False) = 2 Then
-			dcArgument.Styles(stLibro).Font.Size = iStory(i)
-			dcArgument.Styles(stLibro).NameLocal = stStory
+			dcArgument.Styles.Add stStory, wdStyleTypeParagraph
+			With dcArgument.Styles(stStory)
+				.BaseStyle = dcArgument.Styles(stLibro)
+				.Font.Size = iStory(i)
+			End With
+			dcArgument.Styles(stStory).Font.Size = iStory(i)
+			If RaMacros.StyleSubstitution(dcArgument, stLibro, stStory, False) <> 0 Then
+				Debug.Print "Error creando sustituyendo " & stLibro & " por " & stStory
+			End If
 		End If
 	Next i
 End Sub
