@@ -271,7 +271,7 @@ Function ConversionLibro(dcLibro As Document, _
 	Debug.Print "7/" & iUltima & " - Archivo libro: formateando comillas"
 	Iniseg.ComillasFormato dcLibro
 	Debug.Print "8/" & iUltima & " - Archivo libro: sustituyendo formatos directos por estilos"
-	RaMacros.StylesNoDirectFormatting dcLibro
+	RaMacros.StylesNoDirectFormatting dcLibro, Nothing, True
 	Debug.Print "9/" & iUltima & " - Archivo libro: Aplicando estilo correcto a hipervínculos"
 	RaMacros.HyperlinksFormatting dcLibro, 1, 0
 	Debug.Print "10.1/" & iUltima & " - Archivo libro: Aplicando estilo correcto a notas al pie"
@@ -1225,7 +1225,7 @@ Sub NotasPieExportar(dcArgument As Document, _
 			RaMacros.CleanBasic dcNotas.Content, True, True, dcNotas
 			Iniseg.AutoFormateo dcNotas
 			RaMacros.HyperlinksFormatting dcNotas, 3, 1
-			RaMacros.StylesNoDirectFormatting dcNotas
+			RaMacros.StylesNoDirectFormatting dcNotas, Nothing, True
 			dcNotas.Content.Select
 			Selection.ClearCharacterDirectFormatting
 			Selection.ClearParagraphDirectFormatting
