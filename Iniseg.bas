@@ -238,7 +238,7 @@ Function ConversionLibro(dcLibro As Document, _
 '
 	Dim iContador As Integer, iUltima As Integer
 
-	If Not (iNotasContinuas = 0 Or iNotasContinuas = 3 Or iNotasContinuas = 2) Then
+	If Not (iNotasContinuas = 0 Or iNotasContinuas = 1 Or iNotasContinuas = 3) Then
 		If iNotasContinuas = -501 Then
 			iNotasContinuas = Iniseg.SetNotasOpciones(dcLibro, 0)
 		Else
