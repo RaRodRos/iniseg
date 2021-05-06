@@ -755,10 +755,55 @@ End Sub
 Sub ParrafosSeparacionLibro(dcArgument As Document)
 ' Inserta párrafos vacíos de separación
 '
+	Dim bFound As Boolean
 	Dim lContador As Long
 	Dim iStory As Integer, iSize As Integer, iSizeNext As Integer
 	Dim rgStory As Range
 	Dim pCurrent As Paragraph
+
+	With dcArgument.Content.Find
+		.ClearFormatting
+		.Replacement.ClearFormatting
+		.Forward = True
+		.Format = False
+		.MatchCase = False
+		.MatchWholeWord = False
+		.MatchWildcards = True
+		.MatchSoundsLike = False
+		.MatchAllWordForms = False
+		' Elimina saltos manuales de página (innecesarios con los saltos de sección y revisión posteriores)
+		.Text = "(^13)^m^13"
+		.Replacement.Text = "\1"
+		.Execute Replace:=wdReplaceAll
+		.Text = "^m"
+		.Replacement.Text = ""
+		.Execute Replace:=wdReplaceAll
+
+		' Mete un salto de línea en los títulos 1, entre "Tema N" y el nombre del tema
+		.Format = True
+		.style = wdstyleheading1
+		.Text = "^13(*^13)"
+		.Replacement.Text = "^l\1"
+		.Execute Replace:=wdReplaceAll
+		.Text = "([tT][eE][mM][aA] [0-9]{1;2})"
+		.Replacement.Text = "\1 "
+		.Execute Replace:=wdReplaceAll
+		.Text = "([tT][eE][mM][aA] [0-9]{1;2}) @"
+		.Replacement.Text = "\1^l^l"
+		.Execute Replace:=wdReplaceAll
+		' Formatea los saltos de línea y les da tamaño 10
+		.Replacement.ClearFormatting
+		.Replacement.Font.Size = 10
+		.Text = "[^13^l]{2;}"
+		.Replacement.Text = "^l^l"
+		.Execute Replace:=wdReplaceAll
+		' Elimina signos de puntuación que pudiera haber tras el número de tema
+		.Replacement.ClearFormatting
+		.Text = "[^l][,.;:]"
+		.Replacement.Text = "\1"
+		.Execute Replace:=wdReplaceAll
+	End With
+	RaMacros.FindAndReplaceClearParameters
 
 	For iStory = 1 To 5 Step 4
 		On Error Resume Next
@@ -767,45 +812,6 @@ Sub ParrafosSeparacionLibro(dcArgument As Document)
 			On Error GoTo 0
 			' El loop es para que pase por todos los textframe
 			Do
-				With rgStory.Find
-					.ClearFormatting
-					.Replacement.ClearFormatting
-					.Forward = True
-					.Format = False
-					.MatchCase = False
-					.MatchWholeWord = False
-					.MatchWildcards = True
-					.MatchSoundsLike = False
-					.MatchAllWordForms = False
-					' Elimina saltos manuales de página (innecesarios con los saltos de sección y revisión posteriores)
-					.Text = "(^13)^m^13"
-					.Replacement.Text = "\1"
-					.Execute Replace:=wdReplaceAll
-					.Text = "^m"
-					.Replacement.Text = ""
-					.Execute Replace:=wdReplaceAll
-
-					' Mete un salto de línea en los títulos 1, entre "Tema N" y el nombre del tema
-					.Format = True
-					.style = wdstyleheading1
-					.Text = "^13(*^13)"
-					.Replacement.Text = "^l\1"
-					.Execute Replace:=wdReplaceAll
-					.Text = "([tT][eE][mM][aA] [0-9]{1;2})"
-					.Replacement.Text = "\1 "
-					.Execute Replace:=wdReplaceAll
-					.Text = "([tT][eE][mM][aA] [0-9]{1;2}) @"
-					.Replacement.Text = "\1^l^l"
-					.Execute Replace:=wdReplaceAll
-					' Formatea los saltos de línea y les da tamaño 10
-					.Replacement.ClearFormatting
-					.Replacement.Font.Size = 10
-					.Text = "[^13^l]{2;}"
-					.Replacement.Text = "^l^l"
-					.Execute Replace:=wdReplaceAll
-				End With
-				RaMacros.FindAndReplaceClearParameters
-
 				For lContador = rgStory.Paragraphs.Count - 1 To 1 Step -1
 					Set pCurrent = rgStory.Paragraphs(lContador)
 					' No se añaden párrafos de separación a los pies de imagen o el interior de tablas
