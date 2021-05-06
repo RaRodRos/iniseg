@@ -565,6 +565,10 @@ Sub CleanBasic(rgArg As Range, _
 	' bBreakLines: manual break lines get converted to paragraph marks
 	' dcArg: the target document. Necessary in case rgArg is Nothing
 '
+	If rgArg Is Nothing And dcArg Is Nothing Then Err.Raise 516, "There is no target range"
+	If dcArg Is Nothing Then Set dcArg = rgFind.Parent
+	If rgArg.Parent <> dcArg Then Err.Raise 517, "rgArg is not in dcArg"
+
 	RaMacros.CleanSpaces rgArg, bTabs, dcArg
 	RaMacros.CleanEmptyParagraphs rgArg, bBreakLines, dcArg
 	RaMacros.FindAndReplaceClearParameters
@@ -588,8 +592,9 @@ Sub CleanSpaces(rgArg As Range, _
 	Dim rgStory As Range, rgFind As Range
 	Dim tbCurrent As Table
 
-	If rgArg Is Nothing And dcArg Is Nothing Then Err.Raise 516 "There is no target range"
+	If rgArg Is Nothing And dcArg Is Nothing Then Err.Raise 516, "There is no target range"
 	If dcArg Is Nothing Then Set dcArg = rgFind.Parent
+	If rgArg.Parent <> dcArg Then Err.Raise 517, "rgArg is not in dcArg"
 
 	bFound1 = False
 	bFound2 = False
@@ -738,8 +743,9 @@ Sub CleanEmptyParagraphs(rgArg As Range, _
 	Dim tbCurrent As Table
 	Dim cllCurrentCell As Cell
 
-	If rgArg Is Nothing And dcArg Is Nothing Then Err.Raise 516 "There is no target range"
+	If rgArg Is Nothing And dcArg Is Nothing Then Err.Raise 516, "There is no target range"
 	If dcArg Is Nothing Then Set dcArg = rgFind.Parent
+	If rgArg.Parent <> dcArg Then Err.Raise 517, "rgArg is not in dcArg"
 
 	For Each rgStory In dcArg.StoryRanges
 		If Not rgArg Is Nothing Then Set rgStory = rgArg.Duplicate
