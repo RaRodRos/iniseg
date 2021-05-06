@@ -199,13 +199,14 @@ Function StyleSubstitution(dcArgument As Document, _
 	' 4: stOriginal and stSubstitute are the same
 '
 
+	If stOriginal = stSubstitute Then Exit Function
 	If Not RaMacros.StyleExists(dcArgument, stOriginal) Then
 		StyleSubstitution = 1
 	End If
 	If Not RaMacros.StyleExists(dcArgument, stSubstitute) Then
 		StyleSubstitution = StyleSubstitution + 2
 	End If
-	If StyleSubstitution > 0 Or stOriginal = stOriginal Then Exit Function
+	If StyleSubstitution > 0 Then Exit Function
 
 	Dim rgStory As Range
 
