@@ -79,7 +79,7 @@ Sub Iniseg1Limpieza()
 	Debug.Print "5.1/14 - Limpiando hiperenlaces para que solo figure su dominio"
 	RaMacros.HyperlinksFormatting dcOriginalFile, 2, 0
 	Debug.Print "5.2/14 - Limpiando espacios"
-	RaMacros.CleanSpaces dcOriginalFile, 0, True
+	RaMacros.CleanSpaces Nothing, True, dcOriginalFile
 
 	Debug.Print "6/14 - Borrando encabezados y pies de página"
 	RaMacros.HeadersFootersRemove dcOriginalFile
@@ -251,7 +251,7 @@ Function ConversionLibro(dcLibro As Document, _
 	Debug.Print "1/" & iUltima & " - Archivo libro: haciendo copia de seguridad (1)"
 	RaMacros.SaveAsNewFile dcLibro, "1-", "", False, True
 	Debug.Print "2/" & iUltima & " - Archivo libro: limpieza básica"
-	RaMacros.CleanBasic dcLibro, 0, True, True
+	RaMacros.CleanBasic Nothing, True, True, dcLibro
 
 	Debug.Print "3/" & iUltima & " - Archivo libro: títulos sin puntuación"
 	RaMacros.HeadingsNoPunctuation dcLibro
@@ -284,7 +284,7 @@ Function ConversionLibro(dcLibro As Document, _
 	End If
 	Debug.Print "11/" & iUltima & " - Archivo libro: corrigiendo limpieza e interlineado"
 	Iniseg.InterlineadoCorregido dcLibro
-	RaMacros.CleanBasic dcLibro, 0, False, True
+	RaMacros.CleanBasic Nothing, False, True, dcLibro
 	' Lo siguiente es demasiado agresivo, devuelve numeraciones y cambia cosas sin ton ni son
 	' dcLibro.Content.Select
 	' Selection.ClearCharacterDirectFormatting
@@ -1222,7 +1222,7 @@ Sub NotasPieExportar(dcArgument As Document, _
 		
 		If Not dcNotas Is Nothing And (bDivide Or scCurrent.Index = dcArgument.Sections.Count) Then
 			dcNotas.ListParagraphs(1).Range.ListFormat.ListTemplate.ListLevels(1).StartAt = lStartingFootnote
-			RaMacros.CleanBasic dcNotas, 1, True, True
+			RaMacros.CleanBasic dcNotas.Content, True, True, dcNotas
 			Iniseg.AutoFormateo dcNotas
 			RaMacros.HyperlinksFormatting dcNotas, 3, 1
 			RaMacros.StylesNoDirectFormatting dcNotas
@@ -1401,7 +1401,7 @@ End Sub
 Sub ConversionAutomaticaLibro(dcArgument As Document)
 ' Convierte automáticamente los párrafos a los estilos de la plantilla
 '
-	RaMacros.CleanBasic dcArgument, 0, True, True
+	RaMacros.CleanBasic Nothing, True, True, dcArgument
 	With dcArgument.Content.Find
 		.ClearFormatting
 		.Replacement.ClearFormatting
