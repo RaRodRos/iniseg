@@ -563,6 +563,7 @@ Sub CleanBasic(rgArg As Range, _
 		' all the storyranges of the document
 	' bTabs: if True Tabs are substituted for a single space
 	' bBreakLines: manual break lines get converted to paragraph marks
+	' dcArg: the target document. Necessary in case rgArg is Nothing
 '
 	RaMacros.CleanSpaces rgArg, bTabs, dcArg
 	RaMacros.CleanEmptyParagraphs rgArg, bBreakLines, dcArg
@@ -581,6 +582,7 @@ Sub CleanSpaces(rgArg As Range, _
 	' rgArg: the range that will be cleaned. If Nothing it will iterate over
 		' all the storyranges of the document
 	' bTabs: if True Tabs are substituted for a single space
+	' dcArg: the target document. Necessary in case rgArg is Nothing
 '
 	Dim bFound1 As Boolean, bFound2 As Boolean
 	Dim rgStory As Range, rgFind As Range
@@ -729,6 +731,7 @@ Sub CleanEmptyParagraphs(rgArg As Range, _
 	' rgArg: the range that will be cleaned. If Nothing it will iterate over
 		' all the storyranges of the document
 	' bBreakLines: manual break lines get converted to paragraph marks
+	' dcArg: the target document. Necessary in case rgArg is Nothing
 '
 	Dim bAutoFit As Boolean, bFound As Boolean, bWrap As Boolean
 	Dim rgStory As Range, rgFind As Range, rgBibliography As Range
