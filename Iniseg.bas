@@ -799,7 +799,7 @@ Sub ParrafosSeparacionLibro(dcArg As Document)
 		.Execute Replace:=wdReplaceAll
 		' Elimina signos de puntuación que pudiera haber tras el número de tema
 		.Replacement.ClearFormatting
-		.Text = "[^l][,.;:]"
+		.Text = "(^l)[,.;:]"
 		.Replacement.Text = "\1"
 		.Execute Replace:=wdReplaceAll
 	End With
