@@ -1,13 +1,13 @@
 ' Attribute VB_Name = "RaMacros"
 Option Explicit
 
-Function RangeInField(dcArg As Document, rgArg As Range) As Boolean
+Function RangeInField(rgArg As Range) As Boolean
 ' Returns true if rgArg is part of a field
 '
 	Dim fcurrent As Field
 	Dim i As Integer
 
-	For Each fCurrent in dcArg.Fields
+	For Each fCurrent in rgArg.Parent.Fields
 		If rgArg.InRange(fCurrent.Result) Then
 			RangeInField = True
 			Exit Function
@@ -604,28 +604,28 @@ Sub CleanSpaces(rgArg As Range, _
 	For Each rgStory In dcArg.StoryRanges
 		If Not rgArg Is Nothing Then Set rgStory = rgArg.Duplicate
 
-		' Deletting first and last characters if necessary
-		Set rgFind = rgStory.Duplicate
-		rgFind.Collapse wdCollapseStart
-		Do While rgStory.Characters.First.Text = " " _
-				Or rgStory.Characters.First.Text = vbTab _
-				Or rgStory.Characters.First.Text = "," _
-				Or rgStory.Characters.First.Text = "." _
-				Or rgStory.Characters.First.Text = ";" _
-				Or rgStory.Characters.First.Text = ":"
-			If rgFind.Delete = 0 Then Exit Do
-		Loop
-		Set rgFind = rgStory.Duplicate
-		rgFind.Collapse wdCollapseEnd
-		rgFind.MoveStart wdCharacter, -1
-		Do While rgFind.Text = " " _
-				Or rgStory.Characters.Last.Text = vbTab
+		' Iterate through storyranges that have more than one story
+		Do Until rgStory Is Nothing
+			' Deletting first and last characters if empty
+			Set rgFind = rgStory.Duplicate
 			rgFind.Collapse wdCollapseStart
-			If rgFind.Delete = 0 Then Exit Do
+			Do While rgStory.Characters.First.Text = " " _
+					Or rgStory.Characters.First.Text = vbTab _
+					Or rgStory.Characters.First.Text = "," _
+					Or rgStory.Characters.First.Text = "." _
+					Or rgStory.Characters.First.Text = ";" _
+					Or rgStory.Characters.First.Text = ":"
+				If rgFind.Delete = 0 Then Exit Do
+			Loop
+			Set rgFind = rgStory.Duplicate
+			rgFind.Collapse wdCollapseEnd
 			rgFind.MoveStart wdCharacter, -1
-		Loop
+			Do While rgFind.Text = " " Or rgStory.Characters.Last.Text = vbTab
+				rgFind.Collapse wdCollapseStart
+				If rgFind.Delete = 0 Then Exit Do
+				rgFind.MoveStart wdCharacter, -1
+			Loop
 
-		Do
 			With rgStory.Find
 				.ClearFormatting
 				.Replacement.ClearFormatting
@@ -639,8 +639,7 @@ Sub CleanSpaces(rgArg As Range, _
 				.MatchWildcards = True
 			End With
 
-			' This loop is placed to catch the characters the may be shuffling
-			' around because of the cleaning
+			' Looping until no undesired characters are found
 			Do
 				bFound1 = False
 				With rgStory.Find
@@ -725,7 +724,7 @@ Sub CleanSpaces(rgArg As Range, _
 				End If
 			Loop While bFound1
 			Set rgStory = rgStory.NextStoryRange
-		Loop Until rgStory Is Nothing
+		Loop
 		If Not rgArg Is Nothing Then Exit Sub
 	Next rgStory
 End Sub
@@ -753,90 +752,94 @@ Sub CleanEmptyParagraphs(rgArg As Range, _
 
 	For Each rgStory In dcArg.StoryRanges
 		If Not rgArg Is Nothing Then Set rgStory = rgArg.Duplicate
-		Do
+
+		' Iterate through storyranges that have more than one story
+		Do Until rgStory Is Nothing
+			' Deletting first and last paragraphs, if empty
+			Do While rgStory.Paragraphs.First.Range.Text = vbCr _
+					Or rgStory.Paragraphs.First.Range.Text = vbVerticalTab
+				If rgStory.Paragraphs.First.Range.Delete = 0 Then Exit Do
+			Loop
+			Do While rgStory.Paragraphs.First.Range.Text = vbCr _
+					Or rgStory.Paragraphs.First.Range.Text = vbVerticalTab
+				If rgStory.Paragraphs.Last.Range.Previous(wdCharacter, 1).Delete = 0 Then Exit Do
+			Loop
+
+			With rgStory.Find
+				.ClearFormatting
+				.Replacement.ClearFormatting
+				.Forward = True
+				.Format = False
+				.Wrap = wdFindStop
+				.MatchCase = False
+				.MatchWholeWord = False
+				.MatchAllWordForms = False
+				.MatchSoundsLike = False
+				.MatchWildcards = False
+				If bBreakLines Then
+					.Text = "^l"
+					.Replacement.Text = "^p"
+					.Execute Replace:=wdReplaceAll
+				End If
+			End With
+
+			' Deletting empty paragraphs related to tables
+			For each tbCurrent In rgStory.Tables
+				' Check if the table is part of a field (it can get bugged)
+				If Not RangeInField(tbCurrent.Range) Then
+					bAutoFit = tbCurrent.AllowAutoFit
+					tbCurrent.AllowAutoFit = False
+					bWrap = tbCurrent.Rows.WrapAroundText
+					tbCurrent.Rows.WrapAroundText = False
+					
+					' Deletting empty paragraphs before tables
+					Do While tbCurrent.Range.Start <> 0
+						Set rgFind = tbCurrent.Range.Previous(wdParagraph,1)
+						If rgFind.Text <> vbCr And rgFind.Text <> vbVerticalTab Then Exit Do
+						If rgFind.Start <> 0 Then
+							If rgFind.Previous(wdParagraph, 1).Tables.Count > 0 Then Exit Do
+						End If
+						If rgFind.Delete = 0 Then Exit Do
+					Loop
+
+					' Deletting empty paragraphs after tables
+					Do While tbCurrent.Range.End <> rgStory.End
+						Set rgFind = tbCurrent.Range.Next(wdParagraph,1)
+						If rgFind.Text <> vbCr And rgFind.Text <> vbVerticalTab Then Exit Do
+						If rgFind.End <> rgStory.End Then
+							If rgFind.Next(wdParagraph, 1).Tables.Count > 0 Then Exit Do
+						End If
+						If rgFind.Delete = 0 Then Exit Do
+					Loop
+
+					' Deletting empty paragraphs inside non empty cell tables
+					For Each cllCurrentCell In tbCurrent.Range.Cells
+						If Len(cllCurrentCell.Range.Text) > 2 _
+							And (cllCurrentCell.Range.Characters(1).Text = vbCr _
+							Or cllCurrentCell.Range.Characters(1).Text = vbVerticalTab) _
+						Then
+							cllCurrentCell.Range.Characters(1).Delete
+						End If
+
+						If Len(cllCurrentCell.Range.Text) > 2 _
+							And (Asc(Right$(cllCurrentCell.Range.Text, 3)) = vbCr _
+							Or Asc(Right$(cllCurrentCell.Range.Text, 3)) = vbVerticalTab) _
+						Then
+							Set rgFind = cllCurrentCell.Range
+							rgFind.MoveEnd Unit:=wdCharacter, Count:=-1
+							rgFind.Characters.Last.Delete
+						End If
+					Next cllCurrentCell
+
+					tbCurrent.AllowAutoFit = bAutoFit
+					tbCurrent.Rows.WrapAroundText = bWrap
+				End If
+			Next tbCurrent
+
+			' Loop until no empty paragraphs are found
 			Do
 				bFound = False
-
-				With rgStory.Find
-					.ClearFormatting
-					.Replacement.ClearFormatting
-					.Forward = True
-					.Format = False
-					.Wrap = wdFindStop
-					.MatchCase = False
-					.MatchWholeWord = False
-					.MatchAllWordForms = False
-					.MatchSoundsLike = False
-					.MatchWildcards = False
-					If bBreakLines Then
-						.Text = "^l"
-						.Replacement.Text = "^p"
-						.Execute Replace:=wdReplaceAll
-					End If
-				End With
-
-				' Deletting first and last paragraphs, if empty
-				Do While rgStory.Paragraphs.First.Range.Text = vbCr
-					If rgStory.Paragraphs.First.Range.Delete = 0 Then Exit Do
-				Loop
-				Do While rgStory.Paragraphs.Last.Range.Text = vbCr 
-					If rgStory.StoryType = 2 Or rgStory.StoryType = 3 Or rgStory.StoryType = 4 Then
-						If rgStory.Paragraphs.Last.Range.Previous(wdCharacter, 1).Delete = 0 Then Exit Do
-					Else
-						If rgStory.Paragraphs.Last.Range.Delete = 0 Then Exit Do
-					End If
-				Loop
-
-				' Deletting empty paragraphs related to tables
-				For each tbCurrent In rgStory.Tables
-					' Check if the table is part of a field (it can get bugged)
-					If Not RangeInField(dcArg, tbCurrent.Range) Then
-						bAutoFit = tbCurrent.AllowAutoFit
-						tbCurrent.AllowAutoFit = False
-						bWrap = tbCurrent.Rows.WrapAroundText
-						tbCurrent.Rows.WrapAroundText = False
-						
-						' Deletting empty paragraphs before tables
-						Do While tbCurrent.Range.Start <> 0
-							Set rgFind = tbCurrent.Range.Previous(wdParagraph,1)
-							If rgFind.Text <> vbCr Then Exit Do
-							If rgFind.Start <> 0 Then
-								If rgFind.Previous(wdParagraph, 1).Tables.Count > 0 Then Exit Do
-							End If
-							If rgFind.Delete = 0 Then Exit Do
-						Loop
-
-						' Deletting empty paragraphs after tables
-						Do While tbCurrent.Range.End <> rgStory.End
-							Set rgFind = tbCurrent.Range.Next(wdParagraph,1)
-							If rgFind.Text <> vbCr Then Exit Do
-							If rgFind.End <> rgStory.End Then
-								If rgFind.Next(wdParagraph, 1).Tables.Count > 0 Then Exit Do
-							End If
-							If rgFind.Delete = 0 Then Exit Do
-						Loop
-
-						' Deletting empty paragraphs inside non empty cell tables
-						For Each cllCurrentCell In tbCurrent.Range.Cells
-							If Len(cllCurrentCell.Range.Text) > 2 And _
-									cllCurrentCell.Range.Characters(1).Text = vbCr Then
-								cllCurrentCell.Range.Characters(1).Delete
-							End If
-
-							If Len(cllCurrentCell.Range.Text) > 2 And _
-									Asc(Right$(cllCurrentCell.Range.Text, 3)) = 13 Then
-								Set rgFind = cllCurrentCell.Range
-								rgFind.MoveEnd Unit:=wdCharacter, Count:=-1
-								rgFind.Characters.Last.Delete
-							End If
-						Next cllCurrentCell
-
-						tbCurrent.AllowAutoFit = bAutoFit
-						tbCurrent.Rows.WrapAroundText = bWrap
-					End If
-				Next tbCurrent
-
-				If rgStory.StoryType > 1 Or rgStory.StoryType < 5 Then
+				If rgStory.StoryType > 1 And rgStory.StoryType < 5 Then
 					Do
 						bFound = False
 						Set rgFind = rgStory.Duplicate
@@ -849,9 +852,9 @@ Sub CleanEmptyParagraphs(rgArg As Range, _
 							If rgFind.Delete <> 0 Then bFound = True
 						End If
 					Loop While bFound
+					bFound = False
 				End If
 
-				bFound = False
 				With rgStory.Find
 					.Replacement.Text = "\1"
 					.Text = "([^13^l]){2;}"
@@ -862,8 +865,8 @@ Sub CleanEmptyParagraphs(rgArg As Range, _
 					If .Execute(Replace:=wdReplaceAll) Then bFound = True
 				End With
 			Loop While bFound
-			Set rgFind = rgFind.NextStoryRange
-		Loop Until rgFind Is Nothing
+			Set rgStory = rgFind.NextStoryRange
+		Loop
 		If Not rgArg Is Nothing Then Exit Sub
 	Next rgStory
 End Sub

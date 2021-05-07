@@ -815,7 +815,7 @@ Sub ParrafosSeparacionLibro(dcArg As Document)
 				For lContador = rgStory.Paragraphs.Count - 1 To 1 Step -1
 					Set pCurrent = rgStory.Paragraphs(lContador)
 					' No se añaden párrafos de separación a los pies de imagen o el interior de tablas
-					If pCurrent.Range.Tables.Count = 0 And Not RaMacros.RangeInField(dcArg, pCurrent.Range) Then
+					If pCurrent.Range.Tables.Count = 0 And Not RaMacros.RangeInField(pCurrent.Range) Then
 						If pCurrent.Next.Range.Tables.Count = 0 Then
 							If Not (pCurrent.style = dcArg.styles(wdStyleCaption) _
 								And pCurrent.Next.style = pCurrent.style) _
