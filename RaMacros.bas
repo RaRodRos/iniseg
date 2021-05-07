@@ -1,7 +1,7 @@
 ' Attribute VB_Name = "RaMacros"
 Option Explicit
 
-Function RangeInField(rgArg As Range) As Boolean
+Function RangeIsField(rgArg As Range) As Boolean
 ' Returns true if rgArg is part of a field
 '
 	Dim fcurrent As Field
@@ -9,11 +9,11 @@ Function RangeInField(rgArg As Range) As Boolean
 
 	For Each fCurrent in rgArg.Parent.Fields
 		If rgArg.InRange(fCurrent.Result) Then
-			RangeInField = True
+			RangeIsField = True
 			Exit Function
 		End If
 	Next fCurrent
-	RangeInField = False
+	RangeIsField = False
 End Function
 
 
@@ -786,7 +786,7 @@ Sub CleanEmptyParagraphs(rgArg As Range, _
 			' Deletting empty paragraphs related to tables
 			For each tbCurrent In rgStory.Tables
 				' Check if the table is part of a field (it can get bugged)
-				If Not RangeInField(tbCurrent.Range) Then
+				If Not RangeIsField(tbCurrent.Range) Then
 					bAutoFit = tbCurrent.AllowAutoFit
 					tbCurrent.AllowAutoFit = False
 					bWrap = tbCurrent.Rows.WrapAroundText
