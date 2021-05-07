@@ -439,7 +439,7 @@ End Function
 
 
 
-Function SetNotasOpciones(dcArgument As Document, iPregunta As Integer)
+Function SetNotasOpciones(dcArg As Document, iPregunta As Integer)
 ' Pregunta para adjudicar valores a las variables para las notas al pie
 ' Args:
 	' iPregunta: escoge qué pregunta hacer
@@ -447,7 +447,7 @@ Function SetNotasOpciones(dcArgument As Document, iPregunta As Integer)
 		' 1: bNotasExportar (boolean)
 		' 2: bNotasSeparadas (boolean)
 '
-	If dcArgument.Footnotes.Count < 1 Then
+	If dcArg.Footnotes.Count < 1 Then
 		SetNotasOpciones = False
 		If iPregunta = 0 Then SetNotasOpciones = 3
 		Exit Function
@@ -481,8 +481,8 @@ End Function
 
 
 
-Sub HeaderCopy(dcOriginalDocument As Document, _
-				dcObjectiveDocument As Document, _
+Sub HeaderCopy(dcOriginal As Document, _
+				dcTarget As Document, _
 				Optional ByVal iHeaderOption As Integer = 3)
 ' Copia los encabezados de un archivo a otro según la opción que se le pase:
 	' iHeaderOption = 1 => copia el encabezado de pág. impar en todos los encabezados
@@ -498,21 +498,21 @@ Sub HeaderCopy(dcOriginalDocument As Document, _
 	Dim stOriginalHeader As String, iHeader As Integer
 
 	If iHeaderOption = 1 Then
-		stOriginalHeader = Replace(dcOriginalDocument.Sections(1).Headers(1).Range.Text, vbLf, "")
+		stOriginalHeader = Replace(dcOriginal.Sections(1).Headers(1).Range.Text, vbLf, "")
 		stOriginalHeader = Trim(Replace(stOriginalHeader, vbCr, ""))
 	End If
 
 	For iHeader = 1 To 3
 		If iHeaderOption > 1 Then
 			If iHeaderOption = 2 And iHeader = 2 Then
-				stOriginalHeader = Replace(dcOriginalDocument.Sections(1).Headers(1).Range.Text, vbLf, "")
+				stOriginalHeader = Replace(dcOriginal.Sections(1).Headers(1).Range.Text, vbLf, "")
 			Else
-				stOriginalHeader = Replace(dcOriginalDocument.Sections(1).Headers(iHeader).Range.Text, vbLf, "")
+				stOriginalHeader = Replace(dcOriginal.Sections(1).Headers(iHeader).Range.Text, vbLf, "")
 			End If
 			stOriginalHeader = Trim(Replace(stOriginalHeader, vbCr, ""))
 		End If
 
-		With dcObjectiveDocument.Sections(1).Headers(iHeader).Range.Find
+		With dcTarget.Sections(1).Headers(iHeader).Range.Find
 			.ClearFormatting
 			.Replacement.ClearFormatting
 			.Forward = True
@@ -528,8 +528,8 @@ Sub HeaderCopy(dcOriginalDocument As Document, _
 			.Execute Replace:=wdReplaceOne
 		End With
 
-		dcObjectiveDocument.Sections(1).Headers(iHeader).Range.Case = wdLowerCase
-		dcObjectiveDocument.Sections(1).Headers(iHeader).Range.Case = wdTitleWord
+		dcTarget.Sections(1).Headers(iHeader).Range.Case = wdLowerCase
+		dcTarget.Sections(1).Headers(iHeader).Range.Case = wdTitleWord
 	Next iHeader
 End Sub
 
@@ -537,7 +537,7 @@ End Sub
 
 
 
-Sub AutoFormateo(dcArgument As Document)
+Sub AutoFormateo(dcArg As Document)
 	' Convierte las URL de texto plano a hiperenlaces
 	' Convierte los símbolos en viñeta
 	' Da estilo de lista a las listas
@@ -585,7 +585,7 @@ Sub AutoFormateo(dcArgument As Document)
 		.AutoFormatReplaceQuotes = False
 		.AutoFormatReplaceSymbols = True
 
-		dcArgument.Range.AutoFormat
+		dcArg.Range.AutoFormat
 
 		.AutoFormatApplyBulletedLists = optAutoformatValores(0)
 		.AutoFormatApplyFirstIndents = optAutoformatValores(1)
@@ -610,7 +610,7 @@ End Sub
 
 
 
-Sub ComillasFormato(dcArgument As Document)
+Sub ComillasFormato(dcArg As Document)
 ' Quita la negrita y cursiva de las comillas y las pasa a curvadas
 '
 	Dim bSmtQt As Boolean
@@ -618,7 +618,7 @@ Sub ComillasFormato(dcArgument As Document)
 	Options.AutoFormatAsYouTypeReplaceQuotes = True
 	RaMacros.FindAndReplaceClearParameters
 
-	With dcArgument.Range.Find
+	With dcArg.Range.Find
 		.ClearFormatting
 		.Replacement.ClearFormatting
 		.Forward = True
@@ -649,7 +649,7 @@ End Sub
 
 
 
-Sub ImagenesLibro(dcArgument As Document)
+Sub ImagenesLibro(dcArg As Document)
 ' Formatea más cómodamente las imágenes
 	' Las convierte de flotantes a inline (de shapes a inlineshapes)
 	' Impide que aparezcan deformadas (mismo % relativo al tamaño original en alto y ancho)
@@ -659,17 +659,17 @@ Sub ImagenesLibro(dcArgument As Document)
 	Dim inlShape As InlineShape, sngRealPageWidth As Single, sngRealPageHeight As Single, iIndex As Integer
 
 	
-	sngRealPageWidth = dcArgument.PageSetup.PageWidth - dcArgument.PageSetup.Gutter _
-		- dcArgument.PageSetup.RightMargin - dcArgument.PageSetup.LeftMargin
+	sngRealPageWidth = dcArg.PageSetup.PageWidth - dcArg.PageSetup.Gutter _
+		- dcArg.PageSetup.RightMargin - dcArg.PageSetup.LeftMargin
 
-	sngRealPageHeight = dcArgument.PageSetup.PageHeight _
-		- dcArgument.PageSetup.TopMargin - dcArgument.PageSetup.BottomMargin _
-		- dcArgument.PageSetup.FooterDistance - dcArgument.PageSetup.HeaderDistance
+	sngRealPageHeight = dcArg.PageSetup.PageHeight _
+		- dcArg.PageSetup.TopMargin - dcArg.PageSetup.BottomMargin _
+		- dcArg.PageSetup.FooterDistance - dcArg.PageSetup.HeaderDistance
 
 	' Se convierten todas de shapes a inlineshapes
-	If dcArgument.Shapes.Count > 0 Then
-		For iIndex = dcArgument.Shapes.Count To 1 Step -1
-			With dcArgument.Shapes(iIndex)
+	If dcArg.Shapes.Count > 0 Then
+		For iIndex = dcArg.Shapes.Count To 1 Step -1
+			With dcArg.Shapes(iIndex)
 				'If .Type = msoPicture Then
 				.LockAnchor = True
 				.RelativeVerticalPosition = wdRelativeVerticalPositionParagraph
@@ -686,7 +686,7 @@ Sub ImagenesLibro(dcArgument As Document)
 	End If
 
 	' Se les da el formato correcto
-	For Each inlShape In dcArgument.InlineShapes
+	For Each inlShape In dcArg.InlineShapes
 		With inlShape
 			If .Type = wdInlineShapePicture Then
 				.ScaleHeight = .ScaleWidth
@@ -716,12 +716,12 @@ End Sub
 
 
 
-Sub ImagenesStory(dcArgument As Document)
+Sub ImagenesStory(dcArg As Document)
 ' Hace que todas las imágenes sean enormes, para meterlas en el story
 '
 	Dim inlShape As InlineShape
 
-	For Each inlShape In dcArgument.InlineShapes
+	For Each inlShape In dcArg.InlineShapes
 		inlShape.Width = CentimetersToPoints(29)
 	Next inlShape
 End Sub
@@ -730,11 +730,11 @@ End Sub
 
 
 
-Sub InterlineadoCorregido(dcArgument As Document)
+Sub InterlineadoCorregido(dcArg As Document)
 ' Interlineado de 1,15 sin espaciado entre párrafos
 	' Eliminar los espaciados verticales entre párrafos y aplica el interlineado correcto
 '
-	With dcArgument.Content.ParagraphFormat
+	With dcArg.Content.ParagraphFormat
 		.SpaceBefore = 0
 		.SpaceBeforeAuto = False
 		.SpaceAfter = 0
@@ -752,7 +752,7 @@ End Sub
 
 
 
-Sub ParrafosSeparacionLibro(dcArgument As Document)
+Sub ParrafosSeparacionLibro(dcArg As Document)
 ' Inserta párrafos vacíos de separación
 '
 	Dim bFound As Boolean
@@ -761,7 +761,7 @@ Sub ParrafosSeparacionLibro(dcArgument As Document)
 	Dim rgStory As Range
 	Dim pCurrent As Paragraph
 
-	With dcArgument.Content.Find
+	With dcArg.Content.Find
 		.ClearFormatting
 		.Replacement.ClearFormatting
 		.Forward = True
@@ -807,7 +807,7 @@ Sub ParrafosSeparacionLibro(dcArgument As Document)
 
 	For iStory = 1 To 5 Step 4
 		On Error Resume Next
-		Set rgStory = dcArgument.StoryRanges(iStory)
+		Set rgStory = dcArg.StoryRanges(iStory)
 		If Err.Number = 0 Then
 			On Error GoTo 0
 			' El loop es para que pase por todos los textframe
@@ -815,33 +815,33 @@ Sub ParrafosSeparacionLibro(dcArgument As Document)
 				For lContador = rgStory.Paragraphs.Count - 1 To 1 Step -1
 					Set pCurrent = rgStory.Paragraphs(lContador)
 					' No se añaden párrafos de separación a los pies de imagen o el interior de tablas
-					If pCurrent.Range.Tables.Count = 0 And Not RaMacros.RangeInField(dcArgument, pCurrent.Range) Then
+					If pCurrent.Range.Tables.Count = 0 And Not RaMacros.RangeInField(dcArg, pCurrent.Range) Then
 						If pCurrent.Next.Range.Tables.Count = 0 Then
-							If Not (pCurrent.style = dcArgument.styles(wdStyleCaption) _
+							If Not (pCurrent.style = dcArg.styles(wdStyleCaption) _
 								And pCurrent.Next.style = pCurrent.style) _
 							Then
 								iSize = GetSeparacionTamaño(pCurrent)
 								iSizeNext = GetSeparacionTamaño(pCurrent.Next)
 								pCurrent.Range.InsertParagraphAfter
 								' Se mantiene el estilo actual si los párrafos adyacentes lo requieren, en caso contrario se asigna el estilo iniseg_separacion pertinente
-								If (pCurrent.style = dcArgument.styles(wdStyleBlockQuotation) _
-									Or pCurrent.style = dcArgument.styles(wdStyleQuote)) _
+								If (pCurrent.style = dcArg.styles(wdStyleBlockQuotation) _
+									Or pCurrent.style = dcArg.styles(wdStyleQuote)) _
 									And pCurrent.Next(2).style = pCurrent.style _
 								Then
 									pCurrent.Next.style = pCurrent.style
 									pCurrent.Next.Range.Font.Size = iSizeNext
 								Else
 									If iSizeNext > iSize Then iSize = iSizeNext
-									If RaMacros.StyleExists(dcArgument, _
+									If RaMacros.StyleExists(dcArg, _
 										"iniseg_separacion" & iSize) _
 									Then
 										pCurrent.Next.style = "iniseg_separacion" & iSize
 									Else
-										dcArgument.Styles.Add "iniseg_separacion" & iSize, wdStyleTypeParagraph
-										dcArgument.Styles("iniseg_separacion" & iSize).BaseStyle = wdStyleNormal
-										dcArgument.Styles("iniseg_separacion" & iSize).Font.Size = iSize
+										dcArg.Styles.Add "iniseg_separacion" & iSize, wdStyleTypeParagraph
+										dcArg.Styles("iniseg_separacion" & iSize).BaseStyle = wdStyleNormal
+										dcArg.Styles("iniseg_separacion" & iSize).Font.Size = iSize
 										If iSize > 5 Then
-											With dcArgument.Styles("iniseg_separacion" & iSize).ParagraphFormat
+											With dcArg.Styles("iniseg_separacion" & iSize).ParagraphFormat
 												.KeepWithNext = True
 												.KeepTogether = True
 												.WidowControl = True
@@ -865,13 +865,13 @@ Sub ParrafosSeparacionLibro(dcArgument As Document)
 		End If
 	Next iStory
 End Sub
-Function GetSeparacionTamaño(pArgument As Paragraph) As Integer
+Function GetSeparacionTamaño(pArg As Paragraph) As Integer
 ' Devuelve el tamaño de separación propio del tipo de párrafo pasado como argumento
 '
 	Dim dcParent As Document
-	Set dcParent = pArgument.Parent
+	Set dcParent = pArg.Parent
 	With dcParent
-		Select Case pArgument.style
+		Select Case pArg.style
 			Case dcParent.Styles(wdStyleHeading1), dcParent.Styles(wdStyleHeading2)
 				GetSeparacionTamaño = 11
 			Case dcParent.Styles(wdStyleHeading3), dcParent.Styles(wdStyleHeading4)
@@ -894,15 +894,15 @@ Function GetSeparacionTamaño(pArgument As Paragraph) As Integer
 	End With
 End Function
 
-Sub TablasParrafosSeparacion(dcArgument As Document)
+Sub TablasParrafosSeparacion(dcArg As Document)
 ' Inserta un párrafo vacío y marcado antes de cada tabla
 '
 	Dim iCounter As Integer
 	Dim rgTable As Range
 	Dim tbCurrent As Table
 
-	For iCounter = 1 To dcArgument.Tables.Count Step 1
-		Set tbCurrent = dcArgument.Tables(iCounter)
+	For iCounter = 1 To dcArg.Tables.Count Step 1
+		Set tbCurrent = dcArg.Tables(iCounter)
 		If tbCurrent.NestingLevel = 1 Then
 			tbCurrent.Title = "Tabla " & iCounter
 			tbCurrent.Rows.WrapAroundText = False
@@ -914,7 +914,7 @@ Sub TablasParrafosSeparacion(dcArgument As Document)
 				rgTable.Paragraphs.Last.Style = wdStyleNormal
 				rgTable.Paragraphs.Last.Range.Font.Size = 5
 			End If
-			If tbCurrent.Range.End <> dcArgument.StoryRanges(tbCurrent.Range.StoryType).End _
+			If tbCurrent.Range.End <> dcArg.StoryRanges(tbCurrent.Range.StoryType).End _
 				And tbCurrent.Range.Next(wdParagraph, 1).Text <> vbCr _
 			Then
 				Set rgTable = tbCurrent.Range.Next(wdParagraph, 1)
@@ -926,7 +926,7 @@ Sub TablasParrafosSeparacion(dcArgument As Document)
 	Next iCounter
 End Sub
 
-Sub ParrafosConversionStory(dcArgument As Document)
+Sub ParrafosConversionStory(dcArg As Document)
 ' Conversion de Word impreso a formato para Storyline
 '
 	Dim iLibro(3) As Integer, iStory(3) As Integer, i As Integer
@@ -944,7 +944,7 @@ Sub ParrafosConversionStory(dcArgument As Document)
 	iStory(3) = 8
 
 	' Cambio del tamaño de Titulo 2 de 16 a 17
-	With dcArgument.Styles(wdstyleheading2).Font
+	With dcArg.Styles(wdstyleheading2).Font
 		.Name = "Swis721 Lt BT"
 		.Size = 17
 		.Bold = False
@@ -974,11 +974,11 @@ Sub ParrafosConversionStory(dcArgument As Document)
 	End With
 
 	' Eliminar ALLCAPS de los títulos 3 y 4 (por si derivan del título 1 o 2)
-	dcArgument.Styles(wdstyleheading3).Font.AllCaps = False
-	dcArgument.Styles(wdstyleheading4).Font.AllCaps = False
+	dcArg.Styles(wdstyleheading3).Font.AllCaps = False
+	dcArg.Styles(wdstyleheading4).Font.AllCaps = False
 
 	' Poner el estilo quote centrado y sin espacio a derecha ni izquierda
-	With dcArgument.Styles(wdStyleQuote).ParagraphFormat
+	With dcArg.Styles(wdStyleQuote).ParagraphFormat
 		.LeftIndent = 0
 		.RightIndent = 0
 		.Alignment = wdAlignParagraphCenter
@@ -988,14 +988,14 @@ Sub ParrafosConversionStory(dcArgument As Document)
 	For i = 0 To uBound(iLibro)
 		stLibro = "iniseg_separacion" & iLibro(i)
 		stStory = "iniseg_separacion" & iStory(i)
-		If RaMacros.StyleSubstitution(dcArgument, stLibro, stStory, False) = 2 Then
-			dcArgument.Styles.Add stStory, wdStyleTypeParagraph
-			With dcArgument.Styles(stStory)
-				.BaseStyle = dcArgument.Styles(stLibro)
+		If RaMacros.StyleSubstitution(dcArg, stLibro, stStory, False) = 2 Then
+			dcArg.Styles.Add stStory, wdStyleTypeParagraph
+			With dcArg.Styles(stStory)
+				.BaseStyle = dcArg.Styles(stLibro)
 				.Font.Size = iStory(i)
 			End With
-			dcArgument.Styles(stStory).Font.Size = iStory(i)
-			If RaMacros.StyleSubstitution(dcArgument, stLibro, stStory, False) <> 0 Then
+			dcArg.Styles(stStory).Font.Size = iStory(i)
+			If RaMacros.StyleSubstitution(dcArg, stLibro, stStory, False) <> 0 Then
 				Debug.Print "Error creando sustituyendo " & stLibro & " por " & stStory
 			End If
 		End If
@@ -1006,12 +1006,12 @@ End Sub
 
 
 
-Sub TitulosConTresEspacios(dcArgument As Document)
+Sub TitulosConTresEspacios(dcArg As Document)
 ' Sustituye la tabulación en los títulos por 3 espacios
 '
 	Dim lstLevel As ListLevel
 
-	For Each lstLevel In dcArgument.Styles("iniseg-lista_titulos").ListTemplate.ListLevels
+	For Each lstLevel In dcArg.Styles("iniseg-lista_titulos").ListTemplate.ListLevels
 		If lstLevel.NumberStyle <> wdListNumberStyleNone Then
 			lstLevel.TrailingCharacter = wdTrailingNone
 			lstLevel.NumberFormat = lstLevel.NumberFormat & "   "
@@ -1023,14 +1023,14 @@ End Sub
 
 
 
-Sub TitulosDivididos(dcArgument As Document)
+Sub TitulosDivididos(dcArg As Document)
 ' Corta los títulos 2 para que no peguen contra el logo de Iniseg
 '	- Título 2: 35 caractéres hasta logo Iniseg
 '	- Título 3: 55 caractéres hasta logo Iniseg
 '	- Título 4: 65 caractéres hasta logo Iniseg
 '	- Título 5: 70 caractéres hasta logo Iniseg
 '
-	With dcArgument.Range.Find
+	With dcArg.Range.Find
 		.ClearFormatting
 		.Replacement.ClearFormatting
 		.Forward = True
@@ -1041,7 +1041,7 @@ Sub TitulosDivididos(dcArgument As Document)
 		.MatchAllWordForms = False
 		.MatchSoundsLike = False
 		.MatchWildcards = True
-		If dcArgument.Styles(wdstyleheading2).ListLevelNumber = 0 Then
+		If dcArg.Styles(wdstyleheading2).ListLevelNumber = 0 Then
 			.Text = "(?{35;}) "
 			.Replacement.Text = "\1^13"
 		Else
@@ -1083,7 +1083,7 @@ End Sub
 
 
 
-Sub NotasPieMarcas(dcArgument As Document, ByVal bExportar As Boolean)
+Sub NotasPieMarcas(dcArg As Document, ByVal bExportar As Boolean)
 ' Convierte las referencias de notas al pie al texto "NOTA_PIE-numNota"
 	' para poder automatizar externamente su conversión en el .story
 ' Args:
@@ -1105,9 +1105,9 @@ Sub NotasPieMarcas(dcArgument As Document, ByVal bExportar As Boolean)
 	End With
 
 
-	For iSection = dcArgument.Sections.Count To 1 Step -1
-		Set scCurrent = dcArgument.Sections(iSection)
-		lReferencia = RaMacros.SectionGetFirstFootnoteNumber(dcArgument, scCurrent.Index) _
+	For iSection = dcArg.Sections.Count To 1 Step -1
+		Set scCurrent = dcArg.Sections(iSection)
+		lReferencia = RaMacros.SectionGetFirstFootnoteNumber(dcArg, scCurrent.Index) _
 			+ scCurrent.Range.Footnotes.Count
 		For lNota = scCurrent.Range.Footnotes.Count To 1 Step -1
 			lReferencia = lReferencia - 1
@@ -1126,14 +1126,14 @@ Sub NotasPieMarcas(dcArgument As Document, ByVal bExportar As Boolean)
 
 End Sub
 
-Sub NotasPieExportar(dcArgument As Document, _
+Sub NotasPieExportar(dcArg As Document, _
 					ByVal bDivide As Boolean, _
 					Optional ByVal stSuffix As String = "Footnotes", _
 					Optional ByVal stSectionSuffix As String = "Section", _
 					Optional ByVal stTitle As String = "Footnotes")
 ' Exporta las notas a un archivo separado
 ' Args:
-	' dcArgument: file from which the notes need to be extracted from
+	' dcArg: file from which the notes need to be extracted from
 	' bDivide: if True, the notes of each section get exported to different files
 	' Optional stSuffix As String = "Footnotes", _
 	' Optional stSectionSuffix As String = "Section"
@@ -1154,9 +1154,9 @@ Sub NotasPieExportar(dcArgument As Document, _
 	Dim bFirst As Boolean
 	Dim lCounter As Long, lStartingFootnote
 
-	stOriginalName = Left(dcArgument.Name, InStrRev(dcArgument.Name, ".") - 1)
+	stOriginalName = Left(dcArg.Name, InStrRev(dcArg.Name, ".") - 1)
 	bFirst = True
-	For Each scCurrent In dcArgument.Sections
+	For Each scCurrent In dcArg.Sections
 		If scCurrent.Range.Footnotes.Count > 0 Then
 			If bDivide Then
 				' Asigna el número de tema
@@ -1180,7 +1180,7 @@ Sub NotasPieExportar(dcArgument As Document, _
 						(Template:= "iniseg-wd", _
 						Visible:= False)
 
-				Iniseg.HeaderCopy dcArgument, dcNotas, 1
+				Iniseg.HeaderCopy dcArg, dcNotas, 1
 
 				If bDivide Then
 					dcNotas.Content.Text = RTrim("NOTAS AL PIE " & stFileName)
@@ -1193,12 +1193,12 @@ Sub NotasPieExportar(dcArgument As Document, _
 					.Alignment = wdAlignParagraphCenter
 				End With
 
-				stFileName = dcArgument.Path & Application.PathSeparator & "NOTAS " _
+				stFileName = dcArg.Path & Application.PathSeparator & "NOTAS " _
 					& stFileName & stOriginalName
 				dcNotas.SaveAs2 stFileName
 
 				lStartingFootnote = _
-					RaMacros.SectionGetFirstFootnoteNumber(dcArgument, scCurrent.Index)
+					RaMacros.SectionGetFirstFootnoteNumber(dcArg, scCurrent.Index)
 
 				With dcNotas.Styles(wdStyleListContinue)
 					.ParagraphFormat.SpaceAfter = 2
@@ -1226,7 +1226,7 @@ Sub NotasPieExportar(dcArgument As Document, _
 			Next lCounter
 		End If
 		
-		If Not dcNotas Is Nothing And (bDivide Or scCurrent.Index = dcArgument.Sections.Count) Then
+		If Not dcNotas Is Nothing And (bDivide Or scCurrent.Index = dcArg.Sections.Count) Then
 			dcNotas.ListParagraphs(1).Range.ListFormat.ListTemplate.ListLevels(1).StartAt = lStartingFootnote
 			RaMacros.CleanBasic dcNotas.Content, True, True, dcNotas
 			Iniseg.AutoFormateo dcNotas
@@ -1253,13 +1253,13 @@ End Sub
 
 
 
-Sub BibliografiaMarcarReferencias(dcArgument As Document)
+Sub BibliografiaMarcarReferencias(dcArg As Document)
 ' Marcar los campos de referencias bibliograficas con el texto "NOT_BLI-[numNota]"
 ' para poder automatizar externamente su conversión en el .story
 '
 	Dim i As Integer
 
-	For i = dcArgument.Fields.Count To 1 Step -1
+	For i = dcArg.Fields.Count To 1 Step -1
 		If ActiveDocument.Fields(i).Type = wdFieldCitation Then
 			ActiveDocument.Fields(i).Result.Previous(wdCharacter, 2).InsertAfter "not_bib-"
 		End If
@@ -1272,12 +1272,12 @@ End Sub
 
 
 
-Sub BibliografiaSaltosDePagina(dcArgument As Document)
+Sub BibliografiaSaltosDePagina(dcArg As Document)
 ' Inserta un salto de página antes de cada bibliografía
 '
 	Dim scCurrent As Section, rgFindRange As Range
 
-	For Each scCurrent In dcArgument.Sections
+	For Each scCurrent In dcArg.Sections
 		Set rgFindRange = scCurrent.Range
 		With rgFindRange.Find
 			.ClearFormatting
@@ -1316,13 +1316,13 @@ Sub BibliografiaSaltosDePagina(dcArgument As Document)
 	Next scCurrent
 End Sub
 
-Sub BibliografiaExportar(dcArgument As Document)
-' Exporta la bibliografía en archivos separados y la borra de dcArgument
+Sub BibliografiaExportar(dcArg As Document)
+' Exporta la bibliografía en archivos separados y la borra de dcArg
 '
 	Dim dcBibliografia As Document, scCurrent As Section
 	Dim rgFindRange As Range, rgTitulo As Range, stNombre As String
 
-	For Each scCurrent In dcArgument.Sections
+	For Each scCurrent In dcArg.Sections
 		Set rgFindRange = scCurrent.Range
 		With rgFindRange.Find
 			.ClearFormatting
@@ -1346,7 +1346,7 @@ Sub BibliografiaExportar(dcArgument As Document)
 		End With
 		If rgFindRange.Find.Found Then
 			' Set dcBibliografia = Documents.Add("iniseg-wd", Visible:= False)
-			' Iniseg.HeaderCopy dcArgument, dcBibliografia, 1
+			' Iniseg.HeaderCopy dcArg, dcBibliografia, 1
 			' rgFindRange.End = scCurrent.Range.End
 			' dcBibliografia.Content.FormattedText = rgFindRange
 			' rgFindRange.End = scCurrent.Range.End - 1
@@ -1358,12 +1358,12 @@ Sub BibliografiaExportar(dcArgument As Document)
 			' 	.Execute FindText:="TEMA [0-9][0-9]"
 			' 	If Not .Found Then .Execute FindText:="TEMA [0-9]"
 			' 	If .Found Then
-			' 		stNombre = dcArgument.Path & Application.PathSeparator _
+			' 		stNombre = dcArg.Path & Application.PathSeparator _
 			' 			& "BIBLIOGRAFÍA " & rgFindRange.Text
 			' 	Else
 			' 		Beep
 			' 		stNombre = InputBox("Número de tema no encontrado, completar", "Bibliografía", "TEMA " & scCurrent.Index)
-			' 		stNombre = dcArgument.Path & Application.PathSeparator _
+			' 		stNombre = dcArg.Path & Application.PathSeparator _
 			' 			& "BIBLIOGRAFÍA " & stNombre
 			' 	End If
 			' End With
@@ -1377,12 +1377,12 @@ Sub BibliografiaExportar(dcArgument As Document)
 				.Execute FindText:="TEMA [0-9][0-9]"
 				If Not .Found Then .Execute FindText:="TEMA [0-9]"
 				If .Found Then
-					stNombre = dcArgument.Path & Application.PathSeparator _
+					stNombre = dcArg.Path & Application.PathSeparator _
 						& "BIBLIOGRAFÍA " & rgTitulo.Text & ".pdf"
 				Else
 					Beep
 					stNombre = InputBox("Número de tema no encontrado, completar", "Bibliografía", "TEMA " & scCurrent.Index)
-					stNombre = dcArgument.Path & Application.PathSeparator _
+					stNombre = dcArg.Path & Application.PathSeparator _
 						& "BIBLIOGRAFÍA " & stNombre & ".pdf"
 				End If
 			End With
@@ -1404,11 +1404,11 @@ End Sub
 
 
 
-Sub ConversionAutomaticaLibro(dcArgument As Document)
+Sub ConversionAutomaticaLibro(dcArg As Document)
 ' Convierte automáticamente los párrafos a los estilos de la plantilla
 '
-	RaMacros.CleanBasic Nothing, True, True, dcArgument
-	With dcArgument.Content.Find
+	RaMacros.CleanBasic Nothing, True, True, dcArg
+	With dcArg.Content.Find
 		.ClearFormatting
 		.Replacement.ClearFormatting
 		.Forward = True
@@ -1489,7 +1489,7 @@ End Sub
 
 
 
-Sub ColoresCorrectos(dcArgument As Document)
+Sub ColoresCorrectos(dcArg As Document)
 ' Quita el subrayado y los colores fuera de plantilla del texto
 '
 	Dim iMaxCount As Integer
@@ -1498,7 +1498,7 @@ Sub ColoresCorrectos(dcArgument As Document)
 
 	For iStory = 1 To 5 Step 1
 		On Error Resume Next
-		Set rgStory = dcArgument.StoryRanges(iStory)
+		Set rgStory = dcArg.StoryRanges(iStory)
 		If Err.Number = 0 Then
 			On Error GoTo 0
 			rgStory.Font.ColorIndex = wdAuto
@@ -1516,11 +1516,11 @@ End Sub
 
 
 
-Sub ListasParaStory(dcArgument As Document)
+Sub ListasParaStory(dcArg As Document)
 ' Convierte las listas de letras o números romanos a listas de números y les añade 
 ' una marca para poder cambiarlas externamente y de forma automatizada en el Story
 '
-	With dcArgument.Styles("iniseg-list_mixta").ListTemplate
+	With dcArg.Styles("iniseg-list_mixta").ListTemplate
 		.ListLevels(2).NumberStyle = wdListNumberStyleArabic
 		.ListLevels(2).NumberFormat = "A%2."
 		.ListLevels(3).NumberStyle = wdListNumberStyleArabic
@@ -1537,10 +1537,10 @@ End Sub
 
 
 
-Sub EstilosEsconder(dcArgument As Document)
+Sub EstilosEsconder(dcArg As Document)
 ' Esconde todos los estilos de la galería de estilos, para que no se acumulen
 	Dim stCurrent As Style
-	For Each stCurrent In dcArgument.Styles
+	For Each stCurrent In dcArg.Styles
 		On Error Resume Next
 		stCurrent.QuickStyle = False
 		On Error GoTo 0
