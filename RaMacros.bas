@@ -1501,6 +1501,7 @@ Sub TablesConvertToImage(dcArg As Document, _
 End Sub
 
 Sub TablesExportToPdf(dcArg As Document, _
+					Optional ByVal stDocName As String, _
 					Optional ByVal stSuffix As String = "Table ", _
 					Optional ByVal bDelete As Boolean = False, _
 					Optional ByVal stReplacementText As String = "Link to ", _
@@ -1524,9 +1525,9 @@ Sub TablesExportToPdf(dcArg As Document, _
 	Dim iCounter As Integer
 	Dim rgReplacement As Range
 	Dim tbCurrent As Table
-	Dim stDocName As String, stTableFullName As String
+	Dim stTableFullName As String
 
-	stDocName = Left(dcArg.Name, InStrRev(dcArg.Name, ".") - 1)
+	If stDocName = vbNullString Then stDocName = Left(dcArg.Name, InStrRev(dcArg.Name, ".") - 1)
 	If bDelete And stAddress = vbNullString Then
 		stAddress = dcArg.Path & Application.PathSeparator
 	End If
@@ -1562,28 +1563,6 @@ Sub TablesExportToPdf(dcArg As Document, _
 			End If
 		End If
 	Next iCounter
-End Sub
-
-Sub TablesKeepTogether(dcArg As Document, _
-						Optional ByVal iPlacement As Integer = wdInLine)
-' Convert each table to an inline image
-' Args:
-	' iPlacement: WdOLEPlacement enum
-		' 0: wdInLine
-		' 1: wdFloatOverText
-'
-	Dim iTable As Integer
-	Dim rgTable
-
-	For iTable = dcArg.Tables.Count To 1 Step -1
-		If dcArg.Tables(iTable).NestingLevel = 1 Then
-			With dcArg.Tables(iTable).Range
-				.CopyAsPicture
-				.Delete
-				.PasteSpecial DataType:=wdPasteEnhancedMetafile, Placement:=iPlacement
-			End With
-		End If
-	Next iTable
 End Sub
 
 

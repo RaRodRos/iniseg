@@ -387,24 +387,25 @@ Function ConversionStory(dcLibro As Document, _
 
 	If dcStory.Tables.Count > 0 Then
 		Debug.Print "7/" & iUltima & " - Archivo story: transformando/exportando tablas"
-		RaMacros.TablesConvertToImage dcStory
-		' RaMacros.TablesExportToPdf dcStory, "Tabla ", True, "Enlace a ", True, _
-		' 	dcStory.Name, wdStyleBlockQuotation, 17
-		' With dcStory.Content.Find
-		' 	.ClearFormatting
-		' 	.Replacement.ClearFormatting
-		' 	.Forward = True
-		' 	.Format = False
-		' 	.MatchCase = False
-		' 	.MatchWholeWord = False
-		' 	.MatchWildcards = False
-		' 	.MatchSoundsLike = False
-		' 	.MatchAllWordForms = False
-		' 	.Style = wdStyleBlockQuotation
-		' 	.Text = "Enlace a tabla"
-		' 	.Replacement.ParagraphFormat.Alignment = wdAlignParagraphCenter
-		' 	.Execute Replace:=wdReplaceAll
-		' End With
+		' RaMacros.TablesConvertToImage dcStory
+		RaMacros.TablesExportToPdf _
+			dcStory, Mid$(dcStory.Name, InStr(dcStory.Name, "Tema"), 6), "Tabla ", _
+			True, "Enlace a ",,, wdStyleBlockQuotation, 17
+		With dcStory.Content.Find
+			.ClearFormatting
+			.Replacement.ClearFormatting
+			.Forward = True
+			.Format = False
+			.MatchCase = False
+			.MatchWholeWord = False
+			.MatchWildcards = False
+			.MatchSoundsLike = False
+			.MatchAllWordForms = False
+			.Style = wdStyleBlockQuotation
+			.Text = "Enlace a tabla"
+			.Replacement.ParagraphFormat.Alignment = wdAlignParagraphCenter
+			.Execute Replace:=wdReplaceAll
+		End With
 	Else
 		Debug.Print "7/" & iUltima & "--- No hay tablas ---"
 	End If
