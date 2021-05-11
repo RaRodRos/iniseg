@@ -888,7 +888,7 @@ Sub CleanEmptyParagraphs(rgArg As Range, _
 					End If
 				End If
 			Loop While bFound
-			Set rgStory = rgFind.NextStoryRange
+			Set rgStory = rgStory.NextStoryRange
 		Loop
 		If Not rgArg Is Nothing Then Exit Sub
 	Next rgStory
