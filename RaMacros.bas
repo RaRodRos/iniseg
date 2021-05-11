@@ -253,16 +253,21 @@ End Function
 
 Sub StylesNoDirectFormatting(dcArg As Document, _
 							Optional rgArg As Range, _
+							Optional ByVal styUnderline As Style _
 							Optional ByVal bUnderlineDelete As Boolean)
 ' Converts bold and italic direct style formatting into Strong and Emphasis
 ' Args:
 	' rgArg: if nothing the sub works over all the story ranges
-	' bUnderlineDelete: if true all underlined text reverts to normal
+	' styUnderline: the underlined text gets this style applied. It supersedes bUnderlineDelete
+	' bUnderlineDelete: if true (and styUnderline is Nothing) all underlined styling gets deleted
+' ToDo: recolocar hyperlinksformatting
 '
 	Dim iCounter As Integer
 	Dim rgStory As Range
 	Dim stStylesToApply(13) As Integer
-	
+
+	If Not styUnderline Is Nothing Then bUnderlineDelete = True
+
 	stStylesToApply(0) = wdStyleNormal
 	stStylesToApply(1) = wdStyleCaption
 	stStylesToApply(2) = wdStyleList
@@ -286,7 +291,8 @@ Sub StylesNoDirectFormatting(dcArg As Document, _
 			If rgArg Is Nothing And rgStory.StoryType > 5 Then Exit Do
 			With rgStory.Find
 				.ClearFormatting
-				.Text = ""
+				.Replacement.ClearFormatting
+				.Text = ""1
 				.Replacement.Text = ""
 				.Forward = True
 				.Wrap = wdFindStop
@@ -326,9 +332,12 @@ Sub StylesNoDirectFormatting(dcArg As Document, _
 
 					If bUnderlineDelete Then
 						.Font.Underline = True
-						.Replacement.Font.Underline = False
+						If styUnderline Is Nothing Then
+							.Replacement.Font.Underline = False
+						Else
+							.Replacement.Style = styUnderline
+						End If
 						.Execute Replace:=wdReplaceAll
-						RaMacros.HyperlinksFormatting dcArg, 1 ' Aquí hay que meter el rango actual, cuando se refactorice HyperlinksFormatting
 					End If
 				Next iCounter
 
@@ -342,6 +351,7 @@ Sub StylesNoDirectFormatting(dcArg As Document, _
 		Loop
 		If Not rgArg Is Nothing Then Exit For
 	Next rgStory
+	RaMacros.HyperlinksFormatting dcArg, 1 ' Aquí hay que meter el rango actual, y pasarlo dentro del bucle, cuando se refactorice HyperlinksFormatting
 	RaMacros.FindAndReplaceClearParameters
 End Sub
 
