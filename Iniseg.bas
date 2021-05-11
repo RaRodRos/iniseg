@@ -1409,6 +1409,7 @@ Sub ConversionAutomaticaLibro(dcArg As Document)
 ' Convierte automáticamente los párrafos a los estilos de la plantilla
 '
 	Dim ishCurrent As InlineShape
+	Dim shCurrent As Shape
 
 	RaMacros.CleanBasic Nothing, True, True, dcArg
 
@@ -1487,9 +1488,12 @@ Sub ConversionAutomaticaLibro(dcArg As Document)
 		.Execute Replace:=wdReplaceAll
 	End With
 	
-	For Each ishCurrent In dcArg.Shapes
+	For Each ishCurrent In dcArg.InlineShapes
 		ishCurrent.Range.Style = wdStyleNormal
 	Next ishCurrent
+	For Each shCurrent In dcArg.Shapes
+		shCurrent.Range.Style = wdStyleNormal
+	Next shCurrent
 End Sub
 
 
