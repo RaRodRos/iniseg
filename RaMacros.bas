@@ -253,7 +253,7 @@ End Function
 
 Sub StylesNoDirectFormatting(dcArg As Document, _
 							Optional rgArg As Range, _
-							Optional ByVal styUnderline As Style _
+							Optional ByVal styUnderline As Style, _
 							Optional ByVal bUnderlineDelete As Boolean)
 ' Converts bold and italic direct style formatting into Strong and Emphasis
 ' Args:
@@ -292,7 +292,7 @@ Sub StylesNoDirectFormatting(dcArg As Document, _
 			With rgStory.Find
 				.ClearFormatting
 				.Replacement.ClearFormatting
-				.Text = ""1
+				.Text = ""
 				.Replacement.Text = ""
 				.Forward = True
 				.Wrap = wdFindStop

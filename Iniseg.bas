@@ -1232,7 +1232,7 @@ Sub NotasPieExportar(dcArg As Document, _
 			RaMacros.CleanBasic dcNotas.Content, True, True, dcNotas
 			Iniseg.AutoFormateo dcNotas
 			RaMacros.HyperlinksFormatting dcNotas, 3, 1
-			RaMacros.StylesNoDirectFormatting dcNotas, Nothing, dcLibro.Styles(wdStyleStrong)
+			RaMacros.StylesNoDirectFormatting dcNotas, Nothing, dcNotas.Styles(wdStyleStrong)
 			dcNotas.Content.Select
 			Selection.ClearCharacterDirectFormatting
 			Selection.ClearParagraphDirectFormatting
@@ -1409,7 +1409,6 @@ Sub ConversionAutomaticaLibro(dcArg As Document)
 ' Convierte automáticamente los párrafos a los estilos de la plantilla
 '
 	Dim ishCurrent As InlineShape
-	Dim shCurrent As Shape
 
 	RaMacros.CleanBasic Nothing, True, True, dcArg
 
@@ -1491,9 +1490,6 @@ Sub ConversionAutomaticaLibro(dcArg As Document)
 	For Each ishCurrent In dcArg.InlineShapes
 		ishCurrent.Range.Style = wdStyleNormal
 	Next ishCurrent
-	For Each shCurrent In dcArg.Shapes
-		shCurrent.Range.Style = wdStyleNormal
-	Next shCurrent
 End Sub
 
 
