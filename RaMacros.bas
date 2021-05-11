@@ -48,7 +48,9 @@ Function StylesDeleteUnused(dcArg As Document, _
 		For Each stCurrent In dcArg.Styles
 			'Only check out non-built-in styles
 			If stCurrent.BuiltIn = False Then
-				If StyleInUse(stCurrent.NameLocal, dcArg) = False Then
+				If StyleInUse(stCurrent.NameLocal, dcArg) = False _
+					And Len(stCurrent.NameLocal) > 0 _
+				Then
 					Application.OrganizerDelete Source:= dcArg.FullName, _
 					Name:= stCurrent.NameLocal, Object:=wdOrganizerObjectStyles
 					lCount = lCount + 1
