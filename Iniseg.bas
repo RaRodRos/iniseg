@@ -330,6 +330,7 @@ Function ConversionStory(dcLibro As Document, _
 	Dim dcStory As Document
 	Dim dcBibliografia As Document
 	Dim iUltima As Integer
+	Dim stName As String
 
 	If bPreguntar _
 		And Not bNotasExportar _
@@ -388,9 +389,9 @@ Function ConversionStory(dcLibro As Document, _
 	If dcStory.Tables.Count > 0 Then
 		Debug.Print "7/" & iUltima & " - Archivo story: transformando/exportando tablas"
 		' RaMacros.TablesConvertToImage dcStory
-		RaMacros.TablesExportToPdf _
-			dcStory, Mid$(dcStory.Name, InStr(dcStory.Name, "Tema"), 6), "Tabla ", _
-			True, "Enlace a ",,, wdStyleBlockQuotation, 17
+		stName = Left$(dcStory.Name, InStrRev(dcStory.Name, ".") - 1)
+		stName = Right$(stName, Len(stName) - 2)
+		RaMacros.TablesExportToPdf dcStory, stName, "Tabla ", True, "Enlace a ",,, wdStyleBlockQuotation, 17
 		With dcStory.Content.Find
 			.ClearFormatting
 			.Replacement.ClearFormatting
@@ -1155,7 +1156,7 @@ Sub NotasPieExportar(dcArg As Document, _
 	Dim bFirst As Boolean
 	Dim lCounter As Long, lStartingFootnote
 
-	stOriginalName = Left(dcArg.Name, InStrRev(dcArg.Name, ".") - 1)
+	stOriginalName = Left$(dcArg.Name, InStrRev(dcArg.Name, ".") - 1)
 	bFirst = True
 	For Each scCurrent In dcArg.Sections
 		If scCurrent.Range.Footnotes.Count > 0 Then
@@ -1321,11 +1322,11 @@ Sub BibliografiaExportar(dcArg As Document)
 ' Exporta la bibliografía en archivos separados y la borra de dcArg
 '
 	Dim dcBibliografia As Document, scCurrent As Section
-	Dim rgFindRange As Range, rgTitulo As Range, stNombre As String
+	Dim rgBiblio As Range, rgTitulo As Range, stNombre As String
 
 	For Each scCurrent In dcArg.Sections
-		Set rgFindRange = scCurrent.Range
-		With rgFindRange.Find
+		Set rgBiblio = scCurrent.Range.Duplicate
+		With rgBiblio.Find
 			.ClearFormatting
 			.Replacement.ClearFormatting
 			.Forward = True
@@ -1345,36 +1346,21 @@ Sub BibliografiaExportar(dcArg As Document)
 				End If
 			End If
 		End With
-		If rgFindRange.Find.Found Then
-			' Set dcBibliografia = Documents.Add("iniseg-wd", Visible:= False)
-			' Iniseg.HeaderCopy dcArg, dcBibliografia, 1
-			' rgFindRange.End = scCurrent.Range.End
-			' dcBibliografia.Content.FormattedText = rgFindRange
-			' rgFindRange.End = scCurrent.Range.End - 1
-			' rgFindRange.Delete
-
-			' Set rgFindRange = scCurrent.Range
-			' With rgFindRange.Find
-			' 	.MatchWildcards = True
-			' 	.Execute FindText:="TEMA [0-9][0-9]"
-			' 	If Not .Found Then .Execute FindText:="TEMA [0-9]"
-			' 	If .Found Then
-			' 		stNombre = dcArg.Path & Application.PathSeparator _
-			' 			& "BIBLIOGRAFÍA " & rgFindRange.Text
-			' 	Else
-			' 		Beep
-			' 		stNombre = InputBox("Número de tema no encontrado, completar", "Bibliografía", "TEMA " & scCurrent.Index)
-			' 		stNombre = dcArg.Path & Application.PathSeparator _
-			' 			& "BIBLIOGRAFÍA " & stNombre
-			' 	End If
-			' End With
-
-			' dcBibliografia.Close wdSaveChanges
-
+		If rgBiblio.Find.Found Then
 			' Asigna el número de tema
-			Set rgTitulo = scCurrent.Range
+			Set rgTitulo = scCurrent.Range.Duplicate
 			With rgTitulo.Find
+				.ClearFormatting
+				.Replacement.ClearFormatting
+				.Forward = True
+				.Wrap = wdFindStop
+				.Format = True
+				.MatchCase = False
+				.MatchWholeWord = False
 				.MatchWildcards = True
+				.MatchSoundsLike = False
+				.MatchAllWordForms = False
+				.Style = wdStyleHeading1
 				.Execute FindText:="TEMA [0-9][0-9]"
 				If Not .Found Then .Execute FindText:="TEMA [0-9]"
 				If .Found Then
@@ -1389,13 +1375,13 @@ Sub BibliografiaExportar(dcArg As Document)
 			End With
 
 			' Exporta el pdf
-			rgFindRange.End = scCurrent.Range.End - 1
-			rgFindRange.ExportAsFixedFormat2 _
+			rgBiblio.End = scCurrent.Range.End - 1
+			rgBiblio.ExportAsFixedFormat2 _
 				stNombre,wdExportFormatPDF,False,wdExportOptimizeForPrint,True, _
 				wdExportDocumentWithMarkup,True,,wdExportCreateNoBookmarks,True,False,False,True
 
 			' Borra la bibliografía de dcStory
-			rgFindRange.Delete
+			rgBiblio.Delete
 		End If
 	Next scCurrent
 End Sub
