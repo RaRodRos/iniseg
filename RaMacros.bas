@@ -370,8 +370,8 @@ Sub CopySecurity(dcArg As Document, _
 	Dim stOriginalName As String, stExtension As String, stNewFullName As String
 	Dim iCount As Integer
 
-	stOriginalName = Left(dcArg.Name, InStrRev(dcArg.Name, ".") - 1)
-	stExtension = Right(dcArg.Name, Len(dcArg.Name) - InStrRev(dcArg.Name, ".") + 1)
+	stOriginalName = Left$(dcArg.Name, InStrRev(dcArg.Name, ".") - 1)
+	stExtension = Right$(dcArg.Name, Len(dcArg.Name) - InStrRev(dcArg.Name, ".") + 1)
 	stNewFullName = dcArg.Path & Application.PathSeparator & stPrefix _
 		& stOriginalName & stSuffix & stExtension
 
@@ -404,7 +404,7 @@ Function SaveAsNewFile(dcArg As Document, _
 	Dim stOriginalName As String, stNewFullName As String, stExtension As String
 	Dim dcNewDocument As Document
 
-	stOriginalName = Left(dcArg.Name, InStrRev(dcArg.Name, ".") - 1)
+	stOriginalName = Left$(dcArg.Name, InStrRev(dcArg.Name, ".") - 1)
 	If stSuffix = vbNullString And stPrefix = vbNullString Then stSuffix = "-" & Format(Date, "yymmdd")
 
 	stNewFullName = dcArg.Path & Application.PathSeparator & stPrefix _
@@ -421,7 +421,7 @@ Function SaveAsNewFile(dcArg As Document, _
 			dcNewDocument.Convert
 		End If
 	Else
-		stExtension = Right(dcArg.Name, Len(dcArg.Name) - InStrRev(dcArg.Name, ".") + 1)
+		stExtension = Right$(dcArg.Name, Len(dcArg.Name) - InStrRev(dcArg.Name, ".") + 1)
 	End If
 
 	If Dir(stNewFullName & stExtension) > "" Then
@@ -1539,7 +1539,7 @@ Sub TablesExportToPdf(dcArg As Document, _
 	Dim tbCurrent As Table
 	Dim stTableFullName As String
 
-	If stDocName = vbNullString Then stDocName = Left(dcArg.Name, InStrRev(dcArg.Name, ".") - 1)
+	If stDocName = vbNullString Then stDocName = Left$(dcArg.Name, InStrRev(dcArg.Name, ".") - 1)
 	If bDelete And stAddress = vbNullString Then
 		stAddress = dcArg.Path & Application.PathSeparator
 	End If
