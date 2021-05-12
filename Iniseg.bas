@@ -324,7 +324,7 @@ Function ConversionStory(dcLibro As Document, _
 						Optional ByVal bNotasExportar As Boolean, _
 						Optional ByVal bNotasSeparadas As Boolean, _
 						Optional ByVal bPreguntar As Boolean = True _
-	) As Document
+) As Document
 ' Da el tamaño correcto a párrafos, imágenes y formatea marcas de pie de página
 '
 	Dim dcStory As Document

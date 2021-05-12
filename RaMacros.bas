@@ -1574,11 +1574,17 @@ Sub TablesExportToPdf(dcArg As Document, _
 			stTableFullName = stDocName & " " & tbCurrent.Title
 			tbCurrent.Range.ExportAsFixedFormat2 _
 				OutputFileName:=dcArg.Path & Application.PathSeparator & stTableFullName, _
-				ExportFormat:=wdExportFormatPDF, OpenAfterExport:=False, _
-				OptimizeFor:=wdExportOptimizeForPrint, ExportCurrentPage:=False, _
-				Item:=wdExportDocumentWithMarkup, IncludeDocProps:=True, _
-				CreateBookmarks:= wdExportCreateNoBookmarks, DocStructureTags:=True, _
-				BitmapMissingFonts:=False, UseISO19005_1:=False, OptimizeForImageQuality:=True
+				ExportFormat:=wdExportFormatPDF, _
+				OpenAfterExport:=False, _
+				OptimizeFor:=wdExportOptimizeForPrint, _
+				ExportCurrentPage:=False, _
+				Item:=wdExportDocumentWithMarkup, _
+				IncludeDocProps:=True, _
+				CreateBookmarks:=wdExportCreateNoBookmarks, _
+				DocStructureTags:=True, _
+				BitmapMissingFonts:=False, _
+				UseISO19005_1:=False, _
+				OptimizeForImageQuality:=True
 			If bDelete Then
 				Set rgReplacement = tbCurrent.Range.Next(wdParagraph, 1)
 				rgReplacement.InsertParagraphBefore
