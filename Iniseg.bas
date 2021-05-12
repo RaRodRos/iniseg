@@ -1335,7 +1335,7 @@ Sub BibliografiaExportar(dcArg As Document)
 	Dim rgBiblio As Range, rgTitulo As Range, stNombre As String
 
 	For Each scCurrent In dcArg.Sections
-		Set rgBiblio = scCurrent.Range.Duplicate
+		Set rgBiblio = scCurrent.Range
 		With rgBiblio.Find
 			.ClearFormatting
 			.Replacement.ClearFormatting
@@ -1354,9 +1354,10 @@ Sub BibliografiaExportar(dcArg As Document)
 				If Not .Found Then .Execute FindText:="referencias"
 			End If
 		End With
+		
 		If rgBiblio.Find.Found Then
 			' Asigna el número de tema
-			Set rgTitulo = scCurrent.Range.Duplicate
+			Set rgTitulo = scCurrent.Range.Paragraphs.First.Range
 			With rgTitulo.Find
 				.ClearFormatting
 				.Replacement.ClearFormatting
@@ -1383,10 +1384,23 @@ Sub BibliografiaExportar(dcArg As Document)
 			End With
 
 			' Exporta el pdf
-			rgBiblio.End = scCurrent.Range.End - 1
-			rgBiblio.ExportAsFixedFormat2 _
-				stNombre,wdExportFormatPDF,False,wdExportOptimizeForPrint,True, _
-				wdExportDocumentWithMarkup,True,,wdExportCreateNoBookmarks,True,False,False,True
+			Set rgBiblio = RaMacros.RangeGetCompleteOutlineLevel(rgBiblio.Paragraphs(1))
+
+			dcArg.ExportAsFixedFormat2 _
+				OutputFileName:= stNombre, _
+				ExportFormat:= wdExportFormatPDF, _
+				OpenAfterExport:= False, _
+				OptimizeFor:= wdExportOptimizeForPrint, _
+				Range:= wdExportFromTo, _
+				From:= rgBiblio.Characters(1).Information(wdActiveEndPageNumber), _
+				To:= rgBiblio.Information(wdActiveEndPageNumber), _
+				Item:= wdExportDocumentWithMarkup, _
+				IncludeDocProps:= True, _
+				CreateBookmarks:= wdExportCreateWordBookmarks, _
+				DocStructureTags:= True, _
+				BitmapMissingFonts:= False, _
+				UseISO19005_1:= False, _
+				OptimizeForImageQuality:= True
 
 			' Borra la bibliografía de dcStory
 			rgBiblio.Delete
