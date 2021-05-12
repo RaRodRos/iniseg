@@ -396,7 +396,7 @@ Sub StylesNoDirectFormatting(dcArg As Document, _
 		Loop
 	Next rgStory
 
-	RaMacros.ReferencesFormatting dcArg
+	RaMacros.FootnotesFormatting dcArg
 	RaMacros.HyperlinksFormatting dcArg, 1 ' Aquí hay que meter el rango actual, y pasarlo dentro del bucle, cuando se refactorice HyperlinksFormatting
 	RaMacros.FindAndReplaceClearParameters
 End Sub
@@ -1561,16 +1561,18 @@ End Sub
 Sub TablesExportToPdf(dcArg As Document, _
 					Optional ByVal stDocName As String, _
 					Optional ByVal stSuffix As String = "Table ", _
-					Optional ByVal bDelete As Boolean = False, _
+					Optional ByVal bDeleteTable As Boolean = False, _
 					Optional ByVal stReplacementText As String = "Link to ", _
 					Optional ByVal bLink As Boolean = False, _
 					Optional ByVal stAddress As String, _
 					Optional ByVal iStyle As Integer = wdStyleNormal, _
-					Optional ByVal iSize As Integer = 0)
+					Optional ByVal iSize As Integer = 0, _
+					Optional ByVal bMaintainPageFormat As Boolean = True _
+)
 ' Export each table to a PDF file
 ' Args:
 	' stSuffix: the suffix to append to the table title, if it hasn't any
-	' bDelete: defines if the table should be replaced
+	' bDeleteTable: defines if the table should be replaced
 	' stReplacementText: the replacement text before the table title
 	' bLink: if true the replacement text will be a hyperlink pointing to the address of the pdf
 	' stAddress: the path where the hyperlink will point.
@@ -1586,7 +1588,7 @@ Sub TablesExportToPdf(dcArg As Document, _
 	Dim stTableFullName As String
 
 	If stDocName = vbNullString Then stDocName = Left$(dcArg.Name, InStrRev(dcArg.Name, ".") - 1)
-	If bDelete And stAddress = vbNullString Then
+	If bDeleteTable And stAddress = vbNullString Then
 		stAddress = dcArg.Path & Application.PathSeparator
 	End If
 
@@ -1597,20 +1599,38 @@ Sub TablesExportToPdf(dcArg As Document, _
 				tbCurrent.Title = stSuffix & iCounter
 			End If
 			stTableFullName = stDocName & " " & tbCurrent.Title
-			tbCurrent.Range.ExportAsFixedFormat2 _
-				OutputFileName:=dcArg.Path & Application.PathSeparator & stTableFullName, _
-				ExportFormat:=wdExportFormatPDF, _
-				OpenAfterExport:=False, _
-				OptimizeFor:=wdExportOptimizeForPrint, _
-				ExportCurrentPage:=False, _
-				Item:=wdExportDocumentWithMarkup, _
-				IncludeDocProps:=True, _
-				CreateBookmarks:=wdExportCreateNoBookmarks, _
-				DocStructureTags:=True, _
-				BitmapMissingFonts:=False, _
-				UseISO19005_1:=False, _
-				OptimizeForImageQuality:=True
-			If bDelete Then
+			If bMaintainPageFormat Then
+				tbCurrent.Range.ExportAsFixedFormat2 _
+					OutputFileName:=dcArg.Path & Application.PathSeparator & stTableFullName, _
+					ExportFormat:=wdExportFormatPDF, _
+					OpenAfterExport:=False, _
+					OptimizeFor:=wdExportOptimizeForPrint, _
+					ExportCurrentPage:=False, _
+					Item:=wdExportDocumentWithMarkup, _
+					IncludeDocProps:=True, _
+					CreateBookmarks:=wdExportCreateNoBookmarks, _
+					DocStructureTags:=True, _
+					BitmapMissingFonts:=False, _
+					UseISO19005_1:=False, _
+					OptimizeForImageQuality:=True
+			Else
+				dcArg.ExportAsFixedFormat2 _
+					OutputFileName:=dcArg.Path & Application.PathSeparator & stTableFullName, _
+					ExportFormat:=wdExportFormatPDF, _
+					OpenAfterExport:=False, _
+					OptimizeFor:=wdExportOptimizeForPrint, _
+					Range:=wdExportFromTo, _
+					From:=tbCurrent.Range.Characters(1).Information(wdActiveEndPageNumber), _
+					To:=tbCurrent.Range.Information(wdActiveEndPageNumber), _
+					Item:=wdExportDocumentWithMarkup, _
+					IncludeDocProps:=True, _
+					CreateBookmarks:=wdExportCreateWordBookmarks, _
+					DocStructureTags:=True, _
+					BitmapMissingFonts:=False, _
+					UseISO19005_1:=False, _
+					OptimizeForImageQuality:=True
+			End If
+			If bDeleteTable Then
 				Set rgReplacement = tbCurrent.Range.Next(wdParagraph, 1)
 				rgReplacement.InsertParagraphBefore
 				rgReplacement.InsertParagraphBefore
