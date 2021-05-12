@@ -1241,9 +1241,19 @@ Sub NotasPieExportar(dcArg As Document, _
 				If dcNotas.Paragraphs.Last.Range.Delete = 0 Then Exit Do
 			Loop
 			dcNotas.Save
-			dcNotas.ExportAsFixedFormat OutputFileName:=stFileName, ExportFormat:=wdExportFormatPDF, OpenAfterExport:=False, _
-				OptimizeFor:=wdExportOptimizeForPrint, Range:=wdExportAllDocument, Item:=wdExportDocumentWithMarkup, _
-				CreateBookmarks:=wdExportCreateHeadingBookmarks
+			dcNotas.ExportAsFixedFormat2 _
+				OutputFileName:=stFileName, _
+				ExportFormat:=wdExportFormatPDF, _
+				OpenAfterExport:=False, _
+				OptimizeFor:=wdExportOptimizeForPrint, _
+				Range:=wdExportAllDocument, _
+				Item:=wdExportDocumentWithMarkup, _
+				IncludeDocProps:=True, _
+				CreateBookmarks:=wdExportCreateWordBookmarks, _
+				DocStructureTags:=True, _
+				BitmapMissingFonts:=False, _
+				UseISO19005_1:=False, _
+				OptimizeForImageQuality:=True
 			dcNotas.Close wdDoNotSaveChanges
 			Set dcNotas = Nothing
 		End If
