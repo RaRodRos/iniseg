@@ -16,6 +16,17 @@ Function RangeIsField(rgArg As Range) As Boolean
 	RangeIsField = False
 End Function
 
+Function RangeStoryExist(dcArg, iStory As Integer) As Boolean
+' Returns true if a story with iStory index exist in dcArg document
+'
+	On Error GoTo NotExist
+	RangeStoryExist = dcArg.StoryRanges(iStory) = Nothing
+	Exit Function
+NotExist:
+	On Error GoTo 0
+	RangeStoryExist = False
+End Function
+
 
 
 
