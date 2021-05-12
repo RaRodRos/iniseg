@@ -254,19 +254,45 @@ End Function
 Sub StylesNoDirectFormatting(dcArg As Document, _
 							Optional rgArg As Range, _
 							Optional ByVal styUnderline As Style, _
-							Optional ByVal bUnderlineDelete As Boolean)
+							Optional ByVal iUnderlineSelected As Integer = -1)
 ' Converts bold and italic direct style formatting into Strong and Emphasis
 ' Args:
 	' rgArg: if nothing the sub works over all the story ranges
-	' styUnderline: the underlined text gets this style applied. It supersedes bUnderlineDelete
-	' bUnderlineDelete: if true (and styUnderline is Nothing) all underlined styling gets deleted
+	' styUnderline: the underlined text gets this style applied. It supersedes iUnderlineSelected
+	' iUnderlineSelected: the wdUnderline to be deleted/replaced. It cannot be 0 (wdUnderlineNone)
+		' -1: default deletes all underline styles
+		' -2: no underline styles are changed
 ' ToDo: recolocar hyperlinksformatting
 '
-	Dim iCounter As Integer
+	Dim iUnderlineStyles(), iCounter As Integer, i As Integer
 	Dim rgStory As Range
 	Dim stStylesToApply(13) As Integer
 
-	If Not styUnderline Is Nothing Then bUnderlineDelete = True
+	If iUnderlineSelected < -2 Or iUnderlineSelected = 0 Then Err.Raise 514, "iUnderlineSelected out of range"
+
+						' wdUnderlineNone				' 0		No underline
+	iUnderlineStyles(0) = wdUnderlineSingle				' 1		A single line. default
+	iUnderlineStyles(1) = wdUnderlineWords				' 2		Underline individual words only
+	iUnderlineStyles(2) = wdUnderlineDouble				' 3		A double line
+	iUnderlineStyles(3) = wdUnderlineDotted				' 4		Dots
+	iUnderlineStyles(4) = wdUnderlineThick				' 6		A single thick line
+	iUnderlineStyles(5) = wdUnderlineDash				' 7		Dashes
+	iUnderlineStyles(6) = wdUnderlineDotDash			' 9		Alternating dots and dashes
+	iUnderlineStyles(7) = wdUnderlineDotDotDash			' 10	An alternating dot-dot-dash pattern
+	iUnderlineStyles(8) = wdUnderlineWavy				' 11	A single wavy line
+	iUnderlineStyles(9) = wdUnderlineDashLong			' 39	Long dashes
+	iUnderlineStyles(10) = wdUnderlineDottedHeavy		' 20	Heavy dots
+	iUnderlineStyles(11) = wdUnderlineDashHeavy			' 23	Heavy dashes
+	iUnderlineStyles(12) = wdUnderlineDotDashHeavy		' 25	Alternating heavy dots and heavy dashes
+	iUnderlineStyles(13) = wdUnderlineDotDotDashHeavy	' 26	An alternating heavy dot-dot-dash pattern
+	iUnderlineStyles(14) = wdUnderlineWavyHeavy			' 27	A heavy wavy line
+	iUnderlineStyles(15) = wdUnderlineWavyDouble		' 43	A double wavy line
+	iUnderlineStyles(16) = wdUnderlineDashLongHeavy		' 55	Long heavy dashes
+
+	Do Until iUnderlineSelected < 1 Or iUnderlineSelected = iUnderlineStyles(i)
+		i = i + 1
+		If i = UBound(iUnderlineStyles) + 1 Then Err.Raise 514, "iUnderlineSelected out of range"
+	Loop
 
 	stStylesToApply(0) = wdStyleNormal
 	stStylesToApply(1) = wdStyleCaption
@@ -284,11 +310,10 @@ Sub StylesNoDirectFormatting(dcArg As Document, _
 	stStylesToApply(13) = wdStyleListNumber3
 
 	For Each rgStory In dcArg.StoryRanges
+		If rgStory.StoryType > 5 Then Exit For
 		If Not rgArg Is Nothing Then Set rgStory = rgArg
 		' Iterate through storyranges that have more than one story
 		Do Until rgStory Is Nothing
-			' Controls that the iteration doesn't go beyond the main stories
-			If rgArg Is Nothing And rgStory.StoryType > 5 Then Exit Do
 			With rgStory.Find
 				.ClearFormatting
 				.Replacement.ClearFormatting
@@ -324,33 +349,32 @@ Sub StylesNoDirectFormatting(dcArg As Document, _
 					.Font.Italic = True
 					.Replacement.Style = wdStyleEmphasis
 					.Execute Replace:=wdReplaceAll
-
-					.Font.Bold = False
-					.Font.Italic = True
-					.Replacement.Style = wdStyleEmphasis
-					.Execute Replace:=wdReplaceAll
-
-					If bUnderlineDelete Then
-						.Font.Underline = True
-						If styUnderline Is Nothing Then
-							.Replacement.Font.Underline = False
-						Else
-							.Replacement.Style = styUnderline
-						End If
-						.Execute Replace:=wdReplaceAll
+					
+					' Deletion/replacement of underlined direct styles
+					If styUnderline Is Nothing Then
+						.Replacement.Font.Underline = wdUnderlineNone
+					Else
+						.Replacement.Style = styUnderline
 					End If
+					Do While iUnderlineSelected > -2
+						If iUnderlineSelected > 0 Then
+							.Font.Underline = iUnderlineSelected
+							.Execute Replace:=wdReplaceAll
+							Exit Do
+						End If
+						.Font.Underline = iUnderlineStyles(i)
+						.Execute Replace:=wdReplaceAll
+						i = i + 1
+					Loop
 				Next iCounter
-
-				.ClearFormatting
-				.Text = "^f"
-				.Replacement.Style = wdStyleFootnoteReference
-				.Execute Replace:=wdReplaceAll
 			End With
 
+			If Not rgArg Is Nothing Then Exit For
 			Set rgStory = rgStory.NextStoryRange
 		Loop
-		If Not rgArg Is Nothing Then Exit For
 	Next rgStory
+
+	RaMacros.ReferencesFormatting dcArg
 	RaMacros.HyperlinksFormatting dcArg, 1 ' Aquí hay que meter el rango actual, y pasarlo dentro del bucle, cuando se refactorice HyperlinksFormatting
 	RaMacros.FindAndReplaceClearParameters
 End Sub
@@ -1583,14 +1607,14 @@ End Sub
 
 
 
-Sub FootnotesFormatting(dcArg As Document, _
+Sub ReferencesFormatting(dcArg As Document, _
 						Optional stFootnotes As String, _
 						Optional stFootnoteReferences As String)
 ' Applies styles to the footnotes story and the footnotes references
 ' Args:
 	' stFootnotes: style for the body text. Default: wdStyleFootnoteText
 	' styFootnoteReferences: style for the references. Default: stFootnoteReferences
-'
+' ToDo: integrate endnotes
 	If stFootnotes = vbNullString Then
 		stFootnotes = dcArg.Styles(wdStyleFootnoteText).NameLocal
 	ElseIf Not RaMacros.StyleExists(dcArg, stFootnotes) Then
