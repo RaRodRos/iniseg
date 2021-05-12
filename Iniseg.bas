@@ -1341,9 +1341,7 @@ Sub BibliografiaExportar(dcArg As Document)
 			.Execute FindText:="bibliografía"
 			If Not .Found Then
 				.Execute FindText:="bibliografia"
-				If Not .Found Then
-					.Execute FindText:="referencias"
-				End If
+				If Not .Found Then .Execute FindText:="referencias"
 			End If
 		End With
 		If rgBiblio.Find.Found Then
@@ -1490,19 +1488,15 @@ Sub ColoresCorrectos(dcArg As Document)
 	Dim rgStory As Range
 	Dim iStory As Integer
 
-	For iStory = 1 To 5 Step 1
-		On Error Resume Next
-		Set rgStory = dcArg.StoryRanges(iStory)
-		If Err.Number = 0 Then
-			On Error GoTo 0
-			rgStory.Font.ColorIndex = wdAuto
-			rgStory.Font.Shading.Texture  = wdTextureNone
-			rgStory.Font.Shading.BackgroundPatternColor = wdColorAutomatic
-			rgStory.Font.Shading.ForegroundPatternColor  = wdColorAutomatic
-		Else
-			On Error GoTo 0
-		End If
-	Next iStory
+	For Each rgStory In dcArg.StoryRanges
+		If rgStory.StoryType > 5 Then Exit For
+		Do While Not rgStory Is Nothing
+			rgStory.Shading.Texture  = wdTextureNone
+			rgStory.Shading.BackgroundPatternColor = wdColorAutomatic
+			rgStory.Shading.ForegroundPatternColor  = wdColorAutomatic
+			Set rgStory = rgStory.NextStoryRange
+		Loop
+	Next rgStory
 End Sub
 
 
