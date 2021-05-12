@@ -276,7 +276,7 @@ Function ConversionLibro(dcLibro As Document, _
 	RaMacros.HyperlinksFormatting dcLibro, 1, 0
 	Debug.Print "10.1/" & iUltima & " - Archivo libro: Aplicando estilo correcto a notas al pie"
 	If dcLibro.Footnotes.Count > 0 Then
-		RaMacros.FootnotesFormatting dcLibro
+		RaMacros.ReferencesFormatting dcLibro
 		Debug.Print "10.2/" & iUltima & " - Archivo libro: sangrando notas al pie"
 		RaMacros.FootnotesHangingIndentation dcLibro, 0.5, wdStyleFootnoteText
 	Else
