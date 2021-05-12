@@ -264,10 +264,11 @@ Sub StylesNoDirectFormatting(dcArg As Document, _
 		' -2: no underline styles are changed
 ' ToDo: recolocar hyperlinksformatting
 '
-	Dim iUnderlineStyles(), iCounter As Integer, i As Integer
+	Dim iUnderlineStyles(16), iCounter As Integer, i As Integer
 	Dim rgStory As Range
 	Dim stStylesToApply(13) As Integer
 
+	If iUnderlineSelected = -2 And Not styUnderline Is Nothing Then Err.Raise 514, "No underline style selected"
 	If iUnderlineSelected < -2 Or iUnderlineSelected = 0 Then Err.Raise 514, "iUnderlineSelected out of range"
 
 						' wdUnderlineNone				' 0		No underline
@@ -318,32 +319,40 @@ Sub StylesNoDirectFormatting(dcArg As Document, _
 				.Replacement.Style = wdStyleIntenseEmphasis
 				.Execute Replace:=wdReplaceAll
 
+				.ClearFormatting
+				.Replacement.ClearFormatting
 				.Font.Bold = True
 				.Font.Italic = False
 				.Replacement.Style = wdStyleStrong
 				.Execute Replace:=wdReplaceAll
 
+				.ClearFormatting
+				.Replacement.ClearFormatting
 				.Font.Bold = False
 				.Font.Italic = True
 				.Replacement.Style = wdStyleEmphasis
 				.Execute Replace:=wdReplaceAll
 				
 				' Deletion/replacement of underlined direct styles
-				If styUnderline Is Nothing Then
-					.Replacement.Font.Underline = wdUnderlineNone
-				Else
-					.Replacement.Style = styUnderline
-				End If
-				Do While iUnderlineSelected > -2
-					If iUnderlineSelected > 0 Then
-						.Font.Underline = iUnderlineSelected
-						.Execute Replace:=wdReplaceAll
-						Exit Do
+				If iUnderlineSelected > -2
+					.Replacement.ClearFormatting
+					If styUnderline Is Nothing Then
+						.Replacement.Font.Underline = wdUnderlineNone
+					Else
+						.Replacement.Style = styUnderline
 					End If
-					.Font.Underline = iUnderlineStyles(i)
-					.Execute Replace:=wdReplaceAll
-					i = i + 1
-				Loop
+					Do While i < UBound(iUnderlineStyles)
+						.ClearFormatting
+						If iUnderlineSelected > 0 Then
+							.Font.Underline = iUnderlineSelected
+							.Execute Replace:=wdReplaceAll
+							Exit Do
+						End If
+						.Font.Underline = iUnderlineStyles(i)
+						.Execute Replace:=wdReplaceAll
+						i = i + 1
+					Loop
+				End If
 			End With
 
 			If Not rgArg Is Nothing Then Exit For
