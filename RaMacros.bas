@@ -1604,7 +1604,7 @@ End Sub
 
 
 
-Sub ReferencesFormatting(dcArg As Document, _
+Sub FootnotesFormatting(dcArg As Document, _
 						Optional stFootnotes As String, _
 						Optional stFootnoteReferences As String)
 ' Applies styles to the footnotes story and the footnotes references
@@ -1612,6 +1612,9 @@ Sub ReferencesFormatting(dcArg As Document, _
 	' stFootnotes: style for the body text. Default: wdStyleFootnoteText
 	' styFootnoteReferences: style for the references. Default: stFootnoteReferences
 ' ToDo: integrate endnotes
+'
+	If dcArg.Footnotes.Count = 0 Then Exit Sub
+
 	If stFootnotes = vbNullString Then
 		stFootnotes = dcArg.Styles(wdStyleFootnoteText).NameLocal
 	ElseIf Not RaMacros.StyleExists(dcArg, stFootnotes) Then
@@ -1667,6 +1670,8 @@ Sub FootnotesHangingIndentation(dcArg As Document, _
 		End If
 		.FirstLineIndent = -sIndentation
 	End With
+
+	If dcArg.Footnotes.Count = 0 Then Exit Sub
 
 	With dcArg.StoryRanges(2).Find
 		.ClearFormatting
