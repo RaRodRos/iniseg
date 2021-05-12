@@ -16,6 +16,30 @@ Function RangeIsField(rgArg As Range) As Boolean
 	RangeIsField = False
 End Function
 
+Function RangeGetCompleteOutlineLevel(vPara As Paragraph)
+' Returns the complete range from vPara outline level 
+'
+	Dim iOutline As Integer
+	Dim lStoryEnd As Long
+
+	Set RangeGetCompleteOutlineLevel = vPara.Range
+
+	' If vPara is wdOutlineLevelBodyText the nearest higher outline level is found
+	Do While RangeGetCompleteOutlineLevel.Paragraphs.First.OutlineLevel = 10 _
+			And RangeGetCompleteOutlineLevel.Start > 0
+		RangeGetCompleteOutlineLevel.MoveStart wdParagraph, -1
+	Loop
+
+	iOutline = RangeGetCompleteOutlineLevel.Paragraphs.First.OutlineLevel
+	If iOutline = 10 Then iOutline = 9
+	lStoryEnd = RangeGetCompleteOutlineLevel.Parent.StoryRanges(RangeGetCompleteOutlineLevel.StoryType).End
+
+	Do While RangeGetCompleteOutlineLevel.End < lStoryEnd
+		If RangeGetCompleteOutlineLevel.Next(wdParagraph, 1).Paragraphs.Last.OutlineLevel < iOutline Then Exit Do
+		RangeGetCompleteOutlineLevel.MoveEnd wdParagraph, 1
+	Loop
+End Function
+
 Function RangeStoryExist(dcArg, iStory As Integer) As Boolean
 ' Returns true if a story with iStory index exist in dcArg document
 '
@@ -26,6 +50,7 @@ NotExist:
 	On Error GoTo 0
 	RangeStoryExist = False
 End Function
+
 
 
 
