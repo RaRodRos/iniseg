@@ -294,21 +294,6 @@ Sub StylesNoDirectFormatting(dcArg As Document, _
 		If i = UBound(iUnderlineStyles) + 1 Then Err.Raise 514, "iUnderlineSelected out of range"
 	Loop
 
-	stStylesToApply(0) = wdStyleNormal
-	stStylesToApply(1) = wdStyleCaption
-	stStylesToApply(2) = wdStyleList
-	stStylesToApply(3) = wdStyleList2
-	stStylesToApply(4) = wdStyleList3
-	stStylesToApply(5) = wdStyleListBullet
-	stStylesToApply(6) = wdStyleListBullet2
-	stStylesToApply(7) = wdStyleListBullet3
-	stStylesToApply(8) = wdStyleListBullet3
-	stStylesToApply(9) = wdStyleListBullet4
-	stStylesToApply(10) = wdStyleListBullet5
-	stStylesToApply(11) = wdStyleListNumber
-	stStylesToApply(12) = wdStyleListNumber2
-	stStylesToApply(13) = wdStyleListNumber3
-
 	For Each rgStory In dcArg.StoryRanges
 		If rgStory.StoryType > 5 Then Exit For
 		If Not rgArg Is Nothing Then Set rgStory = rgArg
@@ -328,45 +313,37 @@ Sub StylesNoDirectFormatting(dcArg As Document, _
 				.MatchSoundsLike = False
 				.MatchWildcards = False
 
-				.Style = wdStyleQuote
 				.Font.Bold = True
+				.Font.Italic = True
+				.Replacement.Style = wdStyleIntenseEmphasis
+				.Execute Replace:=wdReplaceAll
+
+				.Font.Bold = True
+				.Font.Italic = False
 				.Replacement.Style = wdStyleStrong
 				.Execute Replace:=wdReplaceAll
 
-				For iCounter = 0 To UBound(stStylesToApply)
-					.Style = stStylesToApply(iCounter)
-					.Font.Bold = True
-					.Font.Italic = True
-					.Replacement.Style = wdStyleIntenseEmphasis
-					.Execute Replace:=wdReplaceAll
-
-					.Font.Bold = True
-					.Font.Italic = False
-					.Replacement.Style = wdStyleStrong
-					.Execute Replace:=wdReplaceAll
-
-					.Font.Bold = False
-					.Font.Italic = True
-					.Replacement.Style = wdStyleEmphasis
-					.Execute Replace:=wdReplaceAll
-					
-					' Deletion/replacement of underlined direct styles
-					If styUnderline Is Nothing Then
-						.Replacement.Font.Underline = wdUnderlineNone
-					Else
-						.Replacement.Style = styUnderline
-					End If
-					Do While iUnderlineSelected > -2
-						If iUnderlineSelected > 0 Then
-							.Font.Underline = iUnderlineSelected
-							.Execute Replace:=wdReplaceAll
-							Exit Do
-						End If
-						.Font.Underline = iUnderlineStyles(i)
+				.Font.Bold = False
+				.Font.Italic = True
+				.Replacement.Style = wdStyleEmphasis
+				.Execute Replace:=wdReplaceAll
+				
+				' Deletion/replacement of underlined direct styles
+				If styUnderline Is Nothing Then
+					.Replacement.Font.Underline = wdUnderlineNone
+				Else
+					.Replacement.Style = styUnderline
+				End If
+				Do While iUnderlineSelected > -2
+					If iUnderlineSelected > 0 Then
+						.Font.Underline = iUnderlineSelected
 						.Execute Replace:=wdReplaceAll
-						i = i + 1
-					Loop
-				Next iCounter
+						Exit Do
+					End If
+					.Font.Underline = iUnderlineStyles(i)
+					.Execute Replace:=wdReplaceAll
+					i = i + 1
+				Loop
 			End With
 
 			If Not rgArg Is Nothing Then Exit For
