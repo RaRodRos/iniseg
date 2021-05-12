@@ -20,7 +20,7 @@ Function RangeStoryExist(dcArg, iStory As Integer) As Boolean
 ' Returns true if a story with iStory index exist in dcArg document
 '
 	On Error GoTo NotExist
-	RangeStoryExist = dcArg.StoryRanges(iStory) = Nothing
+	RangeStoryExist = dcArg.StoryRanges(iStory) Is Nothing
 	Exit Function
 NotExist:
 	On Error GoTo 0
@@ -345,7 +345,7 @@ Sub StylesNoDirectFormatting(dcArg As Document, _
 				.Execute Replace:=wdReplaceAll
 				
 				' Deletion/replacement of underlined direct styles
-				If iUnderlineSelected > -2
+				If iUnderlineSelected > -2 Then
 					.Replacement.ClearFormatting
 					If styUnderline Is Nothing Then
 						.Replacement.Font.Underline = wdUnderlineNone
