@@ -1601,34 +1601,34 @@ Sub TablesExportToPdf(dcArg As Document, _
 			stTableFullName = stDocName & " " & tbCurrent.Title
 			If bMaintainPageFormat Then
 				tbCurrent.Range.ExportAsFixedFormat2 _
-					OutputFileName:=dcArg.Path & Application.PathSeparator & stTableFullName, _
-					ExportFormat:=wdExportFormatPDF, _
-					OpenAfterExport:=False, _
-					OptimizeFor:=wdExportOptimizeForPrint, _
-					ExportCurrentPage:=False, _
-					Item:=wdExportDocumentWithMarkup, _
-					IncludeDocProps:=True, _
-					CreateBookmarks:=wdExportCreateNoBookmarks, _
-					DocStructureTags:=True, _
-					BitmapMissingFonts:=False, _
-					UseISO19005_1:=False, _
-					OptimizeForImageQuality:=True
+					OutputFileName:= dcArg.Path & Application.PathSeparator & stTableFullName, _
+					ExportFormat:= wdExportFormatPDF, _
+					OpenAfterExport:= False, _
+					OptimizeFor:= wdExportOptimizeForPrint, _
+					ExportCurrentPage:= False, _
+					Item:= wdExportDocumentWithMarkup, _
+					IncludeDocProps:= True, _
+					CreateBookmarks:= wdExportCreateNoBookmarks, _
+					DocStructureTags:= True, _
+					BitmapMissingFonts:= False, _
+					UseISO19005_1:= False, _
+					OptimizeForImageQuality:= True
 			Else
 				dcArg.ExportAsFixedFormat2 _
-					OutputFileName:=dcArg.Path & Application.PathSeparator & stTableFullName, _
-					ExportFormat:=wdExportFormatPDF, _
-					OpenAfterExport:=False, _
-					OptimizeFor:=wdExportOptimizeForPrint, _
-					Range:=wdExportFromTo, _
-					From:=tbCurrent.Range.Characters(1).Information(wdActiveEndPageNumber), _
-					To:=tbCurrent.Range.Information(wdActiveEndPageNumber), _
-					Item:=wdExportDocumentWithMarkup, _
-					IncludeDocProps:=True, _
-					CreateBookmarks:=wdExportCreateWordBookmarks, _
-					DocStructureTags:=True, _
-					BitmapMissingFonts:=False, _
-					UseISO19005_1:=False, _
-					OptimizeForImageQuality:=True
+					OutputFileName:= dcArg.Path & Application.PathSeparator & stTableFullName, _
+					ExportFormat:= wdExportFormatPDF, _
+					OpenAfterExport:= False, _
+					OptimizeFor:= wdExportOptimizeForPrint, _
+					Range:= wdExportFromTo, _
+					From:= tbCurrent.Range.Characters(1).Information(wdActiveEndPageNumber), _
+					To:= tbCurrent.Range.Information(wdActiveEndPageNumber), _
+					Item:= wdExportDocumentWithMarkup, _
+					IncludeDocProps:= True, _
+					CreateBookmarks:= wdExportCreateWordBookmarks, _
+					DocStructureTags:= True, _
+					BitmapMissingFonts:= False, _
+					UseISO19005_1:= False, _
+					OptimizeForImageQuality:= True
 			End If
 			If bDeleteTable Then
 				Set rgReplacement = tbCurrent.Range.Next(wdParagraph, 1)
