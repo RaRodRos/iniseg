@@ -387,7 +387,7 @@ Function ConversionStory(dcLibro As Document, _
 	Debug.Print "5.2/" & iUltima & " - Archivo story: convirtiendo listas y campos LISTNUM a texto"
 	dcStory.ConvertNumbersToText
 	Debug.Print "5.3/" & iUltima & " - Archivo story: títulos divididos para no solaparse con el logo en la diapositiva"
-	Iniseg.TitulosDivididos dcStory
+	Iniseg.TitulosDividir dcStory
 	
 	Debug.Print "6/" & iUltima & " - Archivo story: adaptando el tamaño de párrafos"
 	Iniseg.ParrafosConversionStory dcStory
@@ -625,7 +625,6 @@ Sub ComillasFormato(dcArg As Document)
 	Dim bSmtQt As Boolean
 	bSmtQt = Options.AutoFormatAsYouTypeReplaceQuotes
 	Options.AutoFormatAsYouTypeReplaceQuotes = True
-	RaMacros.FindResetProperties
 
 	With dcArg.Range.Find
 		.ClearFormatting
@@ -650,8 +649,6 @@ Sub ComillasFormato(dcArg As Document)
 	End With
 
 	Options.AutoFormatAsYouTypeReplaceQuotes = bSmtQt
-	RaMacros.FindResetProperties
-
 End Sub
 
 
@@ -753,7 +750,6 @@ Sub InterlineadoCorregido(dcArg As Document)
 		.LineUnitBefore = 0
 		.LineUnitAfter = 0
 	End With
-	RaMacros.FindResetProperties
 End Sub
 
 
@@ -1053,14 +1049,11 @@ End Sub
 
 
 
-Sub TitulosDivididos(dcArg As Document)
+Sub TitulosDividir(dcArg As Document)
 ' Corta los títulos 2 para que no peguen contra el logo de Iniseg
 '	- Título 2: 35 caractéres hasta logo Iniseg
-'	- Título 3: 55 caractéres hasta logo Iniseg
-'	- Título 4: 65 caractéres hasta logo Iniseg
-'	- Título 5: 70 caractéres hasta logo Iniseg
 '
-	With dcArg.Range.Find
+	With dcArg.Content.Find
 		.ClearFormatting
 		.Replacement.ClearFormatting
 		.Forward = True
@@ -1073,40 +1066,52 @@ Sub TitulosDivididos(dcArg As Document)
 		.MatchWildcards = True
 		If dcArg.Styles(wdstyleheading2).ListLevelNumber = 0 Then
 			.Text = "(?{35;}) "
-			.Replacement.Text = "\1^13"
+			.Replacement.Text = "\1^l"
 		Else
 			.Text = "(?{30;}) "
-			.Replacement.Text = "\1^13      "
+			.Replacement.Text = "\1^l      "
 		End If
 		.Style = wdstyleheading2
 		.Execute Replace:=wdReplaceAll
-
-		' En principio solo es conveniente hacerlo con los títulos 2, porque los demás no tienen por
-			' qué coincidir en la parte de arriba de la diapositiva, pero con el siguiente código
-			' se transformarían también los títulos 3 a 5
-
-		' .ClearFormatting
-		' .Replacement.ClearFormatting
-		' .Text = "(?{50;}) "
-		' .Replacement.Text = "\1^13         "
-		' .Style = wdstyleheading3
-		' .Execute Replace:=wdReplaceAll
-
-		' .ClearFormatting
-		' .Replacement.ClearFormatting
-		' .Text = "(?{60;}) "
-		' .Replacement.Text = "\1^13            "
-		' .Style = wdstyleheading4
-		' .Execute Replace:=wdReplaceAll
-
-		' .ClearFormatting
-		' .Replacement.ClearFormatting
-		' .Text = "(?{65;}) "
-		' .Replacement.Text = "\1^13"
-		' .Style = wdstyleheading5
-		' .Execute Replace:=wdReplaceAll
 	End With
-	RaMacros.FindResetProperties
+End Sub
+
+Sub TitulosDividirTodos(dcArg As Document)
+' Corta el resto de títulos para que no peguen contra el logo de Iniseg
+' En principio solo es conveniente hacerlo con los títulos 2, porque los demás no tienen por
+' qué coincidir en la parte de arriba de la diapositiva, pero con el siguiente código
+' se transformarían también los títulos 3 a 5
+'	- Título 2: 35 caractéres hasta logo Iniseg
+'	- Título 3: 55 caractéres hasta logo Iniseg
+'	- Título 4: 65 caractéres hasta logo Iniseg
+'	- Título 5: 70 caractéres hasta logo Iniseg
+'
+	Dim stText(2) As String
+	Dim stRepl(2) As String
+	Dim i As Integer
+
+	' Heading 3
+	stText(0) = "50"
+	stRepl(0) = "         "
+	' Heading 4
+	stText(1) = "60"
+	stRepl(1) = "            "
+	' Heading 5
+	stText(2) = "65"
+	stRepl(2) = vbNullString
+
+	For i = 0 To 2
+		With dcArg.Content.Find
+			.ClearFormatting
+			.Replacement.ClearFormatting
+			.Format = True
+			.MatchWildcards = True
+			.Style = -i - 4
+			.Text = "(?{" & stText(i) & ";}) "
+			.Replacement.Text = "\1^l" &  stRepl(i)
+			.Execute Replace:=wdReplaceAll
+		End With
+	Next i
 End Sub
 
 
@@ -1191,7 +1196,6 @@ Sub NotasPieExportar(dcArg As Document, _
 			If bDivide Then
 				' Asigna el número de tema
 				Set rgFind = scCurrent.Range
-				RaMacros.FindResetProperties
 				rgFind.Find.Execute FindText:="TEMA [0-9][0-9]", MatchWildcards:= True
 				If Not rgFind.Find.Found Then rgFind.Find.Execute FindText:="TEMA [0-9]", MatchWildcards:= True
 
