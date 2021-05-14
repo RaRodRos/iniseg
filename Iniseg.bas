@@ -30,7 +30,7 @@ Sub Iniseg1Limpieza()
 	Dim dcOriginal As Document, dcLibro As Document
 	Dim rgActual As Range
 	Dim stTextoOcultoMsg As String, stFileName As String
-	Dim iTextosOcultos() As Integer, Dim i As Integer, iDeleteAnswer As Integer
+	Dim iTextosOcultos() As Integer, i As Integer, iDeleteAnswer As Integer
 	Dim lEstilosBorrados As Long, lPrimeraNotaAlPie As Long
 	
 	Set dcOriginal = ActiveDocument
@@ -91,7 +91,7 @@ Sub Iniseg1Limpieza()
 	RaMacros.HeadersFootersRemove dcOriginal
 
 	Debug.Print "7.1/14 - Dando colores adecuados al texto"
-	Iniseg.ColoresCorrectos dcOriginal
+	RaMacros.FormatNoShading Nothing
 	Debug.Print "7.2/14 - Borrando texto oculto"
 	iTextosOcultos = RaMacros.ClearHiddenText(dcOriginal, True,,,1)
 	stTextoOcultoMsg = "No hay texto oculto"
@@ -1524,27 +1524,6 @@ Sub ConversionAutomaticaLibro(dcArg As Document)
 	For Each ishCurrent In dcArg.InlineShapes
 		ishCurrent.Range.Style = wdStyleNormal
 	Next ishCurrent
-End Sub
-
-
-
-
-
-
-Sub ColoresCorrectos(dcArg As Document)
-' Quita el subrayado y los colores fuera de plantilla del texto
-'
-	Dim rgStory As Range
-
-	For Each rgStory In dcArg.StoryRanges
-		If rgStory.StoryType > 5 Then Exit For
-		Do While Not rgStory Is Nothing
-			rgStory.Shading.Texture  = wdTextureNone
-			rgStory.Shading.ForegroundPatternColor  = wdColorAutomatic
-			rgStory.Shading.BackgroundPatternColor = wdColorAutomatic
-			Set rgStory = rgStory.NextStoryRange
-		Loop
-	Next rgStory
 End Sub
 
 

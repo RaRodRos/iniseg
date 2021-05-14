@@ -488,6 +488,31 @@ End Function
 
 
 
+Sub FormatNoShading(rgArg As Range, Optional dcArg)
+' Takes all shading out of the selected range (or all document if rgArg is Nothing)
+' PARAMS:
+	' rgArg: target range. If nothing the sub will loop through the main storyranges
+	' dcArg: if rgArg is Nothing the sub will loop through the storyranges of dcArg
+'
+	If rgArg Is Nothing And dcArg Is Nothing Then Err.Raise 516,,"There is no target range"
+	Dim rgStory As Range
+
+	For Each rgStory In rgArg.Parent.StoryRanges
+		If rgStory.StoryType > 5 Then Exit For
+		If Not rgArg Is Nothing Then Set rgStory = rgArg.Duplicate
+		Do
+			rgStory.Shading.Texture  = wdTextureNone
+			rgStory.Shading.ForegroundPatternColor  = wdColorAutomatic
+			rgStory.Shading.BackgroundPatternColor = wdColorAutomatic
+			Set rgStory = rgStory.NextStoryRange
+		Loop Until rgStory Is Nothing Or Not rgArg Is Nothing
+	Next rgStory
+End Sub
+
+
+
+
+
 
 Sub FieldsUnlink(dcArg As Document)
 ' Unlinks included and embed fields so the images doesn't corrupt the file when it 
