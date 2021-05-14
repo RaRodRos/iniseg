@@ -406,6 +406,25 @@ End Sub
 
 
 
+Sub FieldsUnlink(dcArg As Document)
+' Unlinks included and embed fields so the images doesn't corrupt the file when it 
+' gets updated from older (or different software) versions
+'
+	Dim iIndex As Integer
+	For iIndex = dcArg.Content.Fields.Count To 1 Step -1
+		If dcArg.Fields(iIndex).Type = wdFieldIncludePicture _
+			Or dcArg.Fields(iIndex).Type = wdFieldEmbed _
+		Then
+			dcArg.Content.Fields(iIndex).Unlink
+		End If
+	Next iIndex
+End Sub
+		
+		
+		
+		
+		
+		
 Sub FileCopy(dcArg As Document, _
 			Optional ByVal stPrefix As String, _
 			Optional ByVal stSuffix As String)
@@ -489,6 +508,49 @@ End Function
 
 
 
+Sub FindResetProperties(Optional rgArg As Range)
+' Resets find object of rgArg or Selection, if rgArg is Nothing
+'
+	Dim findArg As Find
+
+	If rgArg Is Nothing Then Set findArg = Selection.Find Else Set findArg = rgArg.Find
+	
+	With findArg
+		.ClearAllFuzzyOptions
+		.ClearFormatting
+		.CorrectHangulEndings = False
+		.IgnorePunct = False
+		.IgnoreSpace = False
+		.Format = False
+		.Forward = True
+		.Font.Reset
+		.MatchAllWordForms = False
+		.MatchByte = False
+		.MatchCase = False
+		.MatchControl = False
+		.MatchDiacritics = False
+		.MatchFuzzy = False
+		.MatchKashida = False
+		.MatchPhrase = False
+		.MatchPrefix = False
+		.MatchPrefix = False
+		.MatchWholeWord = False
+		.MatchWildcards = False
+		.MatchSoundsLike = False
+		.NoProofing = False
+		.ParagraphFormat.Reset
+		.Replacement.ClearFormatting
+		.Replacement.Text = ""
+		.Style= ""
+		.Text = ""
+		.Wrap = wdFindStop
+	End With
+End Sub
+
+
+
+
+
 Sub FormatNoHighlight(dcArg As Document)
 ' Takes all highlighting of the document off
 ' PARAMS:
@@ -528,25 +590,6 @@ End Sub
 
 
 
-Sub FieldsUnlink(dcArg As Document)
-' Unlinks included and embed fields so the images doesn't corrupt the file when it 
-' gets updated from older (or different software) versions
-'
-	Dim iIndex As Integer
-	For iIndex = dcArg.Content.Fields.Count To 1 Step -1
-		If dcArg.Fields(iIndex).Type = wdFieldIncludePicture _
-			Or dcArg.Fields(iIndex).Type = wdFieldEmbed _
-		Then
-			dcArg.Content.Fields(iIndex).Unlink
-		End If
-	Next iIndex
-End Sub
-		
-		
-		
-		
-		
-		
 Sub HeadersFootersRemove(dcArg As Document)
 ' Borra todos los pies y encabezados de página
 '
@@ -616,49 +659,6 @@ Sub ListsNoExtraNumeration(dcArg As Document, Optional ByVal iStory As Integer =
 	Next iStory
 End Sub
 
-
-
-
-
-
-Sub FindResetProperties(Optional rgArg As Range)
-' Resets find object of rgArg or Selection, if rgArg is Nothing
-'
-	Dim findArg As Find
-
-	If rgArg Is Nothing Then Set findArg = Selection.Find Else Set findArg = rgArg.Find
-	
-	With findArg
-		.ClearAllFuzzyOptions
-		.ClearFormatting
-		.CorrectHangulEndings = False
-		.IgnorePunct = False
-		.IgnoreSpace = False
-		.Format = False
-		.Forward = True
-		.Font.Reset
-		.MatchAllWordForms = False
-		.MatchByte = False
-		.MatchCase = False
-		.MatchControl = False
-		.MatchDiacritics = False
-		.MatchFuzzy = False
-		.MatchKashida = False
-		.MatchPhrase = False
-		.MatchPrefix = False
-		.MatchPrefix = False
-		.MatchWholeWord = False
-		.MatchWildcards = False
-		.MatchSoundsLike = False
-		.NoProofing = False
-		.ParagraphFormat.Reset
-		.Replacement.ClearFormatting
-		.Replacement.Text = ""
-		.Style= ""
-		.Text = ""
-		.Wrap = wdFindStop
-	End With
-End Sub
 
 
 
