@@ -391,7 +391,7 @@ Function ConversionStory(dcLibro As Document, _
 		' RaMacros.TablesConvertToImage dcStory
 		stName = Left$(dcStory.Name, InStrRev(dcStory.Name, ".") - 1)
 		stName = Right$(stName, Len(stName) - 2)
-		RaMacros.TablesExportToPdf dcStory, stName, "Tabla ", True, "Enlace a ",,, wdStyleBlockQuotation, 17
+		RaMacros.TablesExportToPdf dcStory, stName, "Tabla ", True, "Enlace a ",,, wdStyleBlockQuotation, 17, True
 		With dcStory.Content.Find
 			.ClearFormatting
 			.Replacement.ClearFormatting
