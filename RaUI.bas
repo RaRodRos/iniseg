@@ -4,12 +4,12 @@ Option Explicit
 ' En este módulo se implementarán todas las subrutinas y funciones a las que
 	' pueda interesar acceder desde la UI
 
-Sub uiSaveAsNewFileSub()
-    RaMacros.SaveAsNewFile ActiveDocument
+Sub uiFileSaveAsNew()
+    RaMacros.FileSaveAsNew ActiveDocument
 End Sub
 
-Sub uiCopySecurity()
-    RaMacros.CopySecurity ActiveDocument
+Sub uiFileCopy()
+    RaMacros.FileCopy ActiveDocument
 End Sub
 
 Sub uiHeadersFootersRemove()
