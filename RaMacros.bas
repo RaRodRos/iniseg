@@ -278,7 +278,6 @@ Function StyleSubstitution(dcArg As Document, _
 			dcArg.Styles(vStyOriginal).Delete
 		End If
 	End If
-	RaMacros.FindResetProperties
 	StyleSubstitution = 0
 End Function
 
@@ -398,7 +397,6 @@ Sub StylesNoDirectFormatting(dcArg As Document, _
 
 	RaMacros.FootnotesFormatting dcArg
 	RaMacros.HyperlinksFormatting dcArg, 1 ' Aquí hay que meter el rango actual, y pasarlo dentro del bucle, cuando se refactorice HyperlinksFormatting
-	RaMacros.FindResetProperties
 End Sub
 
 
@@ -685,7 +683,6 @@ Sub CleanBasic(rgArg As Range, _
 
 	RaMacros.CleanSpaces rgArg, bTabs, dcArg
 	RaMacros.CleanEmptyParagraphs rgArg, bBreakLines, dcArg
-	RaMacros.FindResetProperties
 End Sub
 
 Sub CleanSpaces(rgArg As Range, _
@@ -1032,7 +1029,6 @@ Sub HeadingsNoPunctuation(dcArg As Document)
 			.Execute Replace:=wdReplaceAll
 		Next signoActual
 	End With
-	RaMacros.FindResetProperties
 End Sub
 
 Sub HeadingsNoNumeration(dcArg As Document)
@@ -1046,7 +1042,6 @@ Sub HeadingsNoNumeration(dcArg As Document)
 	rgexNumeracion.IgnoreCase = True
 	rgexNumeracion.Global = False
 
-	RaMacros.FindResetProperties
 	For iTitulo = -2 To -10 Step -1
 		Set rgFind = dcArg.Content
 		Do
@@ -1074,7 +1069,6 @@ Sub HeadingsNoNumeration(dcArg As Document)
 			End With
 		Loop While bFound
 	Next iTitulo
-	RaMacros.FindResetProperties
 End Sub
 
 Sub HeadingsChangeCase(dcArg As Document, ByVal iHeading As Integer, ByVal iCase As Integer)
@@ -1344,7 +1338,6 @@ Sub QuotesStraightToCurly(dcArg As Document)
 		.Execute Replace:=wdReplaceAll
 	End With
 	Options.AutoFormatAsYouTypeReplaceQuotes = bSmtQt
-	RaMacros.FindResetProperties
 End Sub
 
 
@@ -1430,7 +1423,6 @@ Sub SectionBreakBeforeHeading(dcArg As Document, _
 			End If
 		End With
 	Loop While bFound
-	RaMacros.FindResetProperties
 End Sub
 
 Function SectionGetFirstFootnoteNumber(dcArg As Document, lIndex As Long) As Long
