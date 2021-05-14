@@ -66,6 +66,13 @@ Sub Iniseg1Limpieza()
 		' Al convertir el archivo a una versión moderna se les da a las imagenes las propiedades y métodos adecuados para su manipulación
 		dcOriginal.Convert
 	End If
+	
+	For Each rgActual In dcOriginal.StoryRanges
+		Do
+			rgActual.Font.Name = "Swis721 Lt BT"
+			Set rgActual = rgActual.NextStoryRange
+		Loop Until rgActual Is Nothing
+	Next rgActual
 
 	Debug.Print "2/14 - Creando archivo con plantilla Iniseg"
 	Set dcLibro = Documents.Add("iniseg-wd")
@@ -90,7 +97,6 @@ Sub Iniseg1Limpieza()
 	stTextoOcultoMsg = "No hay texto oculto"
 	On Error GoTo NoTextosOcultos
 	If iTextosOcultos(0) <> -501 Then
-		On Error GoTo 0
 		Dim stStoryRanges(4) As String
 		stStoryRanges(0) = "Texto principal"
 		stStoryRanges(1) = "Notas a pie de página"
@@ -1528,16 +1534,14 @@ End Sub
 Sub ColoresCorrectos(dcArg As Document)
 ' Quita el subrayado y los colores fuera de plantilla del texto
 '
-	Dim iMaxCount As Integer
 	Dim rgStory As Range
-	Dim iStory As Integer
 
 	For Each rgStory In dcArg.StoryRanges
 		If rgStory.StoryType > 5 Then Exit For
 		Do While Not rgStory Is Nothing
 			rgStory.Shading.Texture  = wdTextureNone
-			rgStory.Shading.BackgroundPatternColor = wdColorAutomatic
 			rgStory.Shading.ForegroundPatternColor  = wdColorAutomatic
+			rgStory.Shading.BackgroundPatternColor = wdColorAutomatic
 			Set rgStory = rgStory.NextStoryRange
 		Loop
 	Next rgStory
