@@ -489,28 +489,37 @@ End Function
 
 
 
-Sub FormatNoShading(Optional rgArg As Range, Optional dcArg As Document)
+Sub FormatNoHighlight(dcArg As Document)
+' Takes all highlighting of the document off
+' PARAMS:
+	' dcArg: target document
+'
+	Dim rgStory As Range
+
+	For Each rgStory In dcArg.StoryRanges
+		Do
+			rgStory.HighlightColorIndex = wdNoHighlight
+			Set rgStory = rgStory.NextStoryRange
+		Loop Until rgStory Is Nothing
+	Next rgStory
+End Sub
+
+Sub FormatNoShading(dcArg As Document)
 ' Takes all shading out of the selected range (or all document if rgArg is Nothing)
 ' PARAMS:
 	' rgArg: target range. If nothing the sub will loop through the main storyranges
 	' dcArg: if rgArg is Nothing the sub will loop through the storyranges of dcArg
 '
-	If Not rgArg Is Nothing Then
-		Set dcArg = rgArg.Parent
-	End If
-	If dcArg Is Nothing Then Err.Raise 516,,"There is no target range"
-
 	Dim rgStory As Range
 
 	For Each rgStory In dcArg.StoryRanges
-		If rgStory.StoryType > 5 Then Exit For
-		If Not rgArg Is Nothing Then Set rgStory = rgArg.Duplicate
 		Do
-			rgStory.Shading.Texture  = wdTextureNone
+			' rgStory.Shading.Texture  = wdTextureNone
 			' rgStory.Shading.ForegroundPatternColor  = wdColorAutomatic
+			rgStory.Font.Shading.BackgroundPatternColor = wdColorAutomatic
 			rgStory.Shading.BackgroundPatternColor = wdColorAutomatic
 			Set rgStory = rgStory.NextStoryRange
-		Loop Until rgStory Is Nothing Or Not rgArg Is Nothing
+		Loop Until rgStory Is Nothing
 	Next rgStory
 End Sub
 
@@ -1857,7 +1866,7 @@ Function ClearHiddenText(dcArg As Document, _
 			With styWarning.Font
 				.Size = 31
 				.ColorIndex = wdYellow
-				.Shading.Texture = wdTextureNone
+				' .Shading.Texture = wdTextureNone
 				.Shading.BackgroundPatternColorIndex = wdRed
 				.Hidden = bMaintainHidden
 			End With

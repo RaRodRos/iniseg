@@ -90,8 +90,10 @@ Sub Iniseg1Limpieza()
 	Debug.Print "6/14 - Borrando encabezados y pies de página"
 	RaMacros.HeadersFootersRemove dcOriginal
 
-	Debug.Print "7.1/14 - Dando colores adecuados al texto"
-	RaMacros.FormatNoShading Nothing
+	Debug.Print "7.1/14 - Eliminando sombras y marcados del texto"
+	RaMacros.FormatNoShading dcOriginal
+	RaMacros.FormatNoHighlight dcOriginal
+
 	Debug.Print "7.2/14 - Borrando texto oculto"
 	iTextosOcultos = RaMacros.ClearHiddenText(dcOriginal, True,,,1)
 	stTextoOcultoMsg = "No hay texto oculto"
