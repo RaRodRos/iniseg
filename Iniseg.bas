@@ -27,67 +27,66 @@ Sub Iniseg1Limpieza()
 ' Ejecuta limpieza (espacios, estilos innecesarios, etc.)
 ' Crea y deja abierto el archivo en formato libro para comenzar a darle los estilos
 '
-	Dim dcOriginalFile As Document, dcLibro As Document
-	Dim rgRangoActual As Range
+	Dim dcOriginal As Document, dcLibro As Document
+	Dim rgActual As Range
 	Dim stTextoOcultoMsg As String, stFileName As String
-	Dim i As Integer, iDeleteAnswer As Integer
+	Dim iTextosOcultos() As Integer, Dim i As Integer, iDeleteAnswer As Integer
 	Dim lEstilosBorrados As Long, lPrimeraNotaAlPie As Long
-	Dim iTextosOcultos() As Integer
-
-	Set dcOriginalFile = ActiveDocument
-	Set rgRangoActual = dcOriginalFile.Content
-	stFileName = dcOriginalFile.FullName
+	
+	Set dcOriginal = ActiveDocument
+	Set rgActual = dcOriginal.Content
+	stFileName = dcOriginal.FullName
 	lPrimeraNotaAlPie = 0
 
 	' Borrar contenido innecesario
 	iDeleteAnswer = MsgBox("¿Borrar contenido hasta el punto seleccionado?", vbYesNoCancel, "Borrar contenido")
 	If iDeleteAnswer = vbCancel Then Exit Sub
 
-	rgRangoActual.Start = Selection.Start
+	rgActual.Start = Selection.Start
 	Debug.Print "1.1/14 - Copia de seguridad (0) del archivo original"
-	RaMacros.CopySecurity dcOriginalFile, "0-", ""
+	RaMacros.CopySecurity dcOriginal, "0-", ""
 
 	If iDeleteAnswer = vbYes Then
-		If rgRangoActual.Footnotes.Count > 0 Then
-			lPrimeraNotaAlPie = rgRangoActual.FootnoteOptions.StartingNumber
-			If rgRangoActual.Footnotes(1).Index <> 1 Then
-				lPrimeraNotaAlPie = lPrimeraNotaAlPie + rgRangoActual.Footnotes(1).Index
+		If rgActual.Footnotes.Count > 0 Then
+			lPrimeraNotaAlPie = rgActual.FootnoteOptions.StartingNumber
+			If rgActual.Footnotes(1).Index <> 1 Then
+				lPrimeraNotaAlPie = lPrimeraNotaAlPie + rgActual.Footnotes(1).Index
 			End If
 		End If
 		Debug.Print "1.2/14 - Borrando texto seleccionado"
-		rgRangoActual.End = rgRangoActual.Start
-		rgRangoActual.Start = 0
-		rgRangoActual.Delete
+		rgActual.End = rgActual.Start
+		rgActual.Start = 0
+		rgActual.Delete
 	End If
 
 	' Actualización del formato del archivo (soluciona problemas de compatibilidad con shapes y campos)
-	If dcOriginalFile.CompatibilityMode < 15 Then
+	If dcOriginal.CompatibilityMode < 15 Then
 		Debug.Print "1.3/14 - Actualizando formato de archivo"
-		RaMacros.FieldsUnlink dcOriginalFile
+		RaMacros.FieldsUnlink dcOriginal
 		' Al convertir el archivo a una versión moderna se les da a las imagenes las propiedades y métodos adecuados para su manipulación
-		dcOriginalFile.Convert
+		dcOriginal.Convert
 	End If
 
 	Debug.Print "2/14 - Creando archivo con plantilla Iniseg"
 	Set dcLibro = Documents.Add("iniseg-wd")
 
 	Debug.Print "3/14 - Copiando encabezados"
-	Iniseg.HeaderCopy dcOriginalFile, dcLibro, 1
+	Iniseg.HeaderCopy dcOriginal, dcLibro, 1
 
 	Debug.Print "4/14 - Aplicando autoformateo"
-	Iniseg.AutoFormateo dcOriginalFile
+	Iniseg.AutoFormateo dcOriginal
 	Debug.Print "5.1/14 - Limpiando hiperenlaces para que solo figure su dominio"
-	RaMacros.HyperlinksFormatting dcOriginalFile, 2, 0
+	RaMacros.HyperlinksFormatting dcOriginal, 2, 0
 	Debug.Print "5.2/14 - Limpiando espacios"
-	RaMacros.CleanSpaces Nothing, True, dcOriginalFile
+	RaMacros.CleanSpaces Nothing, True, dcOriginal
 
 	Debug.Print "6/14 - Borrando encabezados y pies de página"
-	RaMacros.HeadersFootersRemove dcOriginalFile
+	RaMacros.HeadersFootersRemove dcOriginal
 
 	Debug.Print "7.1/14 - Dando colores adecuados al texto"
-	Iniseg.ColoresCorrectos dcOriginalFile
+	Iniseg.ColoresCorrectos dcOriginal
 	Debug.Print "7.2/14 - Borrando texto oculto"
-	iTextosOcultos = RaMacros.ClearHiddenText(dcOriginalFile, True,,,1)
+	iTextosOcultos = RaMacros.ClearHiddenText(dcOriginal, True,,,1)
 	stTextoOcultoMsg = "No hay texto oculto"
 	On Error GoTo NoTextosOcultos
 	If iTextosOcultos(0) <> -501 Then
@@ -111,18 +110,18 @@ Sub Iniseg1Limpieza()
 	Debug.Print stTextoOcultoMsg
 
 	Debug.Print "8/14 - Borrando estilos sin uso"
-	lEstilosBorrados = RaMacros.StylesDeleteUnused(dcOriginalFile, False)
+	lEstilosBorrados = RaMacros.StylesDeleteUnused(dcOriginal, False)
 
 	Debug.Print "9/14 - Quitando estilos de la galería de estilos rápidos"
-	Iniseg.EstilosEsconder dcOriginalFile
+	Iniseg.EstilosEsconder dcOriginal
 
 	' Copia de seguridad limpia
 	Debug.Print "10/14 - Creando copia de seguridad limpia (01)"
-	RaMacros.SaveAsNewFile dcOriginalFile, "01-", "", False, True
+	RaMacros.SaveAsNewFile dcOriginal, "01-", "", False, True
 
 	' Guarda el archivo con nombre original, preparado para el siguiente paso
 	Debug.Print "11.1/14 - Copiando contenido limpio al archivo con plantilla (archivo libro)"
-	dcLibro.Content.FormattedText = dcOriginalFile.Content
+	dcLibro.Content.FormattedText = dcOriginal.Content
 
 	If lPrimeraNotaAlPie <> 0 Then
 		Debug.Print "11.2/14 - Archivo libro: corrigiendo el número de comienzo de las notas al pie"
@@ -130,7 +129,7 @@ Sub Iniseg1Limpieza()
 	End If
 
 	Debug.Print "12/14 - Archivo original: cerrando"
-	dcOriginalFile.Close wdDoNotSaveChanges
+	dcOriginal.Close wdDoNotSaveChanges
 	Debug.Print "13/14 - Archivo libro: guardando"
 	dcLibro.SaveAs2 stFileName
 	dcLibro.Activate
