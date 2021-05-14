@@ -205,11 +205,11 @@ End Function
 
 
 
-Function StyleExists(dcArg As Document, stStyName As String) As Boolean
+Function StyleExists(dcArg As Document, vStyle As Variant) As Boolean
 ' Checks if styObjective exists in dcArg and returns a boolean
 '
 	On Error GoTo NotExist
-	If Not dcArg.Styles(stStyName) Is Nothing Then StyleExists = True
+	If Not dcArg.Styles(vStyle) Is Nothing Then StyleExists = True
 	Exit Function
 NotExist:
 	StyleExists = False
@@ -221,28 +221,28 @@ End Function
 
 
 Function StyleSubstitution(dcArg As Document, _
-						stOriginal As String, _
-						stSubstitute As String, _
+						vStyOriginal As Variant, _
+						vStySubstitute As Variant, _
 						Optional ByVal bDelete As Boolean _
 ) As Integer
-' Substitute one style with another one.
+' Replace one style with another over the entire document.
 ' Args:
-	' stOriginal: name of the style to be substituted
-	' stSubstitute: name of the substitute style 
-	' bDelete: if True, stOriginal will be deleted
+	' vStyOriginal: name of the style to be substituted
+	' vStySubstitute: substitute style 
+	' bDelete: if True, vStyOriginal will be deleted
 ' Returns:
 	' 0: all good
-	' 1: stOriginal doesn't exist
-	' 2: stSubstitute doesn't exist
-	' 3: neither stOriginal nor stSubstitute exists
-	' 4: stOriginal and stSubstitute are the same
+	' 1: vStyOriginal doesn't exist
+	' 2: vStySubstitute doesn't exist
+	' 3: neither vStyOriginal nor vStySubstitute exists
+	' 4: vStyOriginal and vStySubstitute are the same
 '
 
-	If stOriginal = stSubstitute Then Exit Function
-	If Not RaMacros.StyleExists(dcArg, stOriginal) Then
+	If vStyOriginal = vStySubstitute Then Exit Function
+	If Not RaMacros.StyleExists(dcArg, vStyOriginal) Then
 		StyleSubstitution = 1
 	End If
-	If Not RaMacros.StyleExists(dcArg, stSubstitute) Then
+	If Not RaMacros.StyleExists(dcArg, vStySubstitute) Then
 		StyleSubstitution = StyleSubstitution + 2
 	End If
 	If StyleSubstitution > 0 Then Exit Function
@@ -263,8 +263,8 @@ Function StyleSubstitution(dcArg As Document, _
 				.MatchSoundsLike = False
 				.MatchWildcards = False
 				.Text = ""
-				.Style = stOriginal
-				.Replacement.Style = stSubstitute
+				.Style = vStyOriginal
+				.Replacement.Style = vStySubstitute
 				.Execute Replace:=wdReplaceAll
 			End With
 			Set rgStory = rgStory.NextStoryRange
@@ -272,10 +272,10 @@ Function StyleSubstitution(dcArg As Document, _
 	Next rgStory
 
 	If bDelete Then
-		If dcArg.Styles(stOriginal).BuiltIn Then
-			Debug.Print stOriginal & " is a built in style and cannot be deleted"
+		If dcArg.Styles(vStyOriginal).BuiltIn Then
+			Debug.Print vStyOriginal & " is a built in style and cannot be deleted"
 		Else
-			dcArg.Styles(stOriginal).Delete
+			dcArg.Styles(vStyOriginal).Delete
 		End If
 	End If
 	RaMacros.FindAndReplaceClearParameters
@@ -407,8 +407,8 @@ End Sub
 
 
 Sub FileCopy(dcArg As Document, _
-				Optional ByVal stPrefix As String, _
-				Optional ByVal stSuffix As String)
+			Optional ByVal stPrefix As String, _
+			Optional ByVal stSuffix As String)
 ' Copies dcArg adding the suffix and/or prefix passed as arguments. In case
 ' there are none, it appends a number
 '
