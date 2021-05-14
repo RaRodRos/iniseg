@@ -278,7 +278,7 @@ Function StyleSubstitution(dcArg As Document, _
 			dcArg.Styles(vStyOriginal).Delete
 		End If
 	End If
-	RaMacros.FindAndReplaceClearParameters
+	RaMacros.FindResetProperties
 	StyleSubstitution = 0
 End Function
 
@@ -398,7 +398,7 @@ Sub StylesNoDirectFormatting(dcArg As Document, _
 
 	RaMacros.FootnotesFormatting dcArg
 	RaMacros.HyperlinksFormatting dcArg, 1 ' Aquí hay que meter el rango actual, y pasarlo dentro del bucle, cuando se refactorice HyperlinksFormatting
-	RaMacros.FindAndReplaceClearParameters
+	RaMacros.FindResetProperties
 End Sub
 
 
@@ -621,24 +621,42 @@ End Sub
 
 
 
-Sub FindAndReplaceClearParameters(Optional bDummy As Boolean)
-' Limpia los cuadros de búsqueda y reemplazo.
-' Útil para llamarla después de automatizar búsquedas
-	' https://wordmvp.com/FAQs/MacrosVBA/ClearFind.htm
+Sub FindResetProperties(Optional rgArg As Range)
+' Resets find object of rgArg or Selection, if rgArg is Nothing
 '
-	With Selection.Find
+	Dim findArg As Find
+
+	If rgArg Is Nothing Then Set findArg = Selection.Find Else Set findArg = rgArg.Find
+	
+	With findArg
+		.ClearAllFuzzyOptions
 		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Text = ""
-		.Replacement.Text = ""
-		.Forward = True
-		.Wrap = wdFindStop
+		.CorrectHangulEndings = False
+		.IgnorePunct = False
+		.IgnoreSpace = False
 		.Format = False
+		.Forward = True
+		.Font.Reset
+		.MatchAllWordForms = False
+		.MatchByte = False
 		.MatchCase = False
+		.MatchControl = False
+		.MatchDiacritics = False
+		.MatchFuzzy = False
+		.MatchKashida = False
+		.MatchPhrase = False
+		.MatchPrefix = False
+		.MatchPrefix = False
 		.MatchWholeWord = False
 		.MatchWildcards = False
 		.MatchSoundsLike = False
-		.MatchAllWordForms = False
+		.NoProofing = False
+		.ParagraphFormat.Reset
+		.Replacement.ClearFormatting
+		.Replacement.Text = ""
+		.Style= ""
+		.Text = ""
+		.Wrap = wdFindStop
 	End With
 End Sub
 
@@ -667,7 +685,7 @@ Sub CleanBasic(rgArg As Range, _
 
 	RaMacros.CleanSpaces rgArg, bTabs, dcArg
 	RaMacros.CleanEmptyParagraphs rgArg, bBreakLines, dcArg
-	RaMacros.FindAndReplaceClearParameters
+	RaMacros.FindResetProperties
 End Sub
 
 Sub CleanSpaces(rgArg As Range, _
@@ -1014,7 +1032,7 @@ Sub HeadingsNoPunctuation(dcArg As Document)
 			.Execute Replace:=wdReplaceAll
 		Next signoActual
 	End With
-	RaMacros.FindAndReplaceClearParameters
+	RaMacros.FindResetProperties
 End Sub
 
 Sub HeadingsNoNumeration(dcArg As Document)
@@ -1028,7 +1046,7 @@ Sub HeadingsNoNumeration(dcArg As Document)
 	rgexNumeracion.IgnoreCase = True
 	rgexNumeracion.Global = False
 
-	RaMacros.FindAndReplaceClearParameters
+	RaMacros.FindResetProperties
 	For iTitulo = -2 To -10 Step -1
 		Set rgFind = dcArg.Content
 		Do
@@ -1056,7 +1074,7 @@ Sub HeadingsNoNumeration(dcArg As Document)
 			End With
 		Loop While bFound
 	Next iTitulo
-	RaMacros.FindAndReplaceClearParameters
+	RaMacros.FindResetProperties
 End Sub
 
 Sub HeadingsChangeCase(dcArg As Document, ByVal iHeading As Integer, ByVal iCase As Integer)
@@ -1326,7 +1344,7 @@ Sub QuotesStraightToCurly(dcArg As Document)
 		.Execute Replace:=wdReplaceAll
 	End With
 	Options.AutoFormatAsYouTypeReplaceQuotes = bSmtQt
-	RaMacros.FindAndReplaceClearParameters
+	RaMacros.FindResetProperties
 End Sub
 
 
@@ -1412,7 +1430,7 @@ Sub SectionBreakBeforeHeading(dcArg As Document, _
 			End If
 		End With
 	Loop While bFound
-	RaMacros.FindAndReplaceClearParameters
+	RaMacros.FindResetProperties
 End Sub
 
 Function SectionGetFirstFootnoteNumber(dcArg As Document, lIndex As Long) As Long

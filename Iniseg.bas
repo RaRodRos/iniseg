@@ -625,7 +625,7 @@ Sub ComillasFormato(dcArg As Document)
 	Dim bSmtQt As Boolean
 	bSmtQt = Options.AutoFormatAsYouTypeReplaceQuotes
 	Options.AutoFormatAsYouTypeReplaceQuotes = True
-	RaMacros.FindAndReplaceClearParameters
+	RaMacros.FindResetProperties
 
 	With dcArg.Range.Find
 		.ClearFormatting
@@ -650,7 +650,7 @@ Sub ComillasFormato(dcArg As Document)
 	End With
 
 	Options.AutoFormatAsYouTypeReplaceQuotes = bSmtQt
-	RaMacros.FindAndReplaceClearParameters
+	RaMacros.FindResetProperties
 
 End Sub
 
@@ -753,7 +753,7 @@ Sub InterlineadoCorregido(dcArg As Document)
 		.LineUnitBefore = 0
 		.LineUnitAfter = 0
 	End With
-	RaMacros.FindAndReplaceClearParameters
+	RaMacros.FindResetProperties
 End Sub
 
 
@@ -1106,7 +1106,7 @@ Sub TitulosDivididos(dcArg As Document)
 		' .Style = wdstyleheading5
 		' .Execute Replace:=wdReplaceAll
 	End With
-	RaMacros.FindAndReplaceClearParameters
+	RaMacros.FindResetProperties
 End Sub
 
 
@@ -1191,7 +1191,7 @@ Sub NotasPieExportar(dcArg As Document, _
 			If bDivide Then
 				' Asigna el número de tema
 				Set rgFind = scCurrent.Range
-				RaMacros.FindAndReplaceClearParameters
+				RaMacros.FindResetProperties
 				rgFind.Find.Execute FindText:="TEMA [0-9][0-9]", MatchWildcards:= True
 				If Not rgFind.Find.Found Then rgFind.Find.Execute FindText:="TEMA [0-9]", MatchWildcards:= True
 
