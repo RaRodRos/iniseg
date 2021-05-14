@@ -406,7 +406,7 @@ End Sub
 
 
 
-Sub CopySecurity(dcArg As Document, _
+Sub FileCopy(dcArg As Document, _
 				Optional ByVal stPrefix As String, _
 				Optional ByVal stSuffix As String)
 ' Copies dcArg adding the suffix and/or prefix passed as arguments. In case
@@ -431,11 +431,7 @@ Sub CopySecurity(dcArg As Document, _
 	fsFileSystem.CopyFile dcArg.FullName, stNewFullName
 End Sub
 
-
-
-
-
-Function SaveAsNewFile(dcArg As Document, _
+Function FileSaveAsNew(dcArg As Document, _
 						Optional ByVal stPrefix As String, _
 						Optional ByVal stSuffix As String, _
 						Optional ByVal bOpen As Boolean = True, _
@@ -482,7 +478,7 @@ Function SaveAsNewFile(dcArg As Document, _
 	End If
 
 	If bOpen Then
-		Set SaveAsNewFile = dcNewDocument
+		Set FileSaveAsNew = dcNewDocument
 	Else
 		dcNewDocument.Close
 	End If
@@ -1424,7 +1420,7 @@ Function SectionsExportEachToFiles(dcArg As Document, _
 	lFirstFootnote = 1
 
 	For Each scCurrent In dcArg.Sections
-		Set dcNewDocument = RaMacros.SaveAsNewFile(dcArg, stPrefix, _
+		Set dcNewDocument = RaMacros.FileSaveAsNew(dcArg, stPrefix, _
 			stSuffix & scCurrent.index, True, False)
 
 		' Delete all sections of new document except the one to be saved
