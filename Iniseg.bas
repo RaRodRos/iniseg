@@ -787,8 +787,11 @@ Sub ParrafosSeparacionLibro(dcArg As Document)
 		.Text = "^13(*^13)"
 		.Replacement.Text = "^l\1"
 		.Execute Replace:=wdReplaceAll
-		.Text = "([tT][eE][mM][aA] [0-9]{1;2})"
-		.Replacement.Text = "\1 "
+		.Text = "[tT][eE][mM][aA]([0-9]{1;2})"
+		.Replacement.Text = "Tema \1"
+		.Execute Replace:=wdReplaceAll
+		.Text = "[tT][eE][mM][aA] @([0-9]{1;2})"
+		.Replacement.Text = "Tema \1 "
 		.Execute Replace:=wdReplaceAll
 		.Text = "([tT][eE][mM][aA] [0-9]{1;2}) @"
 		.Replacement.Text = "\1^l^l"
@@ -799,14 +802,31 @@ Sub ParrafosSeparacionLibro(dcArg As Document)
 		.Text = "[^13^l]{2;}"
 		.Replacement.Text = "^l^l"
 		.Execute Replace:=wdReplaceAll
-		' Elimina signos de puntuación que pudiera haber tras el número de tema
-		.Replacement.ClearFormatting
-		.Text = "(^l)[,.;:]"
-		.Replacement.Text = "\1"
-		.Execute Replace:=wdReplaceAll
 	End With
-	RaMacros.FindAndReplaceClearParameters
+	
+	' Eliminar signos de puntuación que pudiera haber tras el número de tema
+	Set rgStory = dcArg.Content
+	With rgStory.Find
+		.ClearFormatting
+		.Replacement.ClearFormatting
+		.Forward = True
+		.Format = True
+		.style = wdstyleheading1
+		.MatchCase = False
+		.MatchWholeWord = False
+		.MatchWildcards = False
+		.MatchSoundsLike = False
+		.MatchAllWordForms = False
+		.Text = ""
+	End With
+	Do
+		If Not rgStory.Find.Execute Then Exit Do
+		RaMacros.CleanSpaces rgStory
+		rgStory.Start = rgStory.End
+		rgStory.EndOf wdStory, wdExtend
+	Loop Until rgStory.Start = dcArg.Content.End - 1
 
+	' Resto de párrafos
 	For iStory = 1 To 5 Step 4
 		On Error Resume Next
 		Set rgStory = dcArg.StoryRanges(iStory)
@@ -867,6 +887,7 @@ Sub ParrafosSeparacionLibro(dcArg As Document)
 		End If
 	Next iStory
 End Sub
+
 Function GetSeparacionTamaño(pArg As Paragraph) As Integer
 ' Devuelve el tamaño de separación propio del tipo de párrafo pasado como argumento
 '
