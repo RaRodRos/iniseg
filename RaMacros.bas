@@ -1120,7 +1120,7 @@ Sub HeadingsChangeCase(dcArg As Document, ByVal iHeading As Integer, ByVal iCase
 					' Sometimes there's a bug that only allow to change from lower case
 					' so, if it's necessary, it gets converted
 					rgFind.Case = wdLowerCase
-					If iCase <> 0 Then rgFind.Case = iCase
+					rgFind.Case = iCase
 
 					rgFind.Expand wdParagraph
 					If rgFind.End <> dcArg.Content.End Then
