@@ -1198,8 +1198,8 @@ Sub NotasPieExportar(dcArg As Document, _
 			If bDivide Then
 				' Asigna el número de tema
 				Set rgFind = scCurrent.Range
-				rgFind.Find.Execute FindText:="TEMA [0-9][0-9]", MatchWildcards:= True
-				If Not rgFind.Find.Found Then rgFind.Find.Execute FindText:="TEMA [0-9]", MatchWildcards:= True
+				rgFind.Find.Execute FindText:="[Tt][Ee][Mm][Aa] [0-9][0-9]", MatchWildcards:= True
+				If Not rgFind.Find.Found Then rgFind.Find.Execute FindText:="[Tt][Ee][Mm][Aa] [0-9]", MatchWildcards:= True
 
 				If rgFind.Find.Found Then
 					stFileName = rgFind.Text & " "
@@ -1341,8 +1341,8 @@ Sub BibliografiaExportar(dcArg As Document)
 				.MatchSoundsLike = False
 				.MatchAllWordForms = False
 				.Style = wdStyleHeading1
-				.Execute FindText:="TEMA [0-9][0-9]"
-				If Not .Found Then .Execute FindText:="TEMA [0-9]"
+				.Execute FindText:="[Tt][Ee][Mm][Aa] [0-9][0-9]"
+				If Not .Found Then .Execute FindText:="[Tt][Ee][Mm][Aa] [0-9]"
 				If .Found Then
 					stNombre = dcArg.Path & Application.PathSeparator _
 						& "BIBLIOGRAFÍA " & rgTitulo.Text & ".pdf"
