@@ -393,7 +393,6 @@ Function ConversionStory(dcLibro As Document, _
 	
 	Debug.Print "6/" & iUltima & " - Archivo story: adaptando el tamaño de párrafos"
 	Iniseg.ParrafosConversionStory dcStory
-	Iniseg.TitulosConTresEspacios dcStory
 
 	If dcStory.Tables.Count > 0 Then
 		Debug.Print "7/" & iUltima & " - Archivo story: transformando/exportando tablas"
