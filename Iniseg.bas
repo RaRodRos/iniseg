@@ -292,10 +292,10 @@ Function ConversionLibro(dcLibro As Document, _
 	Debug.Print "11/" & iUltima & " - Archivo libro: corrigiendo limpieza e interlineado"
 	Iniseg.InterlineadoCorregido dcLibro
 	RaMacros.CleanBasic Nothing, False, True, dcLibro
-	' Lo siguiente es demasiado agresivo, devuelve numeraciones y cambia cosas sin ton ni son
-	' dcLibro.Content.Select
-	' Selection.ClearCharacterDirectFormatting
-	' Selection.ClearParagraphDirectFormatting
+	' Lo siguiente quizá es demasiado agresivo porque devuelve numeraciones y cambia cosas sin ton ni son
+	dcLibro.Content.Select
+	Selection.ClearCharacterDirectFormatting
+	Selection.ClearParagraphDirectFormatting
 
 	Debug.Print "12/" & iUltima & " - Archivo libro: formateando imágenes"
 	Iniseg.ImagenesLibro dcLibro
@@ -310,9 +310,11 @@ Function ConversionLibro(dcLibro As Document, _
 		Debug.Print "15.2/" & iUltima & " - Archivo libro: mismo numbering rule de notas al pie en todas las secciones"
 		RaMacros.FootnotesSameNumberingRule dcLibro, iNotasContinuas, -501
 	End If
-	Debug.Print "16/" & iUltima & " - Archivo libro: añadiendo saltos de página antes de Títulos de bibliografía"
+	Debug.Print "16.1/" & iUltima & " - Archivo libro: Bibliografía añadiendo saltos de página antes de títulos"
 	Iniseg.BibliografiaSaltosDePagina dcLibro
-
+	Debug.Print "16.2/" & iUltima & " - Archivo libro: Bibliografía eliminando numeración de títulos"
+	Iniseg.BibliografiaNoNumeracion dcLibro
+	
 	' Borrando último párrafo vacío
 	Do While dcLibro.Paragraphs.Last.Range.Text = vbCr
 		If dcLibro.Paragraphs.Last.Range.Delete = 0 Then Exit Do
@@ -1297,69 +1299,6 @@ End Sub
 
 
 
-Sub BibliografiaMarcarReferencias(dcArg As Document)
-' Marcar los campos de referencias bibliograficas con el texto "NOT_BLI-[numNota]"
-' para poder automatizar externamente su conversión en el .story
-'
-	Dim i As Integer
-
-	For i = dcArg.Fields.Count To 1 Step -1
-		If ActiveDocument.Fields(i).Type = wdFieldCitation Then
-			ActiveDocument.Fields(i).Result.Previous(wdCharacter, 2).InsertAfter "not_bib-"
-		End If
-	Next i
-End Sub
-
-
-
-
-
-
-
-Sub BibliografiaSaltosDePagina(dcArg As Document)
-' Inserta un salto de página antes de cada bibliografía
-'
-	Dim scCurrent As Section, rgFindRange As Range
-
-	For Each scCurrent In dcArg.Sections
-		Set rgFindRange = scCurrent.Range
-		With rgFindRange.Find
-			.ClearFormatting
-			.Replacement.ClearFormatting
-			.Forward = True
-			.Wrap = wdFindStop
-			.Format = True
-			.MatchCase = False
-			.MatchWholeWord = False
-			.MatchWildcards = False
-			.MatchSoundsLike = False
-			.MatchAllWordForms = False
-			.Style = wdStyleHeading2
-			.Execute FindText:="bibliografía"
-			If Not .Found Then
-				.Execute FindText:="bibliografia"
-				If Not .Found Then
-					.Execute FindText:="referencias"
-				End If
-			End If
-		End With
-			If rgFindRange.Find.Found Then
-				Set rgFindRange = rgFindRange.Previous(wdParagraph, 1)
-				If rgFindRange.Characters(1).Text <> Chr(12) Then
-					If rgFindRange.Text = vbCr Then
-						rgFindRange.InsertBreak 7
-					Else
-						rgFindRange.InsertParagraphAfter
-						Set rgFindRange = rgFindRange.Paragraphs.Last.Range
-						rgFindRange.Select
-						rgFindRange.style = wdStyleNormal
-						rgFindRange.InsertBreak 7
-					End If
-				End If
-			End If
-	Next scCurrent
-End Sub
-
 Sub BibliografiaExportar(dcArg As Document)
 ' Exporta la bibliografía en archivos separados y la borra de dcArg
 '
@@ -1439,6 +1378,99 @@ Sub BibliografiaExportar(dcArg As Document)
 		End If
 	Next scCurrent
 End Sub
+
+Sub BibliografiaMarcarReferencias(dcArg As Document)
+' Marcar los campos de referencias bibliograficas con el texto "NOT_BLI-[numNota]"
+' para poder automatizar externamente su conversión en el .story
+'
+	Dim i As Integer
+
+	For i = dcArg.Fields.Count To 1 Step -1
+		If ActiveDocument.Fields(i).Type = wdFieldCitation Then
+			ActiveDocument.Fields(i).Result.Previous(wdCharacter, 2).InsertAfter "not_bib-"
+		End If
+	Next i
+End Sub
+
+Sub BibliografiaNoNumeracion(dcArg As Document)
+
+	Dim i As Integer
+	Dim stBiblio(2) As String
+	Dim rgFind As Range
+
+	stBiblio(0) = "bibliografía"
+	stBiblio(1) = "bibliografia"
+	stBiblio(2) = "referencias"
+
+	For i = 0 To 2
+		Set rgFind = dcArg.Content
+		With rgFind.Find
+			.ClearFormatting
+			.Replacement.ClearFormatting
+			.Forward = True
+			.Format = True
+			.style = wdstyleheading2
+			.MatchCase = False
+			.MatchWholeWord = False
+			.MatchWildcards = False
+			.MatchSoundsLike = False
+			.MatchAllWordForms = False
+			.Text = stBiblio(i)
+		End With
+		Do
+			If Not rgFind.Find.Execute Then Exit Do
+			rgFind.ListFormat.RemoveNumbers NumberType:=wdNumberParagraph
+			rgFind.Start = rgFind.End
+			rgFind.EndOf wdStory, wdExtend
+		Loop Until rgFind.Start = dcArg.Content.End - 1
+	Next i
+End Sub
+
+Sub BibliografiaSaltosDePagina(dcArg As Document)
+' Inserta un salto de página antes de cada bibliografía
+'
+	Dim scCurrent As Section, rgFindRange As Range
+
+	For Each scCurrent In dcArg.Sections
+		Set rgFindRange = scCurrent.Range
+		With rgFindRange.Find
+			.ClearFormatting
+			.Replacement.ClearFormatting
+			.Forward = True
+			.Wrap = wdFindStop
+			.Format = True
+			.MatchCase = False
+			.MatchWholeWord = False
+			.MatchWildcards = False
+			.MatchSoundsLike = False
+			.MatchAllWordForms = False
+			.Style = wdStyleHeading2
+			.Execute FindText:="bibliografía"
+			If Not .Found Then
+				.Execute FindText:="bibliografia"
+				If Not .Found Then
+					.Execute FindText:="referencias"
+				End If
+			End If
+		End With
+			If rgFindRange.Find.Found Then
+				Set rgFindRange = rgFindRange.Previous(wdParagraph, 1)
+				If rgFindRange.Characters(1).Text <> Chr(12) Then
+					If rgFindRange.Text = vbCr Then
+						rgFindRange.InsertBreak 7
+					Else
+						rgFindRange.InsertParagraphAfter
+						Set rgFindRange = rgFindRange.Paragraphs.Last.Range
+						rgFindRange.Select
+						rgFindRange.style = wdStyleNormal
+						rgFindRange.InsertBreak 7
+					End If
+				End If
+			End If
+	Next scCurrent
+End Sub
+
+
 
 
 
