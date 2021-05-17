@@ -937,16 +937,16 @@ Sub TablasParrafosSeparacion(dcArg As Document)
 			Then
 				Set rgTable = tbCurrent.Range.Previous(wdParagraph, 1)
 				rgTable.Characters.Last.InsertParagraphBefore
-				rgTable.Paragraphs.Last.Style = wdStyleNormal
-				rgTable.Paragraphs.Last.Range.Font.Size = 5
+				rgTable.Paragraphs.Last.Style = "iniseg_separacion5"
+				' rgTable.Paragraphs.Last.Range.Font.Size = 5
 			End If
 			If tbCurrent.Range.End <> dcArg.StoryRanges(tbCurrent.Range.StoryType).End _
 				And tbCurrent.Range.Next(wdParagraph, 1).Text <> vbCr _
 			Then
 				Set rgTable = tbCurrent.Range.Next(wdParagraph, 1)
 				rgTable.InsertParagraphBefore
-				rgTable.Paragraphs.First.Style = wdStyleNormal
-				rgTable.Paragraphs.First.Range.Font.Size = 5
+				rgTable.Paragraphs.First.Style = "iniseg_separacion5"
+				' rgTable.Paragraphs.First.Range.Font.Size = 5
 			End If
 		End If
 	Next iCounter
