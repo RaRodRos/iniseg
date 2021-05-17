@@ -663,7 +663,9 @@ Sub ImagenesLibro(dcArg As Document)
 	' Las centra
 	' Impide que superen el ancho de página
 '
-	Dim inlShape As InlineShape, sngRealPageWidth As Single, sngRealPageHeight As Single, iIndex As Integer
+	Dim i As Integer
+	Dim sngRealPageWidth As Single, sngRealPageHeight As Single
+	Dim inlShape As InlineShape
 
 	
 	sngRealPageWidth = dcArg.PageSetup.PageWidth - dcArg.PageSetup.Gutter _
@@ -675,8 +677,8 @@ Sub ImagenesLibro(dcArg As Document)
 
 	' Se convierten todas de shapes a inlineshapes
 	If dcArg.Shapes.Count > 0 Then
-		For iIndex = dcArg.Shapes.Count To 1 Step -1
-			With dcArg.Shapes(iIndex)
+		For i = dcArg.Shapes.Count To 1 Step -1
+			With dcArg.Shapes(i)
 				'If .Type = msoPicture Then
 				.LockAnchor = True
 				.RelativeVerticalPosition = wdRelativeVerticalPositionParagraph
@@ -689,7 +691,7 @@ Sub ImagenesLibro(dcArg As Document)
 				.ConvertToInlineShape
 				'End If
 			End With
-		Next iIndex
+		Next i
 	End If
 
 	' Se les da el formato correcto
@@ -726,7 +728,26 @@ End Sub
 Sub ImagenesStory(dcArg As Document)
 ' Hace que todas las imágenes sean enormes, para meterlas en el story
 '
+	Dim i As Integer
 	Dim inlShape As InlineShape
+
+	If dcArg.Shapes.Count > 0 Then
+		For i = dcArg.Shapes.Count To 1 Step -1
+			With dcArg.Shapes(i)
+				'If .Type = msoPicture Then
+				.LockAnchor = True
+				.RelativeVerticalPosition = wdRelativeVerticalPositionParagraph
+				With .WrapFormat
+					.AllowOverlap = False
+					.DistanceTop = 8
+					.DistanceBottom = 8
+					.Type = wdWrapTopBottom
+				End With
+				.ConvertToInlineShape
+				'End If
+			End With
+		Next i
+	End If
 
 	For Each inlShape In dcArg.InlineShapes
 		inlShape.Width = CentimetersToPoints(29)
