@@ -1139,6 +1139,16 @@ End Sub
 
 
 
+Sub HyperlinksDeleteAll(dcArg As Document)
+' Deletes all hyperlinks
+'
+	Dim i As Integer
+
+	For i = dcArg.Hyperlinks.Count To 1 Step - 1
+		dcArg.Hyperlinks(i).Delete
+	Next i
+End Sub
+
 Sub HyperlinksFormatting(dcArg As Document, _
 						ByVal iPurpose As Integer, _
 						Optional ByVal iStory As Integer = 0)
