@@ -1643,10 +1643,11 @@ Sub TablesExportToPdf(dcArg As Document, _
 					Optional ByVal stAddress As String, _
 					Optional ByVal iStyle As Integer = wdStyleNormal, _
 					Optional ByVal iSize As Integer, _
-					Optional ByVal bMaintainPageFormat As Boolean = True _
+					Optional ByVal bFullPage As Boolean = True _
 )
 ' Export each table to a PDF file
 ' Args:
+	' stDocName: name of the parent document
 	' stSuffix: the suffix to append to the table title, if it hasn't any
 	' bDeleteTable: defines if the table should be replaced
 	' stReplacementText: the replacement text before the table title
@@ -1657,6 +1658,7 @@ Sub TablesExportToPdf(dcArg As Document, _
 		' If empty it will point to the destination of the exported pdf
 	' iStyle: the paragraph style of the replacement text
 	' iSize: the font size of the replacement text
+	' bFullPage: if true the table is exported along with the rest of its page
 '
 	Dim iCounter As Integer
 	Dim rgReplacement As Range
@@ -1675,21 +1677,7 @@ Sub TablesExportToPdf(dcArg As Document, _
 				tbCurrent.Title = stSuffix & iCounter
 			End If
 			stTableFullName = stDocName & " " & tbCurrent.Title
-			If bMaintainPageFormat Then
-				tbCurrent.Range.ExportAsFixedFormat2 _
-					OutputFileName:= dcArg.Path & Application.PathSeparator & stTableFullName, _
-					ExportFormat:= wdExportFormatPDF, _
-					OpenAfterExport:= False, _
-					OptimizeFor:= wdExportOptimizeForPrint, _
-					ExportCurrentPage:= False, _
-					Item:= wdExportDocumentWithMarkup, _
-					IncludeDocProps:= True, _
-					CreateBookmarks:= wdExportCreateNoBookmarks, _
-					DocStructureTags:= True, _
-					BitmapMissingFonts:= False, _
-					UseISO19005_1:= False, _
-					OptimizeForImageQuality:= True
-			Else
+			If bFullPage Then
 				dcArg.ExportAsFixedFormat2 _
 					OutputFileName:= dcArg.Path & Application.PathSeparator & stTableFullName, _
 					ExportFormat:= wdExportFormatPDF, _
@@ -1701,6 +1689,20 @@ Sub TablesExportToPdf(dcArg As Document, _
 					Item:= wdExportDocumentWithMarkup, _
 					IncludeDocProps:= True, _
 					CreateBookmarks:= wdExportCreateWordBookmarks, _
+					DocStructureTags:= True, _
+					BitmapMissingFonts:= False, _
+					UseISO19005_1:= False, _
+					OptimizeForImageQuality:= True
+			Else
+				tbCurrent.Range.ExportAsFixedFormat2 _
+					OutputFileName:= dcArg.Path & Application.PathSeparator & stTableFullName, _
+					ExportFormat:= wdExportFormatPDF, _
+					OpenAfterExport:= False, _
+					OptimizeFor:= wdExportOptimizeForPrint, _
+					ExportCurrentPage:= False, _
+					Item:= wdExportDocumentWithMarkup, _
+					IncludeDocProps:= True, _
+					CreateBookmarks:= wdExportCreateNoBookmarks, _
 					DocStructureTags:= True, _
 					BitmapMissingFonts:= False, _
 					UseISO19005_1:= False, _
