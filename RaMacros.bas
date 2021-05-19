@@ -1613,6 +1613,27 @@ Sub TablesConvertToImage(dcArg As Document, _
 	Next iTable
 End Sub
 
+Sub TablesConvertToText(Optional rgArg As Range, _
+						Optional ByVal iSeparator As Integer, _
+						Optional ByVal vNested As Variant = True)
+' Convert each table in the range to text
+' If no range is passed as an argument, it will act on the selection
+' params:
+	' iSeparator: the column separator parameter:
+		' wdSeparateByParagraphs 			0 	
+		' wdSeparateByTabs 					1
+		' wdSeparateByCommas 				2 	
+		' wdSeparateByDefaultListSeparator 	3 	
+	' bNested: the NestedTables parameter
+'
+	If rgArg Is Nothing Then Set rgArg = Selection.Range
+	If rgArg Is Nothing Then Exit Sub
+
+	Do While rgArg.Tables.Count > 0
+		rgArg.Tables(1).ConvertToText iSeparator, vNested
+	Loop
+End Sub
+
 Sub TablesExportToPdf(dcArg As Document, _
 					Optional ByVal stDocName As String, _
 					Optional ByVal stSuffix As String = "Table ", _
