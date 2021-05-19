@@ -136,6 +136,11 @@ Sub Iniseg1Limpieza()
 		dcLibro.Footnotes.StartingNumber = lPrimeraNotaAlPie
 	End If
 
+	If dcLibro.Tables.Count <> 0 Then
+		Debug.Print "11.3/14 - Archivo libro: formateando tablas con el estilo iniseg-tabla"
+		Iniseg.TablasEstiloIniseg
+	End If
+
 	Debug.Print "12/14 - Archivo original: cerrando"
 	dcOriginal.Close wdDoNotSaveChanges
 	Debug.Print "13/14 - Archivo libro: guardando"
@@ -303,7 +308,7 @@ Function ConversionLibro(dcLibro As Document, _
 	Debug.Print "13/" & iUltima & " - Archivo libro: añadiendo párrafos de separación"
 	Iniseg.ParrafosSeparacionLibro dcLibro
 	Debug.Print "14/" & iUltima & " - Archivo libro: añadiendo párrafos de separación antes de tablas"
-	Iniseg.TablasParrafosSeparacion dcLibro
+	Iniseg.ParrafosSeparacionTablas dcLibro
 	Debug.Print "15.1/" & iUltima & " - Archivo libro: añadiendo saltos de sección antes de Títulos 1"
 	RaMacros.SectionBreakBeforeHeading dcLibro, False, 4, 1
 	If dcLibro.Sections.Count > 1 Then
@@ -936,7 +941,7 @@ Function GetSeparacionTamaño(pArg As Paragraph) As Integer
 	End With
 End Function
 
-Sub TablasParrafosSeparacion(dcArg As Document)
+Sub ParrafosSeparacionTablas(dcArg As Document)
 ' Inserta un párrafo vacío y marcado antes de cada tabla
 '
 	Dim iCounter As Integer
@@ -1606,10 +1611,38 @@ End Sub
 
 Sub EstilosEsconder(dcArg As Document)
 ' Esconde todos los estilos de la galería de estilos, para que no se acumulen
+'
 	Dim stCurrent As Style
 	For Each stCurrent In dcArg.Styles
 		On Error Resume Next
 		stCurrent.QuickStyle = False
 		On Error GoTo 0
 	Next stCurrent
+End Sub
+
+
+
+
+
+
+Sub TablasEstiloIniseg(Optional tbArg As Table)
+' Formatea la tabla indicada (o todas si no se envía ninguna) con el estilo de
+' tabla "iniseg-tabla"
+'
+	Dim tbCurrent As Table
+
+	If Not tbArg Is Nothing Then
+		tbArg.Style = "iniseg-tabla"
+		tbArg.Select
+		Selection.ClearCharacterDirectFormatting
+		Selection.ClearParagraphDirectFormatting
+		Exit Sub
+	End If
+
+	For Each tbCurrent In ActiveDocument.Tables
+		tbCurrent.Style = "iniseg-tabla"
+		tbCurrent.Select
+		Selection.ClearCharacterDirectFormatting
+		Selection.ClearParagraphDirectFormatting
+	Next tbCurrent
 End Sub
