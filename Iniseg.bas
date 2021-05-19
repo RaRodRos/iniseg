@@ -404,16 +404,10 @@ Function ConversionStory(dcLibro As Document, _
 			.ClearFormatting
 			.Replacement.ClearFormatting
 			.Forward = True
-			.Format = False
-			.MatchCase = False
-			.MatchWholeWord = False
-			.MatchWildcards = False
-			.MatchSoundsLike = False
-			.MatchAllWordForms = False
+			.Format = True
 			.Style = wdStyleBlockQuotation
-			.Text = "Enlace a tabla"
 			.Replacement.ParagraphFormat.Alignment = wdAlignParagraphCenter
-			.Execute Replace:=wdReplaceAll
+			.Execute FindText:="Enlace a tabla", Replace:=wdReplaceAll
 		End With
 	Else
 		Debug.Print "7/" & iUltima & "--- No hay tablas ---"
