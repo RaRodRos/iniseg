@@ -1627,25 +1627,26 @@ Sub TablesConvertToText(Optional rgArg As Range, _
 	' bNested: the NestedTables parameter
 '
 	If rgArg Is Nothing Then Set rgArg = Selection.Range
-	If rgArg Is Nothing Then Exit Sub
 
 	Do While rgArg.Tables.Count > 0
 		rgArg.Tables(1).ConvertToText iSeparator, vNested
 	Loop
 End Sub
 
-Sub TablesExportToPdf(dcArg As Document, _
-					Optional ByVal stDocName As String, _
-					Optional ByVal stSuffix As String = "Table ", _
-					Optional ByVal bDeleteTable As Boolean, _
-					Optional ByVal stReplacementText As String = "Link to ", _
-					Optional ByVal bLink As Boolean, _
-					Optional ByVal stAddress As String, _
-					Optional ByVal iStyle As Integer = wdStyleNormal, _
-					Optional ByVal iSize As Integer, _
-					Optional ByVal bFullPage As Boolean = True _
+Sub TablesExportToPdf( _
+	Optional rgArg As Range, _
+	Optional dcArg As Document, _
+	Optional ByVal stDocName As String, _
+	Optional ByVal stSuffix As String = "Table ", _
+	Optional ByVal bDeleteTable As Boolean, _
+	Optional ByVal stReplacementText As String = "Link to ", _
+	Optional ByVal bLink As Boolean, _
+	Optional ByVal stAddress As String, _
+	Optional ByVal iStyle As Integer = wdStyleNormal, _
+	Optional ByVal iSize As Integer, _
+	Optional ByVal bFullPage As Boolean _
 )
-' Export each table to a PDF file
+' Export each table of the argument range to a PDF file
 ' Args:
 	' stDocName: name of the parent document
 	' stSuffix: the suffix to append to the table title, if it hasn't any
@@ -1662,16 +1663,25 @@ Sub TablesExportToPdf(dcArg As Document, _
 '
 	Dim iCounter As Integer
 	Dim rgReplacement As Range
+	Dim tbCollection As Tables
 	Dim tbCurrent As Table
 	Dim stTableFullName As String
+
+	If rgArg Is Nothing Then
+		If dcArg Is Nothing Then Err.Raise 516,, "There is no target range"
+		Set tbCollection = dcArg.Tables
+	Else
+		Set tbCollection = rgArg.Tables
+		Set dcArg = rgArg.Parent
+	End If
 
 	If stDocName = vbNullString Then stDocName = Left$(dcArg.Name, InStrRev(dcArg.Name, ".") - 1)
 	If bDeleteTable And stAddress = vbNullString Then
 		stAddress = dcArg.Path & Application.PathSeparator
 	End If
 
-	For iCounter = dcArg.Tables.Count To 1 Step -1
-		Set tbCurrent = dcArg.Tables(iCounter)
+	For iCounter = tbCollection.Count To 1 Step -1
+		Set tbCurrent = tbCollection(iCounter)
 		If tbCurrent.NestingLevel = 1 Then
 			If tbCurrent.Title = vbNullString Then
 				tbCurrent.Title = stSuffix & iCounter
