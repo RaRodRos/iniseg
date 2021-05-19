@@ -58,7 +58,7 @@ End Function
 
 
 Function StylesDeleteUnused(dcArg As Document, _
-							Optional ByVal bMsgBox As Boolean = False _
+							Optional ByVal bMsgBox As Boolean _
 ) As Long
 ' Deletes unused styles using multiple loops to respect their hierarchy 
 	' (avoiding the deletion of fathers without use, like in lists)
@@ -452,7 +452,7 @@ Function FileSaveAsNew(dcArg As Document, _
 						Optional ByVal stPrefix As String, _
 						Optional ByVal stSuffix As String, _
 						Optional ByVal bOpen As Boolean = True, _
-						Optional ByVal bCompatibility As Boolean = False)
+						Optional ByVal bCompatibility As Boolean)
 ' Guarda una copia del documento pasado como argumento, manteniendo el original abierto y convirtiéndolo al formato actual
 ' Args:
 	' stPrefix: string to prefix the new document's name
@@ -609,7 +609,7 @@ End Sub
 
 
 
-Sub ListsNoExtraNumeration(dcArg As Document, Optional ByVal iStory As Integer = 0)
+Sub ListsNoExtraNumeration(dcArg As Document, Optional ByVal iStory As Integer)
 ' Deletes lists' manual numerations
 '
 	Dim iMaxCount As Integer
@@ -664,7 +664,7 @@ End Sub
 
 Sub CleanBasic(rgArg As Range, _
 				Optional ByVal bTabs As Boolean = True, _
-				Optional ByVal bBreakLines As Boolean = False, _
+				Optional ByVal bBreakLines As Boolean, _
 				Optional dcArg As document)
 ' CleanSpaces + CleanEmptyParagraphs
 ' It's important to execute the subroutines in the proper order to achieve their optimal effects
@@ -843,7 +843,7 @@ Sub CleanSpaces(rgArg As Range, _
 End Sub
 
 Sub CleanEmptyParagraphs(rgArg As Range, _
-						Optional ByVal bBreakLines As Boolean = False, _
+						Optional ByVal bBreakLines As Boolean, _
 						Optional dcArg As document)
 ' Deletes empty paragraphs
 ' Args:
@@ -1151,7 +1151,7 @@ End Sub
 
 Sub HyperlinksFormatting(dcArg As Document, _
 						ByVal iPurpose As Integer, _
-						Optional ByVal iStory As Integer = 0)
+						Optional ByVal iStory As Integer)
 ' It cleans and format hyperlinks
 ' Args:
 	' iPurpose: choose what is the aim of the subroutine:
@@ -1637,12 +1637,12 @@ End Sub
 Sub TablesExportToPdf(dcArg As Document, _
 					Optional ByVal stDocName As String, _
 					Optional ByVal stSuffix As String = "Table ", _
-					Optional ByVal bDeleteTable As Boolean = False, _
+					Optional ByVal bDeleteTable As Boolean, _
 					Optional ByVal stReplacementText As String = "Link to ", _
-					Optional ByVal bLink As Boolean = False, _
+					Optional ByVal bLink As Boolean, _
 					Optional ByVal stAddress As String, _
 					Optional ByVal iStyle As Integer = wdStyleNormal, _
-					Optional ByVal iSize As Integer = 0, _
+					Optional ByVal iSize As Integer, _
 					Optional ByVal bMaintainPageFormat As Boolean = True _
 )
 ' Export each table to a PDF file
@@ -1874,7 +1874,7 @@ Function ClearHiddenText(dcArg As Document, _
 						Optional bDelete As Boolean, _
 						Optional styWarning As Style, _
 						Optional bMaintainHidden As Boolean, _
-						Optional bShowHidden As Integer = 0) _
+						Optional bShowHidden As Integer) _
 	As Integer()
 ' Deletes or apply a warning style to all hidden text in the document.
 ' Returns: array of integers of the story ranges containing hidden text
