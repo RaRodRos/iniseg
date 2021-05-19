@@ -241,7 +241,7 @@ Function ConversionLibro(dcLibro As Document, _
 						Optional iNotasContinuas As Integer = -501) _
 	As Document
 ' Realiza la limpieza necesaria y formatea correctamente
-' Args:
+' Params:
 	' iNotasContinuas:
 		' -501: default (se preguntará)
 		' 0: wdRestartContinuous
@@ -450,7 +450,7 @@ End Function
 
 Function SetNotasOpciones(dcArg As Document, iPregunta As Integer)
 ' Pregunta para adjudicar valores a las variables para las notas al pie
-' Args:
+' Params:
 	' iPregunta: escoge qué pregunta hacer
 		' 0: iNotasContinuas (integer)
 		' 1: bNotasExportar (boolean)
@@ -1142,7 +1142,7 @@ End Sub
 Sub NotasPieMarcas(dcArg As Document, ByVal bExportar As Boolean)
 ' Convierte las referencias de notas al pie al texto "NOTA_PIE-numNota"
 	' para poder automatizar externamente su conversión en el .story
-' Args:
+' Params:
 	' bExportar: si es true las notas se borran y su referencia se sustituye por el texto
 		' si es false la referencia de la nota no se borra, se le aplica el atributo "hidden"
 '
@@ -1188,7 +1188,7 @@ Sub NotasPieExportar(dcArg As Document, _
 					Optional ByVal stSectionSuffix As String = "Section", _
 					Optional ByVal stTitle As String = "Footnotes")
 ' Exporta las notas a un archivo separado
-' Args:
+' Params:
 	' dcArg: file from which the notes need to be extracted from
 	' bDivide: if True, the notes of each section get exported to different files
 	' Optional stSuffix As String = "Footnotes", _

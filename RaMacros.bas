@@ -226,7 +226,7 @@ Function StyleSubstitution(dcArg As Document, _
 						Optional ByVal bDelete As Boolean _
 ) As Integer
 ' Replace one style with another over the entire document.
-' Args:
+' Params:
 	' vStyOriginal: name of the style to be substituted
 	' vStySubstitute: substitute style 
 	' bDelete: if True, vStyOriginal will be deleted
@@ -291,7 +291,7 @@ Sub StylesNoDirectFormatting(dcArg As Document, _
 							Optional ByVal styUnderline As Style, _
 							Optional ByVal iUnderlineSelected As Integer = -1)
 ' Converts bold and italic direct style formatting into Strong and Emphasis
-' Args:
+' Params:
 	' rgArg: if nothing the sub works over all the story ranges
 	' styUnderline: the underlined text gets this style applied. It supersedes iUnderlineSelected
 	' iUnderlineSelected: the wdUnderline to be deleted/replaced. It cannot be 0 (wdUnderlineNone)
@@ -454,7 +454,7 @@ Function FileSaveAsNew(dcArg As Document, _
 						Optional ByVal bOpen As Boolean = True, _
 						Optional ByVal bCompatibility As Boolean)
 ' Guarda una copia del documento pasado como argumento, manteniendo el original abierto y convirtiéndolo al formato actual
-' Args:
+' Params:
 	' stPrefix: string to prefix the new document's name
 	' stSuffix: string to suffix the new document's name. By default it will add the current date
 	' bOpen: if True the new document stays open, if false it's saved AND closed
@@ -668,7 +668,7 @@ Sub CleanBasic(rgArg As Range, _
 				Optional dcArg As document)
 ' CleanSpaces + CleanEmptyParagraphs
 ' It's important to execute the subroutines in the proper order to achieve their optimal effects
-' Args:
+' Params:
 	' rgArg: the range that will be cleaned. If Nothing it will iterate over
 		' all the storyranges of the document
 	' bTabs: if True Tabs are substituted for a single space
@@ -693,7 +693,7 @@ Sub CleanSpaces(rgArg As Range, _
 	' More than 1 consecutive spaces
 	' Spaces just before paragraph marks, stops, parenthesis, etc.
 	' Spaces just after paragraph marks
-' Args:
+' Params:
 	' rgArg: the range that will be cleaned. If Nothing it will iterate over
 		' all the storyranges of the document
 	' bTabs: if True Tabs are substituted for a single space
@@ -846,7 +846,7 @@ Sub CleanEmptyParagraphs(rgArg As Range, _
 						Optional ByVal bBreakLines As Boolean, _
 						Optional dcArg As document)
 ' Deletes empty paragraphs
-' Args:
+' Params:
 	' rgArg: the range that will be cleaned. If Nothing it will iterate over
 		' all the storyranges of the document
 	' bBreakLines: manual break lines get converted to paragraph marks
@@ -1073,7 +1073,7 @@ End Sub
 
 Sub HeadingsChangeCase(dcArg As Document, ByVal iHeading As Integer, ByVal iCase As Integer)
 ' Changes the case for the heading selected. This subroutine transforms the text, it doesn't change the style option "All caps"
-' Args:
+' Params:
 	' dcArg: the document to be changed
 	' iHeading: the heading style to be changed. If 0 all headings will be processed
 	' iCase: the desired case for the text. It can be one of the WdCharacterCase constants. Options:
@@ -1153,7 +1153,7 @@ Sub HyperlinksFormatting(dcArg As Document, _
 						ByVal iPurpose As Integer, _
 						Optional ByVal iStory As Integer)
 ' It cleans and format hyperlinks
-' Args:
+' Params:
 	' iPurpose: choose what is the aim of the subroutine:
 		' 1: Applies the hyperlink style to all hyperlinks
 		' 2: cleans the text showed so only the domain is left
@@ -1360,7 +1360,7 @@ Sub SectionBreakBeforeHeading(dcArg As Document, _
 							Optional ByVal iWdSectionStart As Integer = 2, _
 							Optional ByVal iHeading As Integer = 1)
 ' Inserts section breaks of the type assigned before each heading of the level selected
-' Args:
+' Params:
 	' dcArg: the document to be changed
 	' bRespect: respect the original section start type before the heading
 	' iWdSectionStart: the kind of section break to insert
@@ -1437,7 +1437,7 @@ End Sub
 
 Function SectionGetFirstFootnoteNumber(dcArg As Document, lIndex As Long) As Long
 ' Returns the number of the first footnote of the section or 0 if there is none
-' Args:
+' Params:
 	' lIndex: the index of the section containing the footnote
 '
 	Dim scCurrent As Section
@@ -1524,7 +1524,7 @@ Sub SectionsFillBlankPages(dcArg As Document, _
 							Optional ByVal stFillerText As String = "", _
 							Optional styFillStyle As Style)
 ' Puts a blank page before each even or odd section break
-' Args: 
+' Params: 
 	' dcArg: the document to be changed
 	' stFillerText: an optional dummy string to fill the blank page
 	' styFillStyle: style for the dummy text
@@ -1581,7 +1581,7 @@ Sub TablesConvertToImage(dcArg As Document, _
 ' Convert each table to an inline image
 ' Solution to problems with clipboard (do loop) found in:
 	' https://www.mrexcel.com/board/threads/excel-vba-inconsistent-errors-when-trying-to-copy-and-paste-objects-from-excel-to-word.1112368/post-5485704
-' Args:
+' Params:
 	' iPlacement: WdOLEPlacement enum
 		' 0: wdInLine
 		' 1: wdFloatOverText
@@ -1647,7 +1647,7 @@ Sub TablesExportToPdf( _
 	Optional ByVal bFullPage As Boolean _
 )
 ' Export each table of the argument range to a PDF file
-' Args:
+' Params:
 	' stDocName: name of the parent document
 	' stSuffix: the suffix to append to the table title, if it hasn't any
 	' bDeleteTable: defines if the table should be replaced
@@ -1747,7 +1747,7 @@ Sub FootnotesFormatting(dcArg As Document, _
 						Optional stFootnotes As String, _
 						Optional stFootnoteReferences As String)
 ' Applies styles to the footnotes story and the footnotes references
-' Args:
+' Params:
 	' stFootnotes: style for the body text. Default: wdStyleFootnoteText
 	' styFootnoteReferences: style for the references. Default: stFootnoteReferences
 ' ToDo: integrate endnotes
@@ -1790,7 +1790,7 @@ Sub FootnotesHangingIndentation(dcArg As Document, _
 								Optional ByVal sIndentation As Single = 0.5, _
 								Optional ByVal iFootnoteStyle As Integer = wdStyleFootnoteText)
 ' Adds a tab to the beginning of each paragraph and footnote, so their indentation is hanging
-' Args:
+' Params:
 	' sIndentation: the position of the indented text in centimeters
 	' iFootnoteStyle: to indicate a custom footnote style
 '
@@ -1841,7 +1841,7 @@ Sub FootnotesSameNumberingRule(dcArg As Document, _
 								Optional ByVal iNumberingRule As Integer = 3, _
 								Optional ByVal iStartingNumber As Integer = -501)
 ' Set the same footnotes numbering rule in all sections of the document
-' Args:
+' Params:
 	' iNumberingRule:
 		' 3 (default): it gives the numbering rule of the first section to all others
 		' 0: wdRestartContinuous
@@ -1890,7 +1890,7 @@ Function ClearHiddenText(dcArg As Document, _
 	As Integer()
 ' Deletes or apply a warning style to all hidden text in the document.
 ' Returns: array of integers of the story ranges containing hidden text
-' Args:
+' Params:
 	' bDelete: true deletes all hidden text
 	' styWarning: defines the style for the hidden text
 	' bMaintainHidden: if true the text maintains its hidden attribute
