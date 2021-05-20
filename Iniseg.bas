@@ -1088,10 +1088,10 @@ Sub TitulosDividir(dcArg As Document)
 		.MatchWildcards = True
 		If dcArg.Styles(wdstyleheading2).ListLevelNumber = 0 Then
 			.Text = "(?{35;}) "
-			.Replacement.Text = "\1^l"
+			.Replacement.Text = "\1^13"
 		Else
 			.Text = "(?{30;}) "
-			.Replacement.Text = "\1^l      "
+			.Replacement.Text = "\1^13      "
 		End If
 		.Style = wdstyleheading2
 		.Execute Replace:=wdReplaceAll
@@ -1130,7 +1130,7 @@ Sub TitulosDividirTodos(dcArg As Document)
 			.MatchWildcards = True
 			.Style = -i - 4
 			.Text = "(?{" & stText(i) & ";}) "
-			.Replacement.Text = "\1^l" &  stRepl(i)
+			.Replacement.Text = "\1^13" &  stRepl(i)
 			.Execute Replace:=wdReplaceAll
 		End With
 	Next i
