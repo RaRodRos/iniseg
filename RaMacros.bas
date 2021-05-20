@@ -1830,6 +1830,30 @@ Sub TablesExportToPdf( _
 	Next iCounter
 End Sub
 
+Sub TablesStyle(Optional rgArg As Range, Optional dcArg As Document, vStyle As Variant)
+' Formats all tables within rgArg or dcArg with vStyle
+'
+	Dim tbCurrent As Table
+	Dim tbCollection As Tables
+
+	If rgArg Is Nothing Then
+		If dcArg Is Nothing Then Err.Raise 516,, "There is no target range"
+		Set tbCollection = dcArg.Tables
+	Else
+		Set dcArg = rgArg.Parent
+		Set tbCollection = rgArg.Tables
+	End If
+	If Not RaMacros.StyleExists(dcArg, vStyle) Then Err.Raise 517,, vStyle & _
+			" (vStyle) doesn't exist in " & dcArg.Name
+
+	For Each tbCurrent In tbCollection
+		tbCurrent.Style = vStyle
+		tbCurrent.Select
+		Selection.ClearCharacterDirectFormatting
+		Selection.ClearParagraphDirectFormatting
+	Next tbCurrent
+End Sub
+
 
 
 

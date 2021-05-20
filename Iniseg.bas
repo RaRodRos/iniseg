@@ -139,7 +139,7 @@ Sub Iniseg1Limpieza()
 
 	If dcLibro.Tables.Count <> 0 Then
 		Debug.Print "11.3/14 - Archivo libro: formateando tablas con el estilo iniseg-tabla"
-		Iniseg.TablasEstiloIniseg
+		RaMacros.TablesStyle , dcLibro, "iniseg-tabla"
 	End If
 
 	Debug.Print "12/14 - Archivo original: cerrando"
@@ -1624,28 +1624,6 @@ End Sub
 
 
 
-
-Sub TablasEstiloIniseg(Optional tbArg As Table)
-' Formatea la tabla indicada (o todas si no se envía ninguna) con el estilo de
-' tabla "iniseg-tabla"
-'
-	Dim tbCurrent As Table
-
-	If Not tbArg Is Nothing Then
-		tbArg.Style = "iniseg-tabla"
-		tbArg.Select
-		Selection.ClearCharacterDirectFormatting
-		Selection.ClearParagraphDirectFormatting
-		Exit Sub
-	End If
-
-	For Each tbCurrent In ActiveDocument.Tables
-		tbCurrent.Style = "iniseg-tabla"
-		tbCurrent.Select
-		Selection.ClearCharacterDirectFormatting
-		Selection.ClearParagraphDirectFormatting
-	Next tbCurrent
-End Sub
 
 Sub TablasExportar(dcArg As Document)
 ' Exporta las tablas de cada tema a un nuevo archivo y 
