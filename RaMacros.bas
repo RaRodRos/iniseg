@@ -1480,6 +1480,7 @@ Function SectionsExportEachToFiles(dcArg As Document, _
 							Optional ByVal stSuffix As String)
 ' Exports each section of the document to a separate file
 ' ToDo: if bClose false then devolver collection con los documentos generados
+'
 	Dim iCounter As Integer
 	Dim lStartingPage As Long, lFirstFootnote As Long
 	Dim scCurrent As Section
@@ -1488,15 +1489,8 @@ Function SectionsExportEachToFiles(dcArg As Document, _
 	lFirstFootnote = 1
 
 	For Each scCurrent In dcArg.Sections
-		Set dcNewDocument = RaMacros.FileSaveAsNew(,dcArg, stNewDocName, _
-			stPrefix, stSuffix & scCurrent.index)
-
-		' Delete all sections of new document except the one to be saved
-		For iCounter = dcNewDocument.Sections.Count To 1 Step -1
-			If iCounter <> scCurrent.index Then
-				dcNewDocument.Sections(iCounter).Range.Delete
-			End If
-		Next iCounter
+		Set dcNewDocument = RaMacros.FileSaveAsNew(scCurrent.Range ,dcArg, _
+			stNewDocName, stPrefix, stSuffix & scCurrent.index)
 
 		' Delete section break and last empty paragraph
 		If dcNewDocument.Sections.Count = 2 Then
@@ -1507,7 +1501,8 @@ Function SectionsExportEachToFiles(dcArg As Document, _
 		' Correct footnote starting number
 		If bMaintainFootnotesNumeration Then
 			If scCurrent.Range.Footnotes.Count > 0 Then
-				lFirstFootnote = RaMacros.SectionGetFirstFootnoteNumber(dcArg, scCurrent.Index)
+				lFirstFootnote = RaMacros.SectionGetFirstFootnoteNumber( _
+					dcArg, scCurrent.Index)
 				dcNewDocument.Footnotes.StartingNumber = lFirstFootnote
 				' This remembers the footnote index of the last section, in case the
 				' next has none, but BE AWARE that inserting new footnotes in the
@@ -1520,9 +1515,12 @@ Function SectionsExportEachToFiles(dcArg As Document, _
 
 		' Correct page starting number
 		If bMaintainPagesNumeration Then
-			lStartingPage = scCurrent.Range.Characters(1).Information(wdActiveEndAdjustedPageNumber)
-			dcNewDocument.Sections(1).Footers(wdHeaderFooterFirstPage).PageNumbers.RestartNumberingAtSection = True
-			dcNewDocument.Sections(1).Footers(wdHeaderFooterFirstPage).PageNumbers.StartingNumber = lStartingPage
+			lStartingPage = scCurrent.Range.Characters(1) _
+				.Information(wdActiveEndAdjustedPageNumber)
+			dcNewDocument.Sections(1).Footers(wdHeaderFooterFirstPage) _
+				.PageNumbers.RestartNumberingAtSection = True
+			dcNewDocument.Sections(1).Footers(wdHeaderFooterFirstPage) _
+				.PageNumbers.StartingNumber = lStartingPage
 		End If
 
 		dcNewDocument.Close wdSaveChanges
