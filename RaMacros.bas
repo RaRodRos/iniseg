@@ -492,8 +492,7 @@ Function FileSaveAsNew(dcArg As Document, _
 	End If
 
 	If Dir(stNewFullName & stExtension) > "" Then
-		stNewFullName = dcArg.Path & Application.PathSeparator & stPrefix & "_" _
-			& Format(Time, "hhnn") & stNewName & stSuffix & stExtension
+		stNewFullName = stNewFullName & "-" & Format(Time, "hhnn") & stExtension
 	End If
 
 	If bCompatibility Then
