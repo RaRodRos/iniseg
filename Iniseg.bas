@@ -977,19 +977,19 @@ End Sub
 Sub ParrafosConversionStory(dcArg As Document)
 ' Conversion de Word impreso a formato para Storyline
 '
-	Dim iLibro(3) As Integer, iStory(3) As Integer, i As Integer
+	Dim iLibroSize(3) As Integer, iStorySize(3) As Integer, i As Integer
 	Dim rgFind As Range
 	Dim stLibro As String, stStory As String
 
-	iLibro(0) = 4
-	iLibro(1) = 5
-	iLibro(2) = 8
-	iLibro(3) = 11
+	iLibroSize(0) = 4
+	iLibroSize(1) = 5
+	iLibroSize(2) = 8
+	iLibroSize(3) = 11
 
-	iStory(0) = 2
-	iStory(1) = 4
-	iStory(2) = 6
-	iStory(3) = 8
+	iStorySize(0) = 2
+	iStorySize(1) = 4
+	iStorySize(2) = 6
+	iStorySize(3) = 8
 
 	' Cambio del tamaño de Titulo 2 de 16 a 17
 	With dcArg.Styles(wdstyleheading2).Font
@@ -1033,19 +1033,18 @@ Sub ParrafosConversionStory(dcArg As Document)
 	End With
 
 	' Cambio de tamaño de parrafos de separacion
-	For i = 0 To uBound(iLibro)
-		stLibro = "iniseg_separacion" & iLibro(i)
-		stStory = "iniseg_separacion" & iStory(i)
+	For i = 0 To uBound(iLibroSize)
+		stLibro = "iniseg_separacion" & iLibroSize(i)
+		stStory = "iniseg_separacion" & iStorySize(i)
 		If RaMacros.StyleSubstitution(dcArg, stLibro, stStory, False) = 2 Then
 			dcArg.Styles.Add stStory, wdStyleTypeParagraph
 			With dcArg.Styles(stStory)
 				.BaseStyle = dcArg.Styles(stLibro)
-				.Font.Size = iStory(i)
+				.Font.Size = iStorySize(i)
 			End With
-			dcArg.Styles(stStory).Font.Size = iStory(i)
-			If RaMacros.StyleSubstitution(dcArg, stLibro, stStory, False) <> 0 Then
-				Debug.Print "Error creando sustituyendo " & stLibro & " por " & stStory
-			End If
+			dcArg.Styles(stStory).Font.Size = iStorySize(i)
+			If RaMacros.StyleSubstitution(dcArg, stLibro, stStory, False) <> 0 _
+			Then Debug.Print "Error creando sustituyendo " & stLibro & " por " & stStory
 		End If
 	Next i
 End Sub
