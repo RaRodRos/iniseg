@@ -403,6 +403,7 @@ Function ConversionStory(dcLibro As Document, _
 	If dcStory.Tables.Count > 0 Then
 		Debug.Print "7/" & iUltima & " - Archivo story: transformando/exportando tablas"
 		' RaMacros.TablesConvertToImage dcStory
+		Iniseg.TablasExportar
 		stName = Left$(dcStory.Name, InStrRev(dcStory.Name, ".") - 1)
 		stName = Right$(stName, Len(stName) - 2)
 		RaMacros.TablesExportToPdf , dcStory, stName, "Tabla ", True, "Enlace a ",,, wdStyleBlockQuotation, 17, False
@@ -1321,8 +1322,9 @@ End Sub
 Sub BibliografiaExportar(dcArg As Document)
 ' Exporta la bibliografía en archivos separados y la borra de dcArg
 '
-	Dim dcBibliografia As Document, scCurrent As Section
-	Dim rgBiblio As Range, rgTitulo As Range, stNombre As String
+	Dim stNombre As String
+	Dim scCurrent As Section
+	Dim rgBiblio As Range
 
 	For Each scCurrent In dcArg.Sections
 		Set rgBiblio = scCurrent.Range
@@ -1347,31 +1349,10 @@ Sub BibliografiaExportar(dcArg As Document)
 		
 		If rgBiblio.Find.Found Then
 			' Asigna el número de tema
-			Set rgTitulo = scCurrent.Range.Paragraphs.First.Range
-			With rgTitulo.Find
-				.ClearFormatting
-				.Replacement.ClearFormatting
-				.Forward = True
-				.Wrap = wdFindStop
-				.Format = True
-				.MatchCase = False
-				.MatchWholeWord = False
-				.MatchWildcards = True
-				.MatchSoundsLike = False
-				.MatchAllWordForms = False
-				.Style = wdStyleHeading1
-				.Execute FindText:="[Tt][Ee][Mm][Aa] [0-9][0-9]"
-				If Not .Found Then .Execute FindText:="[Tt][Ee][Mm][Aa] [0-9]"
-				If .Found Then
-					stNombre = dcArg.Path & Application.PathSeparator _
-						& "BIBLIOGRAFÍA " & rgTitulo.Text & ".pdf"
-				Else
-					Beep
-					stNombre = InputBox("Número de tema no encontrado, completar", "Bibliografía", "TEMA " & scCurrent.Index)
-					stNombre = dcArg.Path & Application.PathSeparator _
-						& "BIBLIOGRAFÍA " & stNombre & ".pdf"
-				End If
-			End With
+			stNombre = Iniseg.TituloDeTema(scCurrent.Range)
+			If stNombre = vbNullString Then stNombre = "Tema 00" & scCurrent.Index
+			stNombre = dcArg.Path & Application.PathSeparator & stNombre _
+				& "BIBLIOGRAFÍA " & ".pdf"
 
 			' Exporta el pdf
 			Set rgBiblio = RaMacros.RangeGetCompleteOutlineLevel(rgBiblio.Paragraphs(1))
@@ -1625,26 +1606,6 @@ End Sub
 
 
 
-Sub TablasExportar(dcArg As Document)
-' Exporta las tablas de cada tema a un nuevo archivo y 
-'
-	Dim tbCurrent As Table
-
-	If Not tbArg Is Nothing Then
-		tbArg.Style = "iniseg-tabla"
-		tbArg.Select
-		Selection.ClearCharacterDirectFormatting
-		Selection.ClearParagraphDirectFormatting
-		Exit Sub
-	End If
-
-	For Each tbCurrent In ActiveDocument.Tables
-		tbCurrent.Style = "iniseg-tabla"
-		tbCurrent.Select
-		Selection.ClearCharacterDirectFormatting
-		Selection.ClearParagraphDirectFormatting
-	Next tbCurrent
-End Sub
 
 
 
@@ -1657,8 +1618,11 @@ Function TituloDeTema(rgArg As Range) As String
 '
 	Dim rgFind As Range
 	Set rgFind = rgArg.Duplicate
-	rgFind.Find.MatchWidcards = True
-	rgFind.Find.Execute FindText:="[Tt][Ee][Mm][Aa] [0-9]{2;}"
-	If Not rgFind.Find.Found Then rgFind.Find.Execute FindText:="[Tt][Ee][Mm][Aa] [0-9]"
-	If rgFind.Find.Found Then TituloDeTema = rgFind.Text
+	With rgFind.Find
+		.MatchWidcards = True
+		.Style = wdStyleHeading1
+		.Execute FindText:="[Tt][Ee][Mm][Aa] [0-9]{2;}"
+		If Not .Found Then .Execute FindText:="[Tt][Ee][Mm][Aa] [0-9]"
+		If .Found Then TituloDeTema = rgFind.Text
+	End With
 End Function
