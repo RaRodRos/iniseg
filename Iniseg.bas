@@ -125,7 +125,7 @@ Sub Iniseg1Limpieza()
 
 	' Copia de seguridad limpia
 	Debug.Print "10/14 - Creando copia de seguridad limpia (01)"
-	RaMacros.FileSaveAsNew dcOriginal, "01-", "", False, True
+	RaMacros.FileSaveAsNew dcOriginal,, "01-"
 
 	' Guarda el archivo con nombre original, preparado para el siguiente paso
 	Debug.Print "11.1/14 - Copiando contenido limpio al archivo con plantilla (archivo libro)"
@@ -261,7 +261,7 @@ Function ConversionLibro(dcLibro As Document, _
 	iUltima = 17
 
 	Debug.Print "1/" & iUltima & " - Archivo libro: haciendo copia de seguridad (1)"
-	RaMacros.FileSaveAsNew dcLibro, "1-", "", False, True
+	RaMacros.FileSaveAsNew dcLibro,, "1-",,, False, True
 	Debug.Print "2/" & iUltima & " - Archivo libro: limpieza básica"
 	RaMacros.CleanBasic Nothing, True, True, dcLibro
 
@@ -360,7 +360,7 @@ Function ConversionStory(dcLibro As Document, _
 	If dcLibro.Sections.Count > 1 Then iUltima = iUltima + 1
 
 	Debug.Print "1/" & iUltima & " - Archivo story: creando"
-	Set dcStory = RaMacros.FileSaveAsNew(dcLibro, "2-", "", True, True)
+	Set dcStory = RaMacros.FileSaveAsNew(dcLibro,, "2-",,, True, True)
 	dcStory.ActiveWindow.Visible = True
 
 	Debug.Print "2.1/" & iUltima & " - Archivo story: marcando referencias bibliográficas"

@@ -449,25 +449,33 @@ Sub FileCopy(dcArg As Document, _
 End Sub
 
 Function FileSaveAsNew(dcArg As Document, _
+						Optional ByVal stNewName As String, _
 						Optional ByVal stPrefix As String, _
 						Optional ByVal stSuffix As String, _
+						Optional ByVal stPath As String, _
 						Optional ByVal bOpen As Boolean = True, _
 						Optional ByVal bCompatibility As Boolean)
 ' Guarda una copia del documento pasado como argumento, manteniendo el original abierto y convirtiéndolo al formato actual
 ' Params:
+	' stNewName: the new document's name
 	' stPrefix: string to prefix the new document's name
 	' stSuffix: string to suffix the new document's name. By default it will add the current date
+	' stPath: the new document's path. If empty it will copy the original's one 
 	' bOpen: if True the new document stays open, if false it's saved AND closed
 	' bCompatibility: if True the new document will be converted to the new Word Format
 '
-	Dim stOriginalName As String, stNewFullName As String, stExtension As String
+	Dim stNewFullName As String, stExtension As String
 	Dim dcNewDocument As Document
 
-	stOriginalName = Left$(dcArg.Name, InStrRev(dcArg.Name, ".") - 1)
-	If stSuffix = vbNullString And stPrefix = vbNullString Then stSuffix = "-" & Format(Date, "yymmdd")
+	If stNewName = vbNullString _
+		And stSuffix = vbNullString _
+		And stPrefix = vbNullString _
+	Then stSuffix = "-" & Format(Date, "yymmdd")
 
-	stNewFullName = dcArg.Path & Application.PathSeparator & stPrefix _
-		& stOriginalName & stSuffix
+	If stNewName = vbNullString Then stNewName = Left$(dcArg.Name, InStrRev(dcArg.Name, ".") - 1)
+	If stPath = vbNullString Then stPath = dcArg.Path
+	
+	stNewFullName = stPath & Application.PathSeparator & stPrefix & stNewName & stSuffix
 
 	Set dcNewDocument = Documents.Add(dcArg.FullName, Visible:=bOpen)
 
@@ -485,7 +493,7 @@ Function FileSaveAsNew(dcArg As Document, _
 
 	If Dir(stNewFullName & stExtension) > "" Then
 		stNewFullName = dcArg.Path & Application.PathSeparator & stPrefix & "_" _
-			& Format(Time, "hhnn") & stOriginalName & stSuffix & stExtension
+			& Format(Time, "hhnn") & stNewName & stSuffix & stExtension
 	End If
 
 	If bCompatibility Then
@@ -1479,8 +1487,7 @@ Function SectionsExportEachToFiles(dcArg As Document, _
 	lFirstFootnote = 1
 
 	For Each scCurrent In dcArg.Sections
-		Set dcNewDocument = RaMacros.FileSaveAsNew(dcArg, stPrefix, _
-			stSuffix & scCurrent.index, True, False)
+		Set dcNewDocument = RaMacros.FileSaveAsNew(dcArg,, stPrefix, stSuffix & scCurrent.index)
 
 		' Delete all sections of new document except the one to be saved
 		For iCounter = dcNewDocument.Sections.Count To 1 Step -1
