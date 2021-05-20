@@ -455,7 +455,9 @@ Function FileSaveAsNew(	Optional rgArg As Range, _
 						Optional ByVal stSuffix As String, _
 						Optional ByVal stPath As String, _
 						Optional ByVal bOpen As Boolean = True, _
-						Optional ByVal bCompatibility As Boolean)
+						Optional ByVal bCompatibility As Boolean
+						Optional ByVal bVisible As Boolean = True _
+) As Document
 ' Saves a copy of the range or document passed as an argument, maintaining the original one opened
 ' Params:
 	' stNewName: the new document's name
@@ -464,6 +466,7 @@ Function FileSaveAsNew(	Optional rgArg As Range, _
 	' stPath: the new document's path. If empty it will copy the original's one 
 	' bOpen: if True the new document stays open, if false it's saved AND closed
 	' bCompatibility: if True the new document will be converted to the new Word Format
+	' bVisible: if false the new document will be invisible
 '
 	Dim stNewFullName As String, stExtension As String
 	Dim dcNewDocument As Document
@@ -482,7 +485,8 @@ Function FileSaveAsNew(	Optional rgArg As Range, _
 	If stPath = vbNullString Then stPath = dcArg.Path
 	stNewFullName = stPath & Application.PathSeparator & stPrefix & stNewName & stSuffix
 
-	Set dcNewDocument = Documents.Add(dcArg.FullName, Visible:=bOpen)
+	On Error GoTo Visible
+	Set dcNewDocument = Documents.Add(dcArg.FullName, Visible:=bVisible)
 	If Not rgArg Is Nothing Then dcNewDocument.Content.FormattedText = rgArg.FormattedText
 
 	If bCompatibility Then
@@ -507,6 +511,11 @@ Function FileSaveAsNew(	Optional rgArg As Range, _
 	End If
 	If Not bOpen Then dcNewDocument.Close
 	Set FileSaveAsNew = dcNewDocument
+	Exit Sub
+Visible:
+	On Error GoTo 0
+	dcNewDocument.ActiveWindow.Visible = True
+	Resume
 End Function
 
 
