@@ -1652,7 +1652,7 @@ End Sub
 Function TablesExportToNewFile( _
 								Optional rgArg As Range, _
 								Optional dcArg As Document, _
-								Optional ByVal bSameMarkUp As Boolean, _
+								Optional ByVal bSameMarkUp As Boolean = True, _
 								Optional ByVal vTemplate As Variant, _
 								Optional ByVal stDocName As String, _
 								Optional ByVal stDocPrefix As String, _
@@ -1696,8 +1696,8 @@ Function TablesExportToNewFile( _
 	If rgArg.Tables.Count = 0 Then Exit Function
 	
 	If bSameMarkUp Then
-		Set TablesExportToNewFile = RaMacros.FileSaveAsNew( _
-			, dcArg, stDocName, stDocPrefix, stDocSuffix, stPath)
+		Set TablesExportToNewFile = RaMacros.FileSaveAsNew(, dcArg, stDocName, _
+										stDocPrefix, stDocSuffix, stPath)
 		TablesExportToNewFile.Content.Delete
 	Else
 		Set TablesExportToNewFile = Documents.Add(vTemplate)
@@ -1744,7 +1744,7 @@ Sub TablesExportToPdf( _
 	Optional ByVal stReplacementText As String = "Link to ", _
 	Optional ByVal bLink As Boolean, _
 	Optional ByVal stAddress As String, _
-	Optional ByVal iStyle As Integer = wdStyleNormal, _
+	Optional ByVal vStyle As Variant = wdStyleNormal, _
 	Optional ByVal iSize As Integer, _
 	Optional ByVal bFullPage As Boolean _
 )
@@ -1759,7 +1759,7 @@ Sub TablesExportToPdf( _
 		' The name of the file will be automatically added to the argument, BUT 
 		' the last character of the path must be a path separator (\ or /)
 		' If empty it will point to the destination of the exported pdf
-	' iStyle: the paragraph style of the replacement text
+	' vStyle: the paragraph style of the replacement text
 	' iSize: the font size of the replacement text
 	' bFullPage: if true the table is exported along with the rest of its page
 '
@@ -1831,7 +1831,7 @@ Sub TablesExportToPdf( _
 				Else
 					rgReplacement.Paragraphs.First.Range.Text = stReplacementText & tbCurrent.Title
 				End If
-				rgReplacement.Paragraphs.First.Style = iStyle
+				rgReplacement.Paragraphs.First.Style = vStyle
 				If iSize <> 0 Then rgReplacement.Paragraphs.First.Range.Font.Size = iSize
 				tbCurrent.Delete
 			End If
