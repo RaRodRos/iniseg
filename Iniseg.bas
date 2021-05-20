@@ -3,6 +3,7 @@ Option Explicit
 
 ' Private iActual As Integer
 ' Private iUltima As Integer
+Private stTitulos() As String
 
 Sub uiInisegConversionLibro()
 	ConversionLibro ActiveDocument
@@ -1543,7 +1544,7 @@ Sub ConversionAutomaticaLibro(dcArg As Document)
 		.Replacement.Style = wdStyleHeading1
 		.Style = wdStyleHeading2
 		.MatchWildcards = True
-		.Text = "([tT][eE][mM][aA]*[0-9]{1;2}*^13*^13)"
+		.Text = "([tT][eE][mM][aA]*[0-9]{1;2}*^13)"
 		.Replacement.Text = "\1"
 		.Execute Replace:=wdReplaceAll
 
@@ -1646,3 +1647,41 @@ Sub TablasEstiloIniseg(Optional tbArg As Table)
 		Selection.ClearParagraphDirectFormatting
 	Next tbCurrent
 End Sub
+
+Sub TablasExportar(dcArg As Document)
+' Exporta las tablas de cada tema a un nuevo archivo y 
+'
+	Dim tbCurrent As Table
+
+	If Not tbArg Is Nothing Then
+		tbArg.Style = "iniseg-tabla"
+		tbArg.Select
+		Selection.ClearCharacterDirectFormatting
+		Selection.ClearParagraphDirectFormatting
+		Exit Sub
+	End If
+
+	For Each tbCurrent In ActiveDocument.Tables
+		tbCurrent.Style = "iniseg-tabla"
+		tbCurrent.Select
+		Selection.ClearCharacterDirectFormatting
+		Selection.ClearParagraphDirectFormatting
+	Next tbCurrent
+End Sub
+
+
+
+
+
+
+Function TituloDeTema(rgArg As Range) As String
+' Devuelve una cadena con el título del tema si se encuentra en rgArg
+' o una cadena vacía, en caso contrario
+'
+	Dim rgFind As Range
+	Set rgFind = rgArg.Duplicate
+	rgFind.Find.MatchWidcards = True
+	rgFind.Find.Execute FindText:="[Tt][Ee][Mm][Aa] [0-9]{2;}"
+	If Not rgFind.Find.Found Then rgFind.Find.Execute FindText:="[Tt][Ee][Mm][Aa] [0-9]"
+	If rgFind.Find.Found Then TituloDeTema = rgFind.Text
+End Function
