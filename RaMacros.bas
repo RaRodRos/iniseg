@@ -1475,6 +1475,7 @@ Function SectionsExportEachToFiles(dcArg As Document, _
 							Optional ByVal bClose As Boolean = True, _
 							Optional ByVal bMaintainFootnotesNumeration As Boolean = True, _
 							Optional ByVal bMaintainPagesNumeration As Boolean = True, _
+							Optional ByVal stNewDocName As String, _
 							Optional ByVal stPrefix As String, _
 							Optional ByVal stSuffix As String)
 ' Exports each section of the document to a separate file
@@ -1487,7 +1488,8 @@ Function SectionsExportEachToFiles(dcArg As Document, _
 	lFirstFootnote = 1
 
 	For Each scCurrent In dcArg.Sections
-		Set dcNewDocument = RaMacros.FileSaveAsNew(dcArg,, stPrefix, stSuffix & scCurrent.index)
+		Set dcNewDocument = RaMacros.FileSaveAsNew(dcArg, stNewDocName, _
+			stPrefix, stSuffix & scCurrent.index)
 
 		' Delete all sections of new document except the one to be saved
 		For iCounter = dcNewDocument.Sections.Count To 1 Step -1

@@ -218,7 +218,7 @@ Sub Iniseg3PaginasVaciasVisibles()
 		Exit Sub
 	ElseIf iDocSeparados = vbYes Then
 		Debug.Print "Archivo libro: exportando cada tema a archivos separados"
-		RaMacros.SectionsExportEachToFiles dcLibro, False, True, False,, " TEMA "
+		RaMacros.SectionsExportEachToFiles dcLibro, False, True, False,,, " TEMA "
 	End If
 
 	' Esto es una mala práctica y solo está para evitar confusiones por
@@ -435,7 +435,7 @@ Function ConversionStory(dcLibro As Document, _
 
 	If dcLibro.Sections.Count > 1 Then
 		Debug.Print iUltima & "/" & iUltima & " - Archivo story: exportando en archivos separados"
-		RaMacros.SectionsExportEachToFiles dcStory, False, True, False,, "-tema_"
+		RaMacros.SectionsExportEachToFiles dcStory, False, True, False,,, "-tema_"
 	End If
 
 	Debug.Print "Conversión para story terminada"
