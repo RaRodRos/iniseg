@@ -448,14 +448,15 @@ Sub FileCopy(dcArg As Document, _
 	fsFileSystem.CopyFile dcArg.FullName, stNewFullName
 End Sub
 
-Function FileSaveAsNew(dcArg As Document, _
+Function FileSaveAsNew(	Optional rgArg As Range, _
+						Optional dcArg As Document, _
 						Optional ByVal stNewName As String, _
 						Optional ByVal stPrefix As String, _
 						Optional ByVal stSuffix As String, _
 						Optional ByVal stPath As String, _
 						Optional ByVal bOpen As Boolean = True, _
 						Optional ByVal bCompatibility As Boolean)
-' Guarda una copia del documento pasado como argumento, manteniendo el original abierto y convirtiéndolo al formato actual
+' Saves a copy of the range or document passed as an argument, maintaining the original one opened
 ' Params:
 	' stNewName: the new document's name
 	' stPrefix: string to prefix the new document's name
@@ -467,17 +468,22 @@ Function FileSaveAsNew(dcArg As Document, _
 	Dim stNewFullName As String, stExtension As String
 	Dim dcNewDocument As Document
 
+	If rgArg Is Nothing Then
+		If dcArg Is Nothing Then Err.Raise 516,, "There is no target range"
+	Else
+		Set dcArg = rgArg.Parent
+	End If
+
 	If stNewName = vbNullString _
 		And stSuffix = vbNullString _
 		And stPrefix = vbNullString _
 	Then stSuffix = "-" & Format(Date, "yymmdd")
-
 	If stNewName = vbNullString Then stNewName = Left$(dcArg.Name, InStrRev(dcArg.Name, ".") - 1)
 	If stPath = vbNullString Then stPath = dcArg.Path
-	
 	stNewFullName = stPath & Application.PathSeparator & stPrefix & stNewName & stSuffix
 
 	Set dcNewDocument = Documents.Add(dcArg.FullName, Visible:=bOpen)
+	If Not rgArg Is Nothing Then dcNewDocument.Content.FormattedText = rgArg.FormattedText
 
 	If bCompatibility Then
 		stExtension = ".docx"
@@ -494,18 +500,13 @@ Function FileSaveAsNew(dcArg As Document, _
 	If Dir(stNewFullName & stExtension) > "" Then
 		stNewFullName = stNewFullName & "-" & Format(Time, "hhnn") & stExtension
 	End If
-
 	If bCompatibility Then
 		dcNewDocument.SaveAs2 FileName:=stNewFullName, FileFormat:= wdFormatDocumentDefault
 	Else
 		dcNewDocument.SaveAs2 FileName:=stNewFullName
 	End If
-
-	If bOpen Then
-		Set FileSaveAsNew = dcNewDocument
-	Else
-		dcNewDocument.Close
-	End If
+	If Not bOpen Then dcNewDocument.Close
+	Set FileSaveAsNew = dcNewDocument
 End Function
 
 
@@ -1487,7 +1488,7 @@ Function SectionsExportEachToFiles(dcArg As Document, _
 	lFirstFootnote = 1
 
 	For Each scCurrent In dcArg.Sections
-		Set dcNewDocument = RaMacros.FileSaveAsNew(dcArg, stNewDocName, _
+		Set dcNewDocument = RaMacros.FileSaveAsNew(,dcArg, stNewDocName, _
 			stPrefix, stSuffix & scCurrent.index)
 
 		' Delete all sections of new document except the one to be saved
@@ -1688,8 +1689,8 @@ Function TablesExportToNewFile( _
 	If rgArg.Tables.Count = 0 Then Exit Function
 	
 	If bSameMarkUp Then
-		Set TablesExportToNewFile = RaMacros.FileSaveAsNew(dcArg, stDocName, stDocPrefix, _
-			stDocSuffix, stPath)
+		Set TablesExportToNewFile = RaMacros.FileSaveAsNew( _
+			, dcArg, stDocName, stDocPrefix, stDocSuffix, stPath)
 		TablesExportToNewFile.Content.Delete
 	Else
 		Set TablesExportToNewFile = Documents.Add(vTemplate)
