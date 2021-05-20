@@ -1641,6 +1641,92 @@ Sub TablesConvertToText(Optional rgArg As Range, _
 	Loop
 End Sub
 
+Function TablesExportToNewFile( _
+								Optional rgArg As Range, _
+								Optional dcArg As Document, _
+								Optional ByVal bSameMarkUp As Boolean, _
+								Optional ByVal vTemplate As Variant, _
+								Optional ByVal stDocName As String, _
+								Optional ByVal stDocPrefix As String, _
+								Optional ByVal stDocSuffix As String = " Tables", _
+								Optional ByVal stPath As String, _
+								Optional ByVal iBreak As Integer = wdPageBreak, _
+								Optional ByVal bTitles As Boolean, _
+								Optional ByVal stTitle As String = "Table ", _
+								Optional ByVal bOverwrite As Boolean, _
+								Optional ByVal vTitleStyle As Variant _
+) As Document
+' Export each table of the selected range to a new document
+' Params:
+	' rgArg: if nothing the tables in the Content range of dcArg will be exported
+	' dcArg: it will get supersede by the parent of rgArg if it isn't nothing
+	' bSameMarkUp: if true the new document will be a copy of the current one, but blank
+	' vTemplate: if bSameMarkUp is false the new document will be based on vTemplate
+	' stDocName: name of the parent document
+	' stDocPrefix: the prefix to append to the new document
+	' stDocSuffix: the suffix to append to the new document
+	' stPath: the new document's path
+	' iBreak: WdBreakType that will follow each table.
+		' If 0 there won't be any. Default: 7 (wdPageBreak)
+	' bTitles: if true a text will precede each table with it's own text
+	' stTitle: the text to insert if the table doesn't have a title
+	' bOverwrite : if true the table titles will be replaced by stTitle
+	' vTitleStyle: the style of the headings
+'
+	Dim i As Integer
+	Dim stCurrentTitle As String
+	Dim rgNewTable As Range
+	Dim tbCurrent As Table
+
+	If rgArg Is Nothing Then
+		If dcArg Is Nothing Then Err.Raise 516,, "There is no target range"
+		Set rgArg = dcArg.Content
+	Else
+		Set dcArg = rgArg.Parent
+	End If
+
+	If rgArg.Tables.Count = 0 Then Exit Function
+	
+	If bSameMarkUp Then
+		Set TablesExportToNewFile = RaMacros.FileSaveAsNew(dcArg, stDocName, stDocPrefix, _
+			stDocSuffix, stPath)
+		TablesExportToNewFile.Content.Delete
+	Else
+		Set TablesExportToNewFile = Documents.Add(vTemplate)
+	End If
+
+	For i = 1 To rgArg.Tables.Count
+		If rgArg.Tables(i).NestingLevel = 1 Then
+			Set rgNewTable = TablesExportToNewFile.Content
+			rgNewTable.Collapse wdCollapseEnd
+
+			stCurrentTitle = rgArg.Tables(i).Title
+			If stCurrentTitle = vbnullstring Or bOverwrite _
+				Then stCurrentTitle = stTitle & i
+
+			If i > 1 Then
+				rgNewTable.InsertAfter vbCrLf
+				rgNewTable.Style = wdStyleNormal
+				If iBreak > 0 Then
+					rgNewTable.Collapse wdCollapseEnd
+					rgNewTable.InsertBreak iBreak
+				End If
+				rgNewTable.Collapse wdCollapseEnd
+			End If
+			If bTitles Then
+				rgNewTable.InsertAfter stCurrentTitle & vbCrLf & vbCrLf
+				rgNewTable.Style = vTitleStyle
+				rgNewTable.Paragraphs.Last.Style = wdStyleNormal
+				rgNewTable.Collapse wdCollapseEnd
+			End If
+			
+			rgNewTable.FormattedText = rgArg.Tables(i).Range.FormattedText
+			rgNewTable.Tables(1).Title = stCurrentTitle
+			If bTitles Then rgNewTable.Tables(1).Range.ParagraphFormat.KeepWithNext = False
+		End If
+	Next i
+End Function
+
 Sub TablesExportToPdf( _
 	Optional rgArg As Range, _
 	Optional dcArg As Document, _
