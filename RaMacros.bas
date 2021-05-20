@@ -425,7 +425,8 @@ End Sub
 		
 Sub FileCopy(dcArg As Document, _
 			Optional ByVal stPrefix As String, _
-			Optional ByVal stSuffix As String)
+			Optional ByVal stSuffix As String, _
+			Optional ByVal stPath As String)
 ' Copies dcArg adding the suffix and/or prefix passed as arguments. In case
 ' there are none, it appends a number
 '
@@ -433,14 +434,21 @@ Sub FileCopy(dcArg As Document, _
 	Dim stOriginalName As String, stExtension As String, stNewFullName As String
 	Dim iCount As Integer
 
+	If stPath = vbNullString Then
+		stPath = dcArg.Path & Application.PathSeparator
+	Else
+		If Dir(stPath, vbDirectory) = "" Then MkDir stPath
+		If InStrRev(stPath, Application.PathSeparator) < len(stPath) _
+		Then stPath = stPath & Application.PathSeparator
+	End If
+
 	stOriginalName = Left$(dcArg.Name, InStrRev(dcArg.Name, ".") - 1)
 	stExtension = Right$(dcArg.Name, Len(dcArg.Name) - InStrRev(dcArg.Name, ".") + 1)
-	stNewFullName = dcArg.Path & Application.PathSeparator & stPrefix _
-		& stOriginalName & stSuffix & stExtension
+	stNewFullName = stPath & stPrefix & stOriginalName & stSuffix & stExtension
 
 	Do While Dir(stNewFullName) > ""
-		stNewFullName = dcArg.Path & Application.PathSeparator & stPrefix _
-			& stOriginalName & stSuffix & "-" & Format(iCount, "00") & stExtension
+		stNewFullName = stPath & stPrefix & stOriginalName & stSuffix & "-" _
+			& Format(iCount, "00") & stExtension
 		iCount = iCount + 1
 	Loop
 
@@ -455,7 +463,7 @@ Function FileSaveAsNew(	Optional rgArg As Range, _
 						Optional ByVal stSuffix As String, _
 						Optional ByVal stPath As String, _
 						Optional ByVal bOpen As Boolean = True, _
-						Optional ByVal bCompatibility As Boolean
+						Optional ByVal bCompatibility As Boolean, _
 						Optional ByVal bVisible As Boolean = True _
 ) As Document
 ' Saves a copy of the range or document passed as an argument, maintaining the original one opened
@@ -477,13 +485,19 @@ Function FileSaveAsNew(	Optional rgArg As Range, _
 		Set dcArg = rgArg.Parent
 	End If
 
+	If stPath = vbNullString Then
+		stPath = dcArg.Path & Application.PathSeparator
+	Else
+		If Dir(stPath, vbDirectory) = "" Then MkDir stPath
+		If InStrRev(stPath, Application.PathSeparator) < len(stPath) _
+		Then stPath = stPath & Application.PathSeparator
+	End If
 	If stNewName = vbNullString _
 		And stSuffix = vbNullString _
 		And stPrefix = vbNullString _
 	Then stSuffix = "-" & Format(Date, "yymmdd")
 	If stNewName = vbNullString Then stNewName = Left$(dcArg.Name, InStrRev(dcArg.Name, ".") - 1)
-	If stPath = vbNullString Then stPath = dcArg.Path
-	stNewFullName = stPath & Application.PathSeparator & stPrefix & stNewName & stSuffix
+	stNewFullName = stPath & stPrefix & stNewName & stSuffix
 
 	On Error GoTo Visible
 	Set dcNewDocument = Documents.Add(dcArg.FullName, Visible:=bVisible)
@@ -511,7 +525,8 @@ Function FileSaveAsNew(	Optional rgArg As Range, _
 	End If
 	If Not bOpen Then dcNewDocument.Close
 	Set FileSaveAsNew = dcNewDocument
-	Exit Sub
+
+	Exit Function
 Visible:
 	On Error GoTo 0
 	dcNewDocument.ActiveWindow.Visible = True
@@ -1436,8 +1451,9 @@ Sub SectionBreakBeforeHeading(dcArg As Document, _
 					Set rgFind = rgFind.Next(Unit:=wdParagraph, Count:=1)
 					rgFind.Collapse Direction:=wdCollapseStart
 				ElseIf bRespect = False _
-						And rgFind.Start = rgFind.Sections(1).Range.Start _
-						And	rgFind.Sections(1).PageSetup.SectionStart <> iWdSectionStart Then
+					And rgFind.Start = rgFind.Sections(1).Range.Start _
+					And	rgFind.Sections(1).PageSetup.SectionStart <> iWdSectionStart _
+				Then
 					rgFind.Sections(1).PageSetup.SectionStart = iWdSectionStart
 				End If
 				' Continue the find operation using range
@@ -1694,7 +1710,15 @@ Function TablesExportToNewFile( _
 	End If
 
 	If rgArg.Tables.Count = 0 Then Exit Function
-	
+
+	If stPath = vbNullString Then
+		stPath = dcArg.Path & Application.PathSeparator
+	Else
+		If Dir(stPath, vbDirectory) = "" Then MkDir stPath
+		If InStrRev(stPath, Application.PathSeparator) < len(stPath) _
+		Then stPath = stPath & Application.PathSeparator
+	End If
+
 	If bSameMarkUp Then
 		Set TablesExportToNewFile = RaMacros.FileSaveAsNew(, dcArg, stDocName, _
 										stDocPrefix, stDocSuffix, stPath)
@@ -1738,9 +1762,10 @@ End Function
 Sub TablesExportToPdf( _
 	Optional rgArg As Range, _
 	Optional dcArg As Document, _
+	Optional ByVal stPath As String, _
 	Optional ByVal stDocName As String, _
 	Optional ByVal stSuffix As String = "Table ", _
-	Optional ByVal bDeleteTable As Boolean, _
+	Optional ByVal bDelete As Boolean, _
 	Optional ByVal stReplacementText As String = "Link to ", _
 	Optional ByVal bLink As Boolean, _
 	Optional ByVal stAddress As String, _
@@ -1750,14 +1775,14 @@ Sub TablesExportToPdf( _
 )
 ' Export each table of the argument range to a PDF file
 ' Params:
+	' stPath: path of the documents
 	' stDocName: name of the parent document
 	' stSuffix: the suffix to append to the table title, if it hasn't any
-	' bDeleteTable: defines if the table should be replaced
+	' bDelete: defines if the table should be replaced
 	' stReplacementText: the replacement text before the table title
 	' bLink: if true the replacement text will be a hyperlink pointing to the address of the pdf
 	' stAddress: the path where the hyperlink will point.
 		' The name of the file will be automatically added to the argument, BUT 
-		' the last character of the path must be a path separator (\ or /)
 		' If empty it will point to the destination of the exported pdf
 	' vStyle: the paragraph style of the replacement text
 	' iSize: the font size of the replacement text
@@ -1777,10 +1802,25 @@ Sub TablesExportToPdf( _
 		Set dcArg = rgArg.Parent
 	End If
 
-	If stDocName = vbNullString Then stDocName = Left$(dcArg.Name, InStrRev(dcArg.Name, ".") - 1)
-	If bDeleteTable And stAddress = vbNullString Then
-		stAddress = dcArg.Path & Application.PathSeparator
+	If bDelete Then
+		If stPath = vbNullString Then
+			stPath = dcArg.Path & Application.PathSeparator
+		Else
+			If Dir(stPath, vbDirectory) = "" Then MkDir stPath
+			If InStrRev(stPath, Application.PathSeparator) < len(stPath) _
+			Then stPath = stPath & Application.PathSeparator
+		End If
+
+		If stAddress = vbNullString Then
+			stAddress = stPath
+		Else
+			If InStrRev(stAddress, Application.PathSeparator) < len(stAddress) _
+			Then stAddress = stAddress & Application.PathSeparator
+		End If
 	End If
+
+	If stDocName = vbNullString Then stDocName = Left$( _
+		dcArg.Name, InStrRev(dcArg.Name, ".") - 1)
 
 	For iCounter = tbCollection.Count To 1 Step -1
 		Set tbCurrent = tbCollection(iCounter)
@@ -1791,7 +1831,7 @@ Sub TablesExportToPdf( _
 			stTableFullName = stDocName & " " & tbCurrent.Title
 			If bFullPage Then
 				dcArg.ExportAsFixedFormat2 _
-					OutputFileName:= dcArg.Path & Application.PathSeparator & stTableFullName, _
+					OutputFileName:= stPath & stTableFullName, _
 					ExportFormat:= wdExportFormatPDF, _
 					OpenAfterExport:= False, _
 					OptimizeFor:= wdExportOptimizeForPrint, _
@@ -1807,7 +1847,7 @@ Sub TablesExportToPdf( _
 					OptimizeForImageQuality:= True
 			Else
 				tbCurrent.Range.ExportAsFixedFormat2 _
-					OutputFileName:= dcArg.Path & Application.PathSeparator & stTableFullName, _
+					OutputFileName:= stPath & stTableFullName, _
 					ExportFormat:= wdExportFormatPDF, _
 					OpenAfterExport:= False, _
 					OptimizeFor:= wdExportOptimizeForPrint, _
@@ -1820,7 +1860,7 @@ Sub TablesExportToPdf( _
 					UseISO19005_1:= False, _
 					OptimizeForImageQuality:= True
 			End If
-			If bDeleteTable Then
+			If bDelete Then
 				Set rgReplacement = tbCurrent.Range.Next(wdParagraph, 1)
 				rgReplacement.InsertParagraphBefore
 				rgReplacement.InsertParagraphBefore
@@ -1839,7 +1879,7 @@ Sub TablesExportToPdf( _
 	Next iCounter
 End Sub
 
-Sub TablesStyle(Optional rgArg As Range, Optional dcArg As Document, vStyle As Variant)
+Sub TablesStyle(Optional rgArg As Range, Optional dcArg As Document, Optional vStyle As Variant)
 ' Formats all tables within rgArg or dcArg with vStyle
 '
 	Dim tbCurrent As Table
