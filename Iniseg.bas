@@ -1,10 +1,6 @@
 ' Attribute VB_Name = "Iniseg"
 Option Explicit
 
-' Private iActual As Integer
-' Private iUltima As Integer
-Private stTitulos() As String
-
 Sub uiInisegConversionLibro()
 	ConversionLibro ActiveDocument
 End Sub
@@ -43,9 +39,10 @@ Sub Iniseg1Limpieza()
 	iDeleteAnswer = MsgBox("¿Borrar contenido hasta el punto seleccionado?", vbYesNoCancel, "Borrar contenido")
 	If iDeleteAnswer = vbCancel Then Exit Sub
 
+
 	rgActual.Start = Selection.Start
 	Debug.Print "1.1/14 - Copia de seguridad (0) del archivo original"
-	RaMacros.FileCopy dcOriginal, "0-", ""
+	RaMacros.FileCopy dcOriginal, "0-",, dcOriginal.Path & Application.PathSeparator & "borrar"
 
 	If iDeleteAnswer = vbYes Then
 		If rgActual.Footnotes.Count > 0 Then
@@ -86,7 +83,7 @@ Sub Iniseg1Limpieza()
 	Debug.Print "5.1/14 - Limpiando hiperenlaces para que solo figure su dominio"
 	RaMacros.HyperlinksFormatting dcOriginal, 2, 0
 	Debug.Print "5.2/14 - Limpiando espacios"
-	RaMacros.CleanSpaces Nothing, True, dcOriginal
+	RaMacros.CleanSpaces dcOriginal,, True
 
 	Debug.Print "6/14 - Borrando encabezados y pies de página"
 	RaMacros.HeadersFootersRemove dcOriginal
@@ -126,7 +123,12 @@ Sub Iniseg1Limpieza()
 
 	' Copia de seguridad limpia
 	Debug.Print "10/14 - Creando copia de seguridad limpia (01)"
-	RaMacros.FileSaveAsNew , dcOriginal,, "01-"
+	RaMacros.FileSaveAsNew _
+		dcArg:= dcOriginal, _
+		stPrefix:="01-", _
+		stPath:=dcOriginal.Path & Application.PathSeparator & "borrar", _
+		bCompatibility:=True, _
+		bVisible:=False
 
 	' Guarda el archivo con nombre original, preparado para el siguiente paso
 	Debug.Print "11.1/14 - Copiando contenido limpio al archivo con plantilla (archivo libro)"
@@ -139,7 +141,7 @@ Sub Iniseg1Limpieza()
 
 	If dcLibro.Tables.Count <> 0 Then
 		Debug.Print "11.3/14 - Archivo libro: formateando tablas con el estilo iniseg-tabla"
-		RaMacros.TablesStyle , dcLibro, "iniseg-tabla"
+		RaMacros.TablesStyle dcLibro,, "iniseg-tabla"
 	End If
 
 	Debug.Print "12/14 - Archivo original: cerrando"
@@ -219,7 +221,13 @@ Sub Iniseg3PaginasVaciasVisibles()
 		Exit Sub
 	ElseIf iDocSeparados = vbYes Then
 		Debug.Print "Archivo libro: exportando cada tema a archivos separados"
-		RaMacros.SectionsExportEachToFiles dcLibro, False, True, False,,, " TEMA "
+		RaMacros.SectionsExportEachToFiles _
+			dcArg:=dcLibro, _
+			bClose:=False, _
+			bMaintainFootnotesNumeration:=True, _
+			bMaintainPagesNumeration:=False, _
+			stSuffix:=" TEMA ", _
+			stPath:=dcLibro.Path & Application.PathSeparator & "def"
 	End If
 
 	' Esto es una mala práctica y solo está para evitar confusiones por
@@ -262,9 +270,15 @@ Function ConversionLibro(dcLibro As Document, _
 	iUltima = 17
 
 	Debug.Print "1/" & iUltima & " - Archivo libro: haciendo copia de seguridad (1)"
-	RaMacros.FileSaveAsNew , dcLibro,, "1-",,, False, True
+	RaMacros.FileSaveAsNew _
+		dcArg:=dcLibro, _
+		stPath:=dcLibro.Path & Application.PathSeparator & "borrar", _
+		stPrefix:="1-", _
+		bCompatibility:=True, _
+		bVisible:=False
+
 	Debug.Print "2/" & iUltima & " - Archivo libro: limpieza básica"
-	RaMacros.CleanBasic Nothing, True, True, dcLibro
+	RaMacros.CleanBasic dcLibro,, True, True
 
 	Debug.Print "3/" & iUltima & " - Archivo libro: títulos sin puntuación"
 	RaMacros.HeadingsNoPunctuation dcLibro
@@ -297,7 +311,7 @@ Function ConversionLibro(dcLibro As Document, _
 	End If
 	Debug.Print "11/" & iUltima & " - Archivo libro: corrigiendo limpieza e interlineado"
 	Iniseg.InterlineadoCorregido dcLibro
-	RaMacros.CleanBasic Nothing, False, True, dcLibro
+	RaMacros.CleanBasic dcLibro,, False, True
 	' Lo siguiente quizá es demasiado agresivo porque devuelve numeraciones y cambia cosas sin ton ni son
 	dcLibro.Content.Select
 	Selection.ClearCharacterDirectFormatting
@@ -361,8 +375,10 @@ Function ConversionStory(dcLibro As Document, _
 	If dcLibro.Sections.Count > 1 Then iUltima = iUltima + 1
 
 	Debug.Print "1/" & iUltima & " - Archivo story: creando"
-	Set dcStory = RaMacros.FileSaveAsNew(, dcLibro,, "2-",,, True, True)
-	dcStory.ActiveWindow.Visible = True
+	Set dcStory = RaMacros.FileSaveAsNew( _
+		dcArg:=dcLibro, _
+		stPrefix:="2-", _
+		bVisible:=False)
 
 	Debug.Print "2.1/" & iUltima & " - Archivo story: marcando referencias bibliográficas"
 	Iniseg.BibliografiaMarcarReferencias dcStory
@@ -403,19 +419,7 @@ Function ConversionStory(dcLibro As Document, _
 	If dcStory.Tables.Count > 0 Then
 		Debug.Print "7/" & iUltima & " - Archivo story: transformando/exportando tablas"
 		' RaMacros.TablesConvertToImage dcStory
-		Iniseg.TablasExportar
-		stName = Left$(dcStory.Name, InStrRev(dcStory.Name, ".") - 1)
-		stName = Right$(stName, Len(stName) - 2)
-		RaMacros.TablesExportToPdf , dcStory, stName, "Tabla ", True, "Enlace a ",,, wdStyleBlockQuotation, 17, False
-		With dcStory.Content.Find
-			.ClearFormatting
-			.Replacement.ClearFormatting
-			.Forward = True
-			.Format = True
-			.Style = wdStyleBlockQuotation
-			.Replacement.ParagraphFormat.Alignment = wdAlignParagraphCenter
-			.Execute FindText:="Enlace a tabla", Replace:=wdReplaceAll
-		End With
+		Iniseg.TablasExportar dcStory
 	Else
 		Debug.Print "7/" & iUltima & "--- No hay tablas ---"
 	End If
@@ -437,7 +441,12 @@ Function ConversionStory(dcLibro As Document, _
 
 	If dcLibro.Sections.Count > 1 Then
 		Debug.Print iUltima & "/" & iUltima & " - Archivo story: exportando en archivos separados"
-		RaMacros.SectionsExportEachToFiles dcStory, False, True, False,,, "-tema_"
+		RaMacros.SectionsExportEachToFiles _
+			dcArg:=dcStory, _
+			bClose:=False, _
+			bMaintainFootnotesNumeration:=True, _
+			bMaintainPagesNumeration:=False, _
+			stSuffix:="-tema_"
 	End If
 
 	Debug.Print "Conversión para story terminada"
@@ -847,7 +856,7 @@ Sub ParrafosSeparacionLibro(dcArg As Document)
 	End With
 	Do
 		If Not rgStory.Find.Execute Then Exit Do
-		RaMacros.CleanSpaces rgStory
+		RaMacros.CleanSpaces rgArg:=rgStory
 		rgStory.Start = rgStory.End
 		rgStory.EndOf wdStory, wdExtend
 	Loop Until rgStory.Start = dcArg.Content.End - 1
@@ -1284,7 +1293,7 @@ Sub NotasPieExportar(dcArg As Document, _
 		
 		If Not dcNotas Is Nothing And (bDivide Or scCurrent.Index = dcArg.Sections.Count) Then
 			dcNotas.ListParagraphs(1).Range.ListFormat.ListTemplate.ListLevels(1).StartAt = lStartingFootnote
-			RaMacros.CleanBasic dcNotas.Content, True, True, dcNotas
+			RaMacros.CleanBasic dcNotas, dcNotas.Content, True, True
 			Iniseg.AutoFormateo dcNotas
 			RaMacros.HyperlinksFormatting dcNotas, 3, 1
 			RaMacros.StylesNoDirectFormatting dcNotas, Nothing, dcNotas.Styles(wdStyleStrong)
@@ -1482,7 +1491,7 @@ Sub ConversionAutomaticaLibro(dcArg As Document)
 '
 	Dim ishCurrent As InlineShape
 
-	RaMacros.CleanBasic Nothing, True, True, dcArg
+	RaMacros.CleanBasic dcArg,, True, True
 
 	With dcArg.Content.Find
 		.ClearFormatting
@@ -1606,6 +1615,49 @@ End Sub
 
 
 
+Sub TablasExportar(dcArg As Document)
+' Exporta las tablas de cada tema a un nuevo archivo y a pdf 
+'
+	Dim stTitulo As String
+	Dim stNewPath As String
+	Dim dcCurrent As Document
+	Dim scCurrent As Section
+
+	stNewPath = dcArg.Path & Application.PathSeparator & "def"
+
+	For Each scCurrent In dcArg.Sections
+		stTitulo = Iniseg.TituloDeTema(scCurrent.Range)
+		If stTitulo = vbNullString Then stTitulo = "Tema 00" & scCurrent.Index
+		Set dcCurrent = RaMacros.TablesExportToNewFile( _
+							rgArg:=scCurrent.Range, _
+							stDocPrefix:=stTitulo, _
+							stDocSuffix:=" Tablas", _
+							stPath:=stNewPath, _
+							bTitles:=True, _
+							stTitle:="Tabla ", _
+							bOverwrite:=True, _
+							vTitleStyle:=wdStyleHeading1)
+		RaMacros.TablesExportToPdf _
+			dcArg:=dcCurrent, _
+			stPath:=stNewPath, _
+			stSuffix:="Tabla ", _
+			bDelete:=True, _
+			stReplacementText:="Enlace a ", _
+			bLink:=True, _
+			vStyle:=wdStyleBlockQuotation, _
+			iSize:=17
+	Next scCurrent
+
+	With dcArg.Content.Find
+		.ClearFormatting
+		.Replacement.ClearFormatting
+		.Forward = True
+		.Format = True
+		.Style = wdStyleBlockQuotation
+		.Replacement.ParagraphFormat.Alignment = wdAlignParagraphCenter
+		.Execute FindText:="Enlace a tabla", Replace:=wdReplaceAll
+	End With
+End Sub
 
 
 
@@ -1619,7 +1671,7 @@ Function TituloDeTema(rgArg As Range) As String
 	Dim rgFind As Range
 	Set rgFind = rgArg.Duplicate
 	With rgFind.Find
-		.MatchWidcards = True
+		.MatchWildcards = True
 		.Style = wdStyleHeading1
 		.Execute FindText:="[Tt][Ee][Mm][Aa] [0-9]{2;}"
 		If Not .Found Then .Execute FindText:="[Tt][Ee][Mm][Aa] [0-9]"

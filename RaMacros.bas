@@ -286,7 +286,8 @@ End Function
 
 
 
-Sub StylesNoDirectFormatting(dcArg As Document, _
+Sub StylesNoDirectFormatting( _
+							dcArg As Document, _
 							Optional rgArg As Range, _
 							Optional ByVal styUnderline As Style, _
 							Optional ByVal iUnderlineSelected As Integer = -1)
@@ -456,13 +457,14 @@ Sub FileCopy(dcArg As Document, _
 	fsFileSystem.CopyFile dcArg.FullName, stNewFullName
 End Sub
 
-Function FileSaveAsNew(	Optional rgArg As Range, _
+Function FileSaveAsNew(	_
 						Optional dcArg As Document, _
+						Optional rgArg As Range, _
 						Optional ByVal stNewName As String, _
 						Optional ByVal stPrefix As String, _
 						Optional ByVal stSuffix As String, _
 						Optional ByVal stPath As String, _
-						Optional ByVal bOpen As Boolean = True, _
+						Optional ByVal bClose As Boolean = True, _
 						Optional ByVal bCompatibility As Boolean, _
 						Optional ByVal bVisible As Boolean = True _
 ) As Document
@@ -523,7 +525,7 @@ Function FileSaveAsNew(	Optional rgArg As Range, _
 	Else
 		dcNewDocument.SaveAs2 FileName:=stNewFullName
 	End If
-	If Not bOpen Then dcNewDocument.Close
+	If bClose Then dcNewDocument.Close
 	Set FileSaveAsNew = dcNewDocument
 
 	Exit Function
@@ -694,10 +696,12 @@ End Sub
 
 
 
-Sub CleanBasic(rgArg As Range, _
+Sub CleanBasic( _
+				Optional dcArg As document, _
+				Optional rgArg As Range, _
 				Optional ByVal bTabs As Boolean = True, _
-				Optional ByVal bBreakLines As Boolean, _
-				Optional dcArg As document)
+				Optional ByVal bBreakLines As Boolean _
+)
 ' CleanSpaces + CleanEmptyParagraphs
 ' It's important to execute the subroutines in the proper order to achieve their optimal effects
 ' Params:
@@ -713,13 +717,14 @@ Sub CleanBasic(rgArg As Range, _
 		If rgArg.Parent <> dcArg Then Err.Raise 517,, "rgArg is not in dcArg"
 	End If
 
-	RaMacros.CleanSpaces rgArg, bTabs, dcArg
-	RaMacros.CleanEmptyParagraphs rgArg, bBreakLines, dcArg
+	RaMacros.CleanSpaces dcArg, rgArg, bTabs
+	RaMacros.CleanEmptyParagraphs dcArg, rgArg, bBreakLines
 End Sub
 
-Sub CleanSpaces(rgArg As Range, _
-				Optional ByVal bTabs As Boolean = True, _
-				Optional dcArg As document)
+Sub CleanSpaces(Optional dcArg As document, _
+				Optional rgArg As Range, _
+				Optional ByVal bTabs As Boolean = True _
+)
 ' Deletes:
 	' Tabulations
 	' More than 1 consecutive spaces
@@ -874,9 +879,11 @@ Sub CleanSpaces(rgArg As Range, _
 	Next rgStory
 End Sub
 
-Sub CleanEmptyParagraphs(rgArg As Range, _
-						Optional ByVal bBreakLines As Boolean, _
-						Optional dcArg As document)
+Sub CleanEmptyParagraphs( _
+						Optional dcArg As document, _
+						Optional rgArg As Range, _
+						Optional ByVal bBreakLines As Boolean _
+)
 ' Deletes empty paragraphs
 ' Params:
 	' rgArg: the range that will be cleaned. If Nothing it will iterate over
@@ -1496,13 +1503,15 @@ Function SectionGetFirstFootnoteNumber(dcArg As Document, lIndex As Long) As Lon
 	End If
 End Function
 
-Function SectionsExportEachToFiles(dcArg As Document, _
-							Optional ByVal bClose As Boolean = True, _
-							Optional ByVal bMaintainFootnotesNumeration As Boolean = True, _
-							Optional ByVal bMaintainPagesNumeration As Boolean = True, _
-							Optional ByVal stNewDocName As String, _
-							Optional ByVal stPrefix As String, _
-							Optional ByVal stSuffix As String)
+Function SectionsExportEachToFiles( _
+				dcArg As Document, _
+				Optional ByVal bClose As Boolean = True, _
+				Optional ByVal bMaintainFootnotesNumeration As Boolean = True, _
+				Optional ByVal bMaintainPagesNumeration As Boolean = True, _
+				Optional ByVal stNewDocName As String, _
+				Optional ByVal stPrefix As String, _
+				Optional ByVal stSuffix As String, _
+				Optional ByVal stPath As String)
 ' Exports each section of the document to a separate file
 ' ToDo: if bClose false then devolver collection con los documentos generados
 '
@@ -1514,9 +1523,13 @@ Function SectionsExportEachToFiles(dcArg As Document, _
 	lFirstFootnote = 1
 
 	For Each scCurrent In dcArg.Sections
-		Set dcNewDocument = RaMacros.FileSaveAsNew(scCurrent.Range ,dcArg, _
-			stNewDocName, stPrefix, stSuffix & scCurrent.index)
-
+		Set dcNewDocument = RaMacros.FileSaveAsNew( _
+			rgArg:=scCurrent.Range, _
+			stNewName:=stNewDocName, _
+			stPrefix:=stPrefix, _
+			stSuffix:=stSuffix & scCurrent.index, _
+			stPath:=stPath _
+		)
 		' Delete section break and last empty paragraph
 		If dcNewDocument.Sections.Count = 2 Then
 			dcNewDocument.Sections(1).Range.Characters.Last.Delete
@@ -1666,8 +1679,8 @@ Sub TablesConvertToText(Optional rgArg As Range, _
 End Sub
 
 Function TablesExportToNewFile( _
-								Optional rgArg As Range, _
 								Optional dcArg As Document, _
+								Optional rgArg As Range, _
 								Optional ByVal bSameMarkUp As Boolean = True, _
 								Optional ByVal vTemplate As Variant, _
 								Optional ByVal stDocName As String, _
@@ -1720,8 +1733,13 @@ Function TablesExportToNewFile( _
 	End If
 
 	If bSameMarkUp Then
-		Set TablesExportToNewFile = RaMacros.FileSaveAsNew(, dcArg, stDocName, _
-										stDocPrefix, stDocSuffix, stPath)
+		Set TablesExportToNewFile = RaMacros.FileSaveAsNew( _
+			dcArg:=dcArg, _
+			stNewName:=stDocName, _
+			stPrefix:=stDocPrefix, _
+			stSuffix:=stDocSuffix, _
+			stPath:=stPath _
+		)
 		TablesExportToNewFile.Content.Delete
 	Else
 		Set TablesExportToNewFile = Documents.Add(vTemplate)
@@ -1760,18 +1778,18 @@ Function TablesExportToNewFile( _
 End Function
 
 Sub TablesExportToPdf( _
-	Optional rgArg As Range, _
-	Optional dcArg As Document, _
-	Optional ByVal stPath As String, _
-	Optional ByVal stDocName As String, _
-	Optional ByVal stSuffix As String = "Table ", _
-	Optional ByVal bDelete As Boolean, _
-	Optional ByVal stReplacementText As String = "Link to ", _
-	Optional ByVal bLink As Boolean, _
-	Optional ByVal stAddress As String, _
-	Optional ByVal vStyle As Variant = wdStyleNormal, _
-	Optional ByVal iSize As Integer, _
-	Optional ByVal bFullPage As Boolean _
+					Optional dcArg As Document, _
+					Optional rgArg As Range, _
+					Optional ByVal stPath As String, _
+					Optional ByVal stDocName As String, _
+					Optional ByVal stSuffix As String = "Table ", _
+					Optional ByVal bDelete As Boolean, _
+					Optional ByVal stReplacementText As String = "Link to ", _
+					Optional ByVal bLink As Boolean, _
+					Optional ByVal stAddress As String, _
+					Optional ByVal vStyle As Variant = wdStyleNormal, _
+					Optional ByVal iSize As Integer, _
+					Optional ByVal bFullPage As Boolean _
 )
 ' Export each table of the argument range to a PDF file
 ' Params:
@@ -1879,7 +1897,7 @@ Sub TablesExportToPdf( _
 	Next iCounter
 End Sub
 
-Sub TablesStyle(Optional rgArg As Range, Optional dcArg As Document, Optional vStyle As Variant)
+Sub TablesStyle(Optional dcArg As Document, Optional rgArg As Range, Optional vStyle As Variant)
 ' Formats all tables within rgArg or dcArg with vStyle
 '
 	Dim tbCurrent As Table
