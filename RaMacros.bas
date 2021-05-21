@@ -201,10 +201,6 @@ Function StoryInUse(dcArg As Document, rgStory As Range) As Boolean
 End Function
 
 
-
-
-
-
 Function StyleExists(dcArg As Document, vStyle As Variant) As Boolean
 ' Checks if styObjective exists in dcArg and returns a boolean
 '
@@ -216,77 +212,7 @@ NotExist:
 End Function
 
 
-
-
-
-
-Function StyleSubstitution(dcArg As Document, _
-						vStyOriginal As Variant, _
-						vStySubstitute As Variant, _
-						Optional ByVal bDelete As Boolean _
-) As Integer
-' Replace one style with another over the entire document.
-' Params:
-	' vStyOriginal: name of the style to be substituted
-	' vStySubstitute: substitute style 
-	' bDelete: if True, vStyOriginal will be deleted
-' Returns:
-	' 0: all good
-	' 1: vStyOriginal doesn't exist
-	' 2: vStySubstitute doesn't exist
-	' 3: neither vStyOriginal nor vStySubstitute exists
-	' 4: vStyOriginal and vStySubstitute are the same
-'
-
-	If vStyOriginal = vStySubstitute Then Exit Function
-	If Not RaMacros.StyleExists(dcArg, vStyOriginal) Then
-		StyleSubstitution = 1
-	End If
-	If Not RaMacros.StyleExists(dcArg, vStySubstitute) Then
-		StyleSubstitution = StyleSubstitution + 2
-	End If
-	If StyleSubstitution > 0 Then Exit Function
-
-	Dim rgStory As Range
-
-	For Each rgStory In dcArg.StoryRanges
-		Do
-			With rgStory.Find
-				.ClearFormatting
-				.Replacement.ClearFormatting
-				.Wrap = wdFindStop
-				.Forward = True
-				.Format = True
-				.MatchCase = False
-				.MatchWholeWord = False
-				.MatchAllWordForms = False
-				.MatchSoundsLike = False
-				.MatchWildcards = False
-				.Text = ""
-				.Style = vStyOriginal
-				.Replacement.Style = vStySubstitute
-				.Execute Replace:=wdReplaceAll
-			End With
-			Set rgStory = rgStory.NextStoryRange
-		Loop Until rgStory Is Nothing
-	Next rgStory
-
-	If bDelete Then
-		If dcArg.Styles(vStyOriginal).BuiltIn Then
-			Debug.Print vStyOriginal & " is a built in style and cannot be deleted"
-		Else
-			dcArg.Styles(vStyOriginal).Delete
-		End If
-	End If
-	StyleSubstitution = 0
-End Function
-
-
-
-
-
-
-Sub StylesNoDirectFormatting( _
+Sub StylesDirectFormattingReplace( _
 							dcArg As Document, _
 							Optional rgArg As Range, _
 							Optional ByVal styUnderline As Style, _
@@ -399,6 +325,70 @@ Sub StylesNoDirectFormatting( _
 	RaMacros.FootnotesFormatting dcArg
 	RaMacros.HyperlinksFormatting dcArg, 1 ' Aquí hay que meter el rango actual, y pasarlo dentro del bucle, cuando se refactorice HyperlinksFormatting
 End Sub
+
+
+Function StyleSubstitution(dcArg As Document, _
+						vStyOriginal As Variant, _
+						vStySubstitute As Variant, _
+						Optional ByVal bDelete As Boolean _
+) As Integer
+' Replace one style with another over the entire document.
+' Params:
+	' vStyOriginal: name of the style to be substituted
+	' vStySubstitute: substitute style 
+	' bDelete: if True, vStyOriginal will be deleted
+' Returns:
+	' 0: all good
+	' 1: vStyOriginal doesn't exist
+	' 2: vStySubstitute doesn't exist
+	' 3: neither vStyOriginal nor vStySubstitute exists
+	' 4: vStyOriginal and vStySubstitute are the same
+'
+
+	If vStyOriginal = vStySubstitute Then Exit Function
+	If Not RaMacros.StyleExists(dcArg, vStyOriginal) Then
+		StyleSubstitution = 1
+	End If
+	If Not RaMacros.StyleExists(dcArg, vStySubstitute) Then
+		StyleSubstitution = StyleSubstitution + 2
+	End If
+	If StyleSubstitution > 0 Then Exit Function
+
+	Dim rgStory As Range
+
+	For Each rgStory In dcArg.StoryRanges
+		Do
+			With rgStory.Find
+				.ClearFormatting
+				.Replacement.ClearFormatting
+				.Wrap = wdFindStop
+				.Forward = True
+				.Format = True
+				.MatchCase = False
+				.MatchWholeWord = False
+				.MatchAllWordForms = False
+				.MatchSoundsLike = False
+				.MatchWildcards = False
+				.Text = ""
+				.Style = vStyOriginal
+				.Replacement.Style = vStySubstitute
+				.Execute Replace:=wdReplaceAll
+			End With
+			Set rgStory = rgStory.NextStoryRange
+		Loop Until rgStory Is Nothing
+	Next rgStory
+
+	If bDelete Then
+		If dcArg.Styles(vStyOriginal).BuiltIn Then
+			Debug.Print vStyOriginal & " is a built in style and cannot be deleted"
+		Else
+			dcArg.Styles(vStyOriginal).Delete
+		End If
+	End If
+	StyleSubstitution = 0
+End Function
+
+
 
 
 
