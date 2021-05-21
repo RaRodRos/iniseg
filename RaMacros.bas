@@ -1774,7 +1774,7 @@ Sub TablesExportToPdf( _
 					Optional rgArg As Range, _
 					Optional ByVal stPath As String, _
 					Optional ByVal stDocName As String, _
-					Optional ByVal stSuffix As String = "Table ", _
+					Optional ByVal stTableSuffix As String = "Table ", _
 					Optional ByVal bDelete As Boolean, _
 					Optional ByVal stReplacementText As String = "Link to ", _
 					Optional ByVal bLink As Boolean, _
@@ -1788,7 +1788,7 @@ Sub TablesExportToPdf( _
 ' Params:
 	' stPath: path of the documents
 	' stDocName: name of the parent document
-	' stSuffix: the suffix to append to the table title, if it hasn't any
+	' stTableSuffix: the suffix to append to the table title, if it hasn't any
 	' bDelete: defines if the table should be replaced
 	' stReplacementText: the replacement text before the table title
 	' bLink: if true the replacement text will be a hyperlink pointing to the address of the pdf
@@ -1838,7 +1838,7 @@ Sub TablesExportToPdf( _
 		Set tbCurrent = tbCollection(iCounter)
 		If tbCurrent.NestingLevel = 1 Then
 			If tbCurrent.Title = vbNullString Then
-				tbCurrent.Title = stSuffix & iCounter
+				tbCurrent.Title = stTableSuffix & iCounter
 			End If
 			stTableFullName = stDocName & " " & tbCurrent.Title
 			If bExport Then
