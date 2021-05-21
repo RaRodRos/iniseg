@@ -1620,20 +1620,19 @@ End Sub
 Sub TablasExportar(dcArg As Document)
 ' Exporta las tablas de cada tema a un nuevo archivo y a pdf 
 '
-	Dim stTitulo As String
-	Dim stNewPath As String
+	Dim stTitulo As String, stNewPath As String, stName As String
 	Dim dcCurrent As Document
 	Dim scCurrent As Section
 
 	stNewPath = dcArg.Path & Application.PathSeparator & "def"
-	stName = Right$(dcArg.Name, Len(dcArg.Name)-2)
+	stName = NombreOriginal(dcArg.Name)
 
 	For Each scCurrent In dcArg.Sections
 		stTitulo = Iniseg.TituloDeTema(scCurrent.Range)
 		If stTitulo = vbNullString Then stTitulo = "Tema 00" & scCurrent.Index
 		Set dcCurrent = RaMacros.TablesExportToNewFile( _
-							rgArg:=scCurrent.Range,
-							stDocName:=stName,
+							rgArg:=scCurrent.Range, _
+							stDocName:=stName, _
 							stDocSuffix:=stTitulo & " Tablas", _
 							stPath:=stNewPath, _
 							bTitles:=True, _
@@ -1642,7 +1641,7 @@ Sub TablasExportar(dcArg As Document)
 							vTitleStyle:=wdStyleHeading1)
 		RaMacros.TablesExportToPdf _
 			dcArg:=dcCurrent, _
-			stDocName:=stName,
+			stDocName:=stName, _
 			stPath:=stNewPath, _
 			stSuffix:=stTitulo & " Tabla ", _
 			bDelete:=False, _
@@ -1708,3 +1707,16 @@ Sub LimpiarParagraphDirectFormatting(Optional dcArg As Document, Optional rgArg 
 		If prCurrent.Style = -1 And prCurrent.Range.Tables.Count = 0 Then prCurrent.Reset
 	Next prCurrent
 End Sub
+
+
+
+
+
+Function NombreOriginal(stName As String)
+	NombreOriginal = stName
+	If Left$(stName,2) = "0-" _
+		Or Left$(stName,2) = "1-" _
+		Or Left$(stName,2) = "2-" _
+	Then NombreOriginal = Right$(stName, Len(stName)-2) _
+	Else If Left$(stName,3) = "01-" Then NombreOriginal = Right$(stName, Len(stName)-3)
+End Function
