@@ -125,8 +125,8 @@ Sub Iniseg1Limpieza()
 	Debug.Print "10/14 - Creando copia de seguridad limpia (01)"
 	RaMacros.FileSaveAsNew _
 		dcArg:= dcOriginal, _
-		stPrefix:="01-", _
 		stPath:=dcOriginal.Path & Application.PathSeparator & "borrar", _
+		stPrefix:="01-", _
 		bCompatibility:=True, _
 		bVisible:=False
 
@@ -374,6 +374,7 @@ Function ConversionStory(dcLibro As Document, _
 	Debug.Print "1/" & iUltima & " - Archivo story: creando"
 	Set dcStory = RaMacros.FileSaveAsNew( _
 		dcArg:=dcLibro, _
+		stPath:=dcStory.Path & Application.PathSeparator & "borrar", _
 		stPrefix:="2-", _
 		bClose:=False)
 
