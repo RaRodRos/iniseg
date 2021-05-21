@@ -1814,15 +1814,15 @@ Sub TablesExportToPdf( _
 		Set dcArg = rgArg.Parent
 	End If
 
-	If bDelete Then
-		If stPath = vbNullString Then
-			stPath = dcArg.Path & Application.PathSeparator
-		Else
-			If Dir(stPath, vbDirectory) = "" Then MkDir stPath
-			If InStrRev(stPath, Application.PathSeparator) < len(stPath) _
-			Then stPath = stPath & Application.PathSeparator
-		End If
+	If stPath = vbNullString Then
+		stPath = dcArg.Path & Application.PathSeparator
+	Else
+		If Dir(stPath, vbDirectory) = "" Then MkDir stPath
+		If InStrRev(stPath, Application.PathSeparator) < len(stPath) _
+		Then stPath = stPath & Application.PathSeparator
+	End If
 
+	If bDelete Then
 		If stAddress = vbNullString Then
 			stAddress = stPath
 		Else
