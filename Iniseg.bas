@@ -1355,6 +1355,8 @@ Sub BibliografiaExportar(dcArg As Document)
 		
 		If rgBiblio.Find.Found Then
 			' Asigna el número de tema
+			If Dir(dcArg.Path & Application.PathSeparator & "def", vbDirectory) = "" _
+				Then MkDir dcArg.Path & Application.PathSeparator & "def"
 			stNombre = Iniseg.TituloDeTema(scCurrent.Range)
 			If stNombre = vbNullString Then stNombre = "Tema 00" & scCurrent.Index
 			stNombre = dcArg.Path & Application.PathSeparator & "def" & _
