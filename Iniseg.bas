@@ -1357,8 +1357,8 @@ Sub BibliografiaExportar(dcArg As Document)
 			' Asigna el número de tema
 			stNombre = Iniseg.TituloDeTema(scCurrent.Range)
 			If stNombre = vbNullString Then stNombre = "Tema 00" & scCurrent.Index
-			stNombre = dcArg.Path & Application.PathSeparator & stNombre _
-				& "BIBLIOGRAFÍA " & ".pdf"
+			stNombre = dcArg.Path & Application.PathSeparator & "def" & _
+				Application.PathSeparator & stNombre & " BIBLIOGRAFÍA.pdf"
 
 			' Exporta el pdf
 			Set rgBiblio = RaMacros.RangeGetCompleteOutlineLevel(rgBiblio.Paragraphs(1))
