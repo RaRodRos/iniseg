@@ -1626,28 +1626,30 @@ Sub TablasExportar(dcArg As Document)
 	Dim scCurrent As Section
 
 	stNewPath = dcArg.Path & Application.PathSeparator & "def"
+	stName = Right$(dcArg.Name, Len(dcArg.Name)-2)
 
 	For Each scCurrent In dcArg.Sections
 		stTitulo = Iniseg.TituloDeTema(scCurrent.Range)
 		If stTitulo = vbNullString Then stTitulo = "Tema 00" & scCurrent.Index
 		Set dcCurrent = RaMacros.TablesExportToNewFile( _
-							rgArg:=scCurrent.Range, _
-							stDocPrefix:=stTitulo, _
-							stDocSuffix:=" Tablas", _
+							rgArg:=scCurrent.Range,
+							stDocName:=stName,
+							stDocSuffix:=stTitulo & " Tablas", _
 							stPath:=stNewPath, _
 							bTitles:=True, _
-							stTitle:="Tabla ", _
+							stTitle:=stTitulo & " Tabla ", _
 							bOverwrite:=True, _
 							vTitleStyle:=wdStyleHeading1)
 		RaMacros.TablesExportToPdf _
 			dcArg:=dcCurrent, _
+			stDocName:=stName,
 			stPath:=stNewPath, _
-			stSuffix:="Tabla ", _
-			bDelete:=True, _
-			stReplacementText:="Enlace a ", _
-			bLink:=True, _
+			stSuffix:=stTitulo & " Tabla ", _
+			bDelete:=False, _
 			vStyle:=wdStyleBlockQuotation, _
-			iSize:=17
+			iSize:=17, _
+			bFullPage:=True
+		dcCurrent.Close wdSaveChanges
 	Next scCurrent
 
 	With dcArg.Content.Find
