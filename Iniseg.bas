@@ -1359,7 +1359,7 @@ Sub BibliografiaExportar(dcArg As Document)
 			If Dir(dcArg.Path & Application.PathSeparator & "def", vbDirectory) = "" _
 				Then MkDir dcArg.Path & Application.PathSeparator & "def"
 			stNombre = Iniseg.TituloDeTema(scCurrent.Range)
-			If stNombre = vbNullString Then stNombre = "Tema 00" & scCurrent.Index
+			If stNombre = vbNullString Then stNombre = "00Tema " & scCurrent.Index
 			stNombre = dcArg.Path & Application.PathSeparator & "def" & _
 				Application.PathSeparator & stNombre & " BIBLIOGRAFÍA.pdf"
 
@@ -1629,7 +1629,7 @@ Sub TablasExportar(dcArg As Document)
 
 	For Each scCurrent In dcArg.Sections
 		stTitulo = Iniseg.TituloDeTema(scCurrent.Range)
-		If stTitulo = vbNullString Then stTitulo = "Tema 00" & scCurrent.Index
+		If stTitulo = vbNullString Then stTitulo = "00Tema " & scCurrent.Index
 		Set dcCurrent = RaMacros.TablesExportToNewFile( _
 							rgArg:=scCurrent.Range, _
 							stDocName:=stName, _
