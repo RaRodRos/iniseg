@@ -223,8 +223,6 @@ Sub Iniseg3PaginasVaciasVisibles()
 		Debug.Print "Archivo libro: exportando cada tema a archivos separados"
 		RaMacros.SectionsExportEachToFiles _
 			dcArg:=dcLibro, _
-			bClose:=False, _
-			bMaintainFootnotesNumeration:=True, _
 			bMaintainPagesNumeration:=False, _
 			stSuffix:=" TEMA ", _
 			stPath:=dcLibro.Path & Application.PathSeparator & "def"
@@ -374,7 +372,6 @@ Function ConversionStory(dcLibro As Document, _
 	Debug.Print "1/" & iUltima & " - Archivo story: creando"
 	Set dcStory = RaMacros.FileSaveAsNew( _
 		dcArg:=dcLibro, _
-		stPath:=dcLibro.Path & Application.PathSeparator & "borrar", _
 		stPrefix:="2-", _
 		bClose:=False)
 
@@ -384,21 +381,6 @@ Function ConversionStory(dcLibro As Document, _
 	Iniseg.BibliografiaExportar dcStory
 
 	Debug.Print "3/" & iUltima & " - Archivo story: Títulos 1 sin mayúsculas"
-	With dcStory.Content.Find
-		.ClearFormatting
-		.Replacement.ClearFormatting
-		.Forward = True
-		.Format = False
-		.MatchCase = False
-		.MatchWholeWord = False
-		.MatchWildcards = True
-		.MatchSoundsLike = False
-		.MatchAllWordForms = False
-		.Style = wdStyleHeading1
-		.Text = "([tT][eE][mM][aA] [0-9]{1;2})*^l^l"
-		.Replacement.Text = ""
-		.Execute Replace:=wdReplaceAll
-	End With
 	dcStory.Styles(wdstyleheading1).Font.AllCaps = False
 	RaMacros.HeadingsChangeCase dcStory, 1, 4
 
@@ -436,6 +418,23 @@ Function ConversionStory(dcLibro As Document, _
 		End If
 		Iniseg.NotasPieMarcas dcStory, bNotasExportar
 	End If
+
+	' Borrar "Tema n" para más comodidad al pasar a Storyline
+	With dcStory.Content.Find
+		.ClearFormatting
+		.Replacement.ClearFormatting
+		.Forward = True
+		.Format = False
+		.MatchCase = False
+		.MatchWholeWord = False
+		.MatchWildcards = True
+		.MatchSoundsLike = False
+		.MatchAllWordForms = False
+		.Style = wdStyleHeading1
+		.Text = "([tT][eE][mM][aA] [0-9]{1;2})*^l^l"
+		.Replacement.Text = ""
+		.Execute Replace:=wdReplaceAll
+	End With
 
 	If dcLibro.Sections.Count > 1 Then
 		Debug.Print iUltima & "/" & iUltima & " - Archivo story: exportando en archivos separados"
@@ -1358,10 +1357,12 @@ Sub BibliografiaExportar(dcArg As Document)
 			' Asigna el número de tema
 			If Dir(dcArg.Path & Application.PathSeparator & "def", vbDirectory) = "" _
 				Then MkDir dcArg.Path & Application.PathSeparator & "def"
-			stNombre = Iniseg.TituloDeTema(scCurrent.Range)
-			If stNombre = vbNullString Then stNombre = "00Tema " & scCurrent.Index
-			stNombre = dcArg.Path & Application.PathSeparator & "def" & _
-				Application.PathSeparator & stNombre & " BIBLIOGRAFÍA.pdf"
+			stNombre = UCase$(Iniseg.TituloDeTema(scCurrent.Range))
+			If stNombre = vbNullString Then stNombre = "00TEMA " & scCurrent.Index
+			stNombre = Iniseg.NombreOriginal(RaMacros.FileGetWithoutExt(dcArg)) _
+				& " " & stNombre
+			stNombre = dcArg.Path & Application.PathSeparator & "def" _
+				& Application.PathSeparator & stNombre & " BIBLIOGRAFÍA.pdf"
 
 			' Exporta el pdf
 			Set rgBiblio = RaMacros.RangeGetCompleteOutlineLevel(rgBiblio.Paragraphs(1))
@@ -1625,11 +1626,11 @@ Sub TablasExportar(dcArg As Document)
 	Dim scCurrent As Section
 
 	stNewPath = dcArg.Path & Application.PathSeparator & "def"
-	stName = NombreOriginal(dcArg.Name)
+	stName = RaMacros.FileGetWithoutExt(NombreOriginal(dcArg.Name))
 
 	For Each scCurrent In dcArg.Sections
-		stTitulo = Iniseg.TituloDeTema(scCurrent.Range)
-		If stTitulo = vbNullString Then stTitulo = "00Tema " & scCurrent.Index
+		stTitulo = UCase$(Iniseg.TituloDeTema(scCurrent.Range))
+		If stTitulo = vbNullString Then stTitulo = "00TEMA " & scCurrent.Index
 		Set dcCurrent = RaMacros.TablesExportToNewFile( _
 							rgArg:=scCurrent.Range, _
 							stDocName:=stName, _
@@ -1643,7 +1644,7 @@ Sub TablasExportar(dcArg As Document)
 			dcArg:=dcCurrent, _
 			stDocName:=stName, _
 			stPath:=stNewPath, _
-			stTableSuffix:=stTitulo & " Tabla ", _
+			stTableSuffix:= " " & stTitulo & " Tabla ", _
 			bDelete:=False, _
 			vStyle:=wdStyleBlockQuotation, _
 			iSize:=17, _

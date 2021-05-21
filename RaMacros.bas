@@ -461,7 +461,7 @@ Function FileGetExtension(vFile As Variant) As String
 	FileGetExtension = _
 		Right$(FileGetExtension, _
 			Len(FileGetExtension) - InStrRev(FileGetExtension, ".") + 1)
-End Sub
+End Function
 
 Function FileGetWithoutExt(vFile As Variant) As String
 ' Returns the name of the file without its extension
@@ -474,7 +474,7 @@ Function FileGetWithoutExt(vFile As Variant) As String
 		Err.Raise 518,, "vFile must be a string or a document"
 	End If
 	FileGetWithoutExt = Left$(FileGetWithoutExt, InStrRev(FileGetWithoutExt, ".") - 1)
-End Sub
+End Function
 
 Function FileSaveAsNew(	_
 						Optional dcArg As Document, _
