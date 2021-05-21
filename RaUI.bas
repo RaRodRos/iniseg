@@ -63,8 +63,8 @@ Sub uiStylesDeleteUnused()
     RaMacros.StylesDeleteUnused ActiveDocument, True
 End Sub
 
-Sub uiStylesNoDirectFormatting()
-    RaMacros.StylesNoDirectFormatting ActiveDocument
+Sub StylesDirectFormattingReplace()
+    RaMacros.StylesDirectFormattingReplace ActiveDocument
 End Sub
 
 Sub uiSectionBreakBeforeHeading()

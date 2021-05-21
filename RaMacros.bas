@@ -1904,10 +1904,10 @@ Sub TablesStyle(Optional dcArg As Document, Optional rgArg As Range, Optional vS
 			" (vStyle) doesn't exist in " & dcArg.Name
 
 	For Each tbCurrent In tbCollection
-		tbCurrent.Style = vStyle
 		tbCurrent.Select
 		Selection.ClearCharacterDirectFormatting
 		Selection.ClearParagraphDirectFormatting
+		tbCurrent.Style = vStyle
 	Next tbCurrent
 End Sub
 

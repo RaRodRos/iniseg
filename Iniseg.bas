@@ -312,10 +312,7 @@ Function ConversionLibro(dcLibro As Document, _
 	Debug.Print "11/" & iUltima & " - Archivo libro: corrigiendo limpieza e interlineado"
 	Iniseg.InterlineadoCorregido dcLibro
 	RaMacros.CleanBasic dcLibro,, False, True
-	' Lo siguiente quizá es demasiado agresivo porque devuelve numeraciones y cambia cosas sin ton ni son
-	dcLibro.Content.Select
-	Selection.ClearCharacterDirectFormatting
-	Selection.ClearParagraphDirectFormatting
+	Iniseg.LimpiarParagraphDirectFormatting dcLibro
 
 	Debug.Print "12/" & iUltima & " - Archivo libro: formateando imágenes"
 	Iniseg.ImagenesLibro dcLibro
@@ -1680,3 +1677,29 @@ Function TituloDeTema(rgArg As Range) As String
 		If .Found Then TituloDeTema = rgFind.Text
 	End With
 End Function
+
+
+
+
+
+
+
+
+Sub LimpiarParagraphDirectFormatting(Optional dcArg As Document, Optional rgArg As Range)
+' Borra los formatos directos de párrafo a todos los párrafos normales que no están
+' en una tabla
+'
+	Dim prCurrent As Paragraph
+	Dim prColl As Paragraphs
+
+	If rgArg Is Nothing Then
+		If dcArg Is Nothing Then Err.Raise 516,, "There is no target range"
+		Set prColl = dcArg.Paragraphs
+	Else
+		Set prColl = rgArg.Paragraphs
+	End If
+
+	For Each prCurrent In prColl
+		If prCurrent.Style = -1 And prCurrent.Range.Tables.Count = 0 Then prCurrent.Reset
+	Next prCurrent
+End Sub
