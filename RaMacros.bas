@@ -1781,7 +1781,8 @@ Sub TablesExportToPdf( _
 					Optional ByVal stAddress As String, _
 					Optional ByVal vStyle As Variant = wdStyleNormal, _
 					Optional ByVal iSize As Integer, _
-					Optional ByVal bFullPage As Boolean _
+					Optional ByVal bFullPage As Boolean, _
+					Optional ByVal bExport As Boolean = True_
 )
 ' Export each table of the argument range to a PDF file
 ' Params:
@@ -1797,6 +1798,7 @@ Sub TablesExportToPdf( _
 	' vStyle: the paragraph style of the replacement text
 	' iSize: the font size of the replacement text
 	' bFullPage: if true the table is exported along with the rest of its page
+	' bExport: if false the table will be processed but not exported
 '
 	Dim iCounter As Integer
 	Dim rgReplacement As Range
@@ -1839,36 +1841,38 @@ Sub TablesExportToPdf( _
 				tbCurrent.Title = stSuffix & iCounter
 			End If
 			stTableFullName = stDocName & " " & tbCurrent.Title
-			If bFullPage Then
-				dcArg.ExportAsFixedFormat2 _
-					OutputFileName:= stPath & stTableFullName, _
-					ExportFormat:= wdExportFormatPDF, _
-					OpenAfterExport:= False, _
-					OptimizeFor:= wdExportOptimizeForPrint, _
-					Range:= wdExportFromTo, _
-					From:= tbCurrent.Range.Characters(1).Information(wdActiveEndPageNumber), _
-					To:= tbCurrent.Range.Information(wdActiveEndPageNumber), _
-					Item:= wdExportDocumentWithMarkup, _
-					IncludeDocProps:= True, _
-					CreateBookmarks:= wdExportCreateWordBookmarks, _
-					DocStructureTags:= True, _
-					BitmapMissingFonts:= False, _
-					UseISO19005_1:= False, _
-					OptimizeForImageQuality:= True
-			Else
-				tbCurrent.Range.ExportAsFixedFormat2 _
-					OutputFileName:= stPath & stTableFullName, _
-					ExportFormat:= wdExportFormatPDF, _
-					OpenAfterExport:= False, _
-					OptimizeFor:= wdExportOptimizeForPrint, _
-					ExportCurrentPage:= False, _
-					Item:= wdExportDocumentWithMarkup, _
-					IncludeDocProps:= True, _
-					CreateBookmarks:= wdExportCreateNoBookmarks, _
-					DocStructureTags:= True, _
-					BitmapMissingFonts:= False, _
-					UseISO19005_1:= False, _
-					OptimizeForImageQuality:= True
+			If bExport Then
+				If bFullPage Then
+					dcArg.ExportAsFixedFormat2 _
+						OutputFileName:= stPath & stTableFullName, _
+						ExportFormat:= wdExportFormatPDF, _
+						OpenAfterExport:= False, _
+						OptimizeFor:= wdExportOptimizeForPrint, _
+						Range:= wdExportFromTo, _
+						From:= tbCurrent.Range.Characters(1).Information(wdActiveEndPageNumber), _
+						To:= tbCurrent.Range.Information(wdActiveEndPageNumber), _
+						Item:= wdExportDocumentWithMarkup, _
+						IncludeDocProps:= True, _
+						CreateBookmarks:= wdExportCreateWordBookmarks, _
+						DocStructureTags:= True, _
+						BitmapMissingFonts:= False, _
+						UseISO19005_1:= False, _
+						OptimizeForImageQuality:= True
+				Else
+					tbCurrent.Range.ExportAsFixedFormat2 _
+						OutputFileName:= stPath & stTableFullName, _
+						ExportFormat:= wdExportFormatPDF, _
+						OpenAfterExport:= False, _
+						OptimizeFor:= wdExportOptimizeForPrint, _
+						ExportCurrentPage:= False, _
+						Item:= wdExportDocumentWithMarkup, _
+						IncludeDocProps:= True, _
+						CreateBookmarks:= wdExportCreateNoBookmarks, _
+						DocStructureTags:= True, _
+						BitmapMissingFonts:= False, _
+						UseISO19005_1:= False, _
+						OptimizeForImageQuality:= True
+				End If
 			End If
 			If bDelete Then
 				Set rgReplacement = tbCurrent.Range.Next(wdParagraph, 1)
