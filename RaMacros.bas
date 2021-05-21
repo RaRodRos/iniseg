@@ -1518,7 +1518,8 @@ Function SectionsExportEachToFiles( _
 			stNewName:=stNewDocName, _
 			stPrefix:=stPrefix, _
 			stSuffix:=stSuffix & scCurrent.index, _
-			stPath:=stPath _
+			stPath:=stPath, _
+			bClose:= False _
 		)
 		' Delete section break and last empty paragraph
 		If dcNewDocument.Sections.Count = 2 Then
@@ -1728,7 +1729,8 @@ Function TablesExportToNewFile( _
 			stNewName:=stDocName, _
 			stPrefix:=stDocPrefix, _
 			stSuffix:=stDocSuffix, _
-			stPath:=stPath _
+			stPath:=stPath, _
+			bClose:=False _
 		)
 		TablesExportToNewFile.Content.Delete
 	Else
