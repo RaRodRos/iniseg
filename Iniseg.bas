@@ -374,7 +374,7 @@ Function ConversionStory(dcLibro As Document, _
 	Debug.Print "1/" & iUltima & " - Archivo story: creando"
 	Set dcStory = RaMacros.FileSaveAsNew( _
 		dcArg:=dcLibro, _
-		stPath:=dcStory.Path & Application.PathSeparator & "borrar", _
+		stPath:=dcLibro.Path & Application.PathSeparator & "borrar", _
 		stPrefix:="2-", _
 		bClose:=False)
 
@@ -1643,7 +1643,7 @@ Sub TablasExportar(dcArg As Document)
 			dcArg:=dcCurrent, _
 			stDocName:=stName, _
 			stPath:=stNewPath, _
-			stSuffix:=stTitulo & " Tabla ", _
+			stTableSuffix:=stTitulo & " Tabla ", _
 			bDelete:=False, _
 			vStyle:=wdStyleBlockQuotation, _
 			iSize:=17, _

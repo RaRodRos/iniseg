@@ -1782,7 +1782,7 @@ Sub TablesExportToPdf( _
 					Optional ByVal vStyle As Variant = wdStyleNormal, _
 					Optional ByVal iSize As Integer, _
 					Optional ByVal bFullPage As Boolean, _
-					Optional ByVal bExport As Boolean = True_
+					Optional ByVal bExport As Boolean = True _
 )
 ' Export each table of the argument range to a PDF file
 ' Params:
