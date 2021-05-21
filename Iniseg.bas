@@ -378,7 +378,7 @@ Function ConversionStory(dcLibro As Document, _
 	Set dcStory = RaMacros.FileSaveAsNew( _
 		dcArg:=dcLibro, _
 		stPrefix:="2-", _
-		bVisible:=False)
+		bClose:=False)
 
 	Debug.Print "2.1/" & iUltima & " - Archivo story: marcando referencias bibliográficas"
 	Iniseg.BibliografiaMarcarReferencias dcStory
@@ -1392,6 +1392,8 @@ Sub BibliografiaMarcarReferencias(dcArg As Document)
 ' Marcar los campos de referencias bibliograficas con el texto "NOT_BLI-[numNota]"
 ' para poder automatizar externamente su conversión en el .story
 '
+	If dcArg.Fields.Count = 0 Then Exit Sub
+	
 	Dim i As Integer
 
 	For i = dcArg.Fields.Count To 1 Step -1
