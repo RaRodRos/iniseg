@@ -408,12 +408,13 @@ Sub FieldsUnlink(dcArg As Document)
 		End If
 	Next iIndex
 End Sub
-		
-		
-		
-		
-		
-		
+
+
+
+
+
+
+
 Sub FileCopy(dcArg As Document, _
 			Optional ByVal stPrefix As String, _
 			Optional ByVal stSuffix As String, _
@@ -433,8 +434,8 @@ Sub FileCopy(dcArg As Document, _
 		Then stPath = stPath & Application.PathSeparator
 	End If
 
-	stOriginalName = Left$(dcArg.Name, InStrRev(dcArg.Name, ".") - 1)
-	stExtension = Right$(dcArg.Name, Len(dcArg.Name) - InStrRev(dcArg.Name, ".") + 1)
+	stOriginalName = FileGetWithoutExt(dcArg)
+	stExtension = FileGetExtension(dcArg)
 	stNewFullName = stPath & stPrefix & stOriginalName & stSuffix & stExtension
 
 	Do While Dir(stNewFullName) > ""
@@ -445,6 +446,34 @@ Sub FileCopy(dcArg As Document, _
 
 	Set fsFileSystem = CreateObject("Scripting.FileSystemObject")
 	fsFileSystem.CopyFile dcArg.FullName, stNewFullName
+End Sub
+
+Function FileGetExtension(vFile As Variant) As String
+' Returns the extension of the file
+'
+	If TypeName(vFile) = "Document" Then
+		FileGetExtension = vFile.Name
+	ElseIf TypeName(vFile) = "String" Then
+		FileGetExtension = vFile
+	Else
+		Err.Raise 518,, "vFile must be a string or a document"
+	End If
+	FileGetExtension = _
+		Right$(FileGetExtension, _
+			Len(FileGetExtension) - InStrRev(FileGetExtension, ".") + 1)
+End Sub
+
+Function FileGetWithoutExt(vFile As Variant) As String
+' Returns the name of the file without its extension
+'
+	If TypeName(vFile) = "Document" Then
+		FileGetWithoutExt = vFile.Name
+	ElseIf TypeName(vFile) = "String" Then
+		FileGetWithoutExt = vFile
+	Else
+		Err.Raise 518,, "vFile must be a string or a document"
+	End If
+	FileGetWithoutExt = Left$(FileGetWithoutExt, InStrRev(FileGetWithoutExt, ".") - 1)
 End Sub
 
 Function FileSaveAsNew(	_
@@ -488,7 +517,7 @@ Function FileSaveAsNew(	_
 		And stSuffix = vbNullString _
 		And stPrefix = vbNullString _
 	Then stSuffix = "-" & Format(Date, "yymmdd")
-	If stNewName = vbNullString Then stNewName = Left$(dcArg.Name, InStrRev(dcArg.Name, ".") - 1)
+	If stNewName = vbNullString Then stNewName = FileGetWithoutExt(dcArg)
 	stNewFullName = stPath & stPrefix & stNewName & stSuffix
 
 	On Error GoTo Visible
@@ -504,7 +533,7 @@ Function FileSaveAsNew(	_
 			dcNewDocument.Convert
 		End If
 	Else
-		stExtension = Right$(dcArg.Name, Len(dcArg.Name) - InStrRev(dcArg.Name, ".") + 1)
+		stExtension = FileGetExtension(dcArg)
 	End If
 
 	If Dir(stNewFullName & stExtension) > "" Then
