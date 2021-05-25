@@ -1217,7 +1217,7 @@ Sub NotasPieExportar(dcArg As Document, _
 	Dim bFirst As Boolean
 	Dim lCounter As Long, lStartingFootnote
 
-	stOriginalName = Left$(dcArg.Name, InStrRev(dcArg.Name, ".") - 1)
+	' stOriginalName = FileGetWithoutExt(dcArg)
 	bFirst = True
 	For Each scCurrent In dcArg.Sections
 		If scCurrent.Range.Footnotes.Count > 0 Then
@@ -1247,7 +1247,7 @@ Sub NotasPieExportar(dcArg As Document, _
 				If bDivide Then
 					dcNotas.Content.Text = RTrim("NOTAS AL PIE " & stFileName)
 				Else
-					dcNotas.Content.Text = "Notas al pie"
+					dcNotas.Content.Text = "NOTAS AL PIE"
 				End If
 
 				With dcNotas.Content.Paragraphs(1)
@@ -1359,7 +1359,7 @@ Sub BibliografiaExportar(dcArg As Document)
 				Then MkDir dcArg.Path & Application.PathSeparator & "def"
 			stNombre = UCase$(Iniseg.TituloDeTema(scCurrent.Range))
 			If stNombre = vbNullString Then stNombre = "00TEMA " & scCurrent.Index
-			stNombre = Iniseg.NombreOriginal(RaMacros.FileGetWithoutExt(dcArg)) _
+			' stNombre = Iniseg.NombreOriginal(RaMacros.FileGetWithoutExt(dcArg)) _
 				& " " & stNombre
 			stNombre = dcArg.Path & Application.PathSeparator & "def" _
 				& Application.PathSeparator & stNombre & " BIBLIOGRAFÍA.pdf"
@@ -1621,30 +1621,29 @@ End Sub
 Sub TablasExportar(dcArg As Document)
 ' Exporta las tablas de cada tema a un nuevo archivo y a pdf 
 '
-	Dim stTitulo As String, stNewPath As String, stName As String
+	Dim stTitulo As String, stNewPath As String
 	Dim dcCurrent As Document
 	Dim scCurrent As Section
 
 	stNewPath = dcArg.Path & Application.PathSeparator & "def"
-	stName = RaMacros.FileGetWithoutExt(NombreOriginal(dcArg.Name))
 
 	For Each scCurrent In dcArg.Sections
 		stTitulo = UCase$(Iniseg.TituloDeTema(scCurrent.Range))
 		If stTitulo = vbNullString Then stTitulo = "00TEMA " & scCurrent.Index
 		Set dcCurrent = RaMacros.TablesExportToNewFile( _
 							rgArg:=scCurrent.Range, _
-							stDocName:=stName, _
-							stDocSuffix:=stTitulo & " Tablas", _
+							stDocName:=stTitulo & " Tablas", _
+							stDocSuffix:="", _
 							stPath:=stNewPath, _
 							bTitles:=True, _
-							stTitle:=stTitulo & " Tabla ", _
+							stTitle:="Tabla ", _
 							bOverwrite:=True, _
 							vTitleStyle:=wdStyleHeading1)
 		RaMacros.TablesExportToPdf _
 			dcArg:=dcCurrent, _
-			stDocName:=stName, _
+			stDocName:=stTitulo, _
 			stPath:=stNewPath, _
-			stTableSuffix:= " " & stTitulo & " Tabla ", _
+			stTableSuffix:="Tabla ", _
 			bDelete:=False, _
 			vStyle:=wdStyleBlockQuotation, _
 			iSize:=17, _
