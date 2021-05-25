@@ -434,7 +434,7 @@ Sub FileCopy(dcArg As Document, _
 		Then stPath = stPath & Application.PathSeparator
 	End If
 
-	stOriginalName = FileGetWithoutExt(dcArg)
+	stOriginalName = FileGetNameWithoutExt(dcArg)
 	stExtension = FileGetExtension(dcArg)
 	stNewFullName = stPath & stPrefix & stOriginalName & stSuffix & stExtension
 
@@ -463,17 +463,17 @@ Function FileGetExtension(vFile As Variant) As String
 			Len(FileGetExtension) - InStrRev(FileGetExtension, ".") + 1)
 End Function
 
-Function FileGetWithoutExt(vFile As Variant) As String
+Function FileGetNameWithoutExt(vFile As Variant) As String
 ' Returns the name of the file without its extension
 '
 	If TypeName(vFile) = "Document" Then
-		FileGetWithoutExt = vFile.Name
+		FileGetNameWithoutExt = vFile.Name
 	ElseIf TypeName(vFile) = "String" Then
-		FileGetWithoutExt = vFile
+		FileGetNameWithoutExt = vFile
 	Else
 		Err.Raise 518,, "vFile must be a string or a document"
 	End If
-	FileGetWithoutExt = Left$(FileGetWithoutExt, InStrRev(FileGetWithoutExt, ".") - 1)
+	FileGetNameWithoutExt = Left$(FileGetNameWithoutExt, InStrRev(FileGetNameWithoutExt, ".") - 1)
 End Function
 
 Function FileSaveAsNew(	_
@@ -517,7 +517,7 @@ Function FileSaveAsNew(	_
 		And stSuffix = vbNullString _
 		And stPrefix = vbNullString _
 	Then stSuffix = "-" & Format(Date, "yymmdd")
-	If stNewName = vbNullString Then stNewName = FileGetWithoutExt(dcArg)
+	If stNewName = vbNullString Then stNewName = FileGetNameWithoutExt(dcArg)
 	stNewFullName = stPath & stPrefix & stNewName & stSuffix
 
 	On Error GoTo Visible

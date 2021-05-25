@@ -1217,7 +1217,7 @@ Sub NotasPieExportar(dcArg As Document, _
 	Dim bFirst As Boolean
 	Dim lCounter As Long, lStartingFootnote
 
-	' stOriginalName = FileGetWithoutExt(dcArg)
+	' stOriginalName = FileGetNameWithoutExt(dcArg)
 	bFirst = True
 	For Each scCurrent In dcArg.Sections
 		If scCurrent.Range.Footnotes.Count > 0 Then
@@ -1359,7 +1359,7 @@ Sub BibliografiaExportar(dcArg As Document)
 				Then MkDir dcArg.Path & Application.PathSeparator & "def"
 			stNombre = UCase$(Iniseg.TituloDeTema(scCurrent.Range))
 			If stNombre = vbNullString Then stNombre = "00TEMA " & scCurrent.Index
-			' stNombre = Iniseg.NombreOriginal(RaMacros.FileGetWithoutExt(dcArg)) _
+			' stNombre = Iniseg.NombreOriginal(RaMacros.FileGetNameWithoutExt(dcArg)) _
 				& " " & stNombre
 			stNombre = dcArg.Path & Application.PathSeparator & "def" _
 				& Application.PathSeparator & stNombre & " BIBLIOGRAFÍA.pdf"
