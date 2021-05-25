@@ -16,8 +16,8 @@ Function RangeIsField(rgArg As Range) As Boolean
 	RangeIsField = False
 End Function
 
-Function RangeGetCompleteOutlineLevel(vPara As Paragraph)
-' Returns the complete range from vPara outline level 
+Function RangeGetCompleteOutlineLevel(vPara As Paragraph) As Range
+' Returns the complete range from the vPara outline level 
 '
 	Dim iOutline As Integer
 	Dim lStoryEnd As Long
@@ -32,7 +32,10 @@ Function RangeGetCompleteOutlineLevel(vPara As Paragraph)
 
 	iOutline = RangeGetCompleteOutlineLevel.Paragraphs.First.OutlineLevel
 	If iOutline = 10 Then iOutline = 9
-	lStoryEnd = RangeGetCompleteOutlineLevel.Parent.StoryRanges(RangeGetCompleteOutlineLevel.StoryType).End
+	lStoryEnd = RangeGetCompleteOutlineLevel.Sections(1).Range.End
+	' Section page breaks don't get return
+	If Asc(RangeGetCompleteOutlineLevel.Sections(1).Range.Characters.Last.Text) = 12 _
+		Then lStoryEnd = lStoryEnd - 1
 
 	Do While RangeGetCompleteOutlineLevel.End < lStoryEnd
 		If RangeGetCompleteOutlineLevel.Next(wdParagraph, 1).Paragraphs.Last.OutlineLevel < iOutline Then Exit Do
