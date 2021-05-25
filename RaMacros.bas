@@ -1733,19 +1733,22 @@ Function TablesExportToNewFile( _
 	' bOverwrite : if true the table titles will be replaced by stTitle
 	' vTitleStyle: the style of the headings
 '
-	Dim i As Integer
+	Dim bIsNotFirst As Boolean
+	Dim iTableIndex As Index
 	Dim stCurrentTitle As String
 	Dim rgNewTable As Range
+	Dim tbCollection As Tables
 	Dim tbCurrent As Table
 
 	If rgArg Is Nothing Then
 		If dcArg Is Nothing Then Err.Raise 516,, "There is no target range"
-		Set rgArg = dcArg.Content
+		Set tbCollection = dcArg.Tables
 	Else
 		Set dcArg = rgArg.Parent
+		Set tbCollection = rgArg.Tables
 	End If
 
-	If rgArg.Tables.Count = 0 Then Exit Function
+	If tbCollection.Count = 0 Then Exit Function
 
 	If stPath = vbNullString Then
 		stPath = dcArg.Path & Application.PathSeparator
@@ -1769,16 +1772,17 @@ Function TablesExportToNewFile( _
 		Set TablesExportToNewFile = Documents.Add(vTemplate)
 	End If
 
-	For i = 1 To rgArg.Tables.Count
-		If rgArg.Tables(i).NestingLevel = 1 Then
+	For Each tbCurrent In tbCollection
+		If tbCurrent.NestingLevel = 1 Then
+			iTableIndex = iTableIndex + 1
 			Set rgNewTable = TablesExportToNewFile.Content
 			rgNewTable.Collapse wdCollapseEnd
 
-			stCurrentTitle = rgArg.Tables(i).Title
+			stCurrentTitle = tbCurrent.Title
 			If stCurrentTitle = vbnullstring Or bOverwrite _
-				Then stCurrentTitle = stTitle & i
+				Then stCurrentTitle = stTitle & iTableIndex
 
-			If i > 1 Then
+			If bIsNotFirst Then
 				rgNewTable.InsertAfter vbCrLf
 				rgNewTable.Style = wdStyleNormal
 				If iBreak > 0 Then
@@ -1794,11 +1798,12 @@ Function TablesExportToNewFile( _
 				rgNewTable.Collapse wdCollapseEnd
 			End If
 			
-			rgNewTable.FormattedText = rgArg.Tables(i).Range.FormattedText
+			rgNewTable.FormattedText = tbCurrent.Range.FormattedText
 			rgNewTable.Tables(1).Title = stCurrentTitle
 			If bTitles Then rgNewTable.Tables(1).Range.ParagraphFormat.KeepWithNext = False
+			bIsNotFirst = True
 		End If
-	Next i
+	Next tbCurrent
 End Function
 
 Sub TablesExportToPdf( _
