@@ -1,7 +1,7 @@
-Sub CleanBullets ( _
-					Optional rgArg As Range, _
-					Optional dcArg As Document, _
-					Optional vStyle As Variant _
+Sub CleanBullets( _
+				Optional rgArg As Range, _
+				Optional dcArg As Document, _
+				Optional vStyle As Variant _
 )
 ' Cleans bullets left by bad implemented lists
 ' Params:
@@ -53,6 +53,7 @@ Sub CleanBullets ( _
 			rgFind.End = rgFind.Start + 4
 			With rgFind.Find
 				.MatchWildcards = True
+				If Not vStyle = Empty Then .Style = vStyle
 				.Text = "[–\-—•" & ChrW$(8270) & ChrW$(8277) & ChrW$(9642) & ChrW$(9656) _
 					& ChrW$(9666) & ChrW$(9667) & ChrW$(9655) & ChrW$(9724) & ChrW$(9723) _
 					& ChrW$(9679) & ChrW$(9676) & ChrW$(9671) & ChrW$(9670) & "]"
