@@ -212,14 +212,19 @@ Sub Iniseg3PaginasVaciasVisibles()
 ' Exporta cada tema de libro a archivos separados e introduce páginas en blanco 
 ' tras las secciones que acaban en página impar para que terceros no se confundan
 '
-	Dim iDocSeparados As Integer
+	Dim iDocSeparados As Integer, iSectionsFillBlankPages As Integer
 	Dim dcLibro As Document
 
 	Set dcLibro = ActiveDocument
-	iDocSeparados = MsgBox("¿Exportar cada tema en archivos separados?", vbYesNoCancel, "Opciones exportar")
-	If iDocSeparados = vbCancel Then
+	iDocSeparados = MsgBox("¿Exportar cada tema en archivos separados?", _
+		vbYesNoCancel, "Opciones exportar")
+	iSectionsFillBlankPages = MsgBox("¿Insertar páginas en blanco antes de los "
+		& "temas que comienzan en página impar?", vbYesNoCancel, "Opciones exportar")
+
+	If iDocSeparados = vbCancel Or iSectionsFillBlankPages = vbCancel Then
 		Exit Sub
-	ElseIf iDocSeparados = vbYes Then
+
+	If iDocSeparados = vbYes Then
 		Debug.Print "Archivo libro: exportando cada tema a archivos separados"
 		RaMacros.SectionsExportEachToFiles _
 			dcArg:=dcLibro, _
@@ -228,11 +233,13 @@ Sub Iniseg3PaginasVaciasVisibles()
 			stPath:=dcLibro.Path & Application.PathSeparator & "def"
 	End If
 
-	' Esto es una mala práctica y solo está para evitar confusiones por
-	' falta de uniformidad en el uso de plantillas y estilos
-	Debug.Print "Archivo libro: insertando páginas en blanco en los cambios de sección"
-	RaMacros.SectionsFillBlankPages dcLibro
-	Debug.Print "Iniseg3PaginasVaciasVisibles terminada"
+	If iSectionsFillBlankPages = vbYes Then
+		' Esto es una mala práctica y solo está para evitar confusiones por
+		' falta de uniformidad en el uso de plantillas y estilos
+		Debug.Print "Archivo libro: insertando páginas en blanco en los cambios de sección"
+		RaMacros.SectionsFillBlankPages dcLibro
+		Debug.Print "Iniseg3PaginasVaciasVisibles terminada"
+	End If
 End Sub
 
 

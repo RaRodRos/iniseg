@@ -42,18 +42,10 @@ Sub CleanBullets ( _
 		Or TypeName(vStyle) = String _
 		Or TypeName(vStyle) = Integer) _
 	Then Err.Raise Err.Raise 518,, "vStyle must be a string, integer or style"
-
-
-
-
-
-
-
-
-
-
-
-
+	If Not StyleExist(dcArg, vStyle) Then
+		Debug.Print vStyle & " doesn't exist in " & dcArg
+		Exit Sub
+	End If
 
 	For Each rgCurrent In cllRanges
 		For Each pCurrent In rgCurrent.Paragraphs
