@@ -218,7 +218,7 @@ Sub Iniseg3PaginasVaciasVisibles()
 	Set dcLibro = ActiveDocument
 	iDocSeparados = MsgBox("¿Exportar cada tema en archivos separados?", _
 		vbYesNoCancel, "Opciones exportar")
-	iSectionsFillBlankPages = MsgBox("¿Insertar páginas en blanco antes de los "
+	iSectionsFillBlankPages = MsgBox("¿Insertar páginas en blanco antes de los " _
 		& "temas que comienzan en página impar?", vbYesNoCancel, "Opciones exportar")
 
 	If iDocSeparados = vbCancel Or iSectionsFillBlankPages = vbCancel Then
