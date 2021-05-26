@@ -214,6 +214,7 @@ Sub Iniseg3PaginasVaciasVisibles()
 '
 	Dim iDocSeparados As Integer, iSectionsFillBlankPages As Integer
 	Dim dcLibro As Document
+	Dim scCurrent As Section
 
 	Set dcLibro = ActiveDocument
 	iDocSeparados = MsgBox("¿Exportar cada tema en archivos separados?", _
@@ -226,11 +227,18 @@ Sub Iniseg3PaginasVaciasVisibles()
 
 	If iDocSeparados = vbYes Then
 		Debug.Print "Archivo libro: exportando cada tema a archivos separados"
-		RaMacros.SectionsExportEachToFiles _
-			dcArg:=dcLibro, _
-			bMaintainPagesNumeration:=False, _
-			stSuffix:=" TEMA ", _
-			stPath:=dcLibro.Path & Application.PathSeparator & "def"
+		For Each scCurrent In dcLibro.Sections
+			RaMacros.FileSaveAsNew _
+				dcArg:=dcLibro, _
+				rgArg:=scCurrent.Range, _
+				stNewName:="", _
+				stPrefix:="", _
+				stSuffix:=" " & TituloDeTema(scCurrent.Range), _
+				stPath:=dcLibro.Path & Application.PathSeparator & "def", _
+				bClose:=True, _
+				bCompatibility:=False, _
+				bVisible:=False
+		Next scCurrent
 	End If
 
 	If iSectionsFillBlankPages = vbYes Then
