@@ -1734,7 +1734,7 @@ Function TablesExportToNewFile( _
 	' vTitleStyle: the style of the headings
 '
 	Dim bIsNotFirst As Boolean
-	Dim iTableIndex As Index
+	Dim iTableIndex As Integer
 	Dim stCurrentTitle As String
 	Dim rgNewTable As Range
 	Dim tbCollection As Tables
