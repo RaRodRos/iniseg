@@ -739,6 +739,7 @@ Sub CleanBasic( _
 		If rgArg.Parent <> dcArg Then Err.Raise 517,, "rgArg is not in dcArg"
 	End If
 
+	RaMacros.FootnotesDeleteEmpty dcArg
 	RaMacros.CleanSpaces dcArg, rgArg, bTabs
 	RaMacros.CleanEmptyParagraphs dcArg, rgArg, bBreakLines
 End Sub
@@ -1959,6 +1960,18 @@ End Sub
 
 
 
+
+Sub FootnotesDeleteEmpty(dcArg As Document)
+' Deletes empty footnotes that had been incorrectly manually erased
+'
+	If dcArg.Footnotes.Count = 0 Then Exit Sub
+
+	Dim fnCurrent As Footnote
+
+	For Each fnCurrent In dcArg.Footnotes
+		If Trim(fnCurrent.Range.Text) = "" Then fnCurrent.Reference.Delete
+	Next fnCurrent
+End Sub
 
 Sub FootnotesFormatting(dcArg As Document, _
 						Optional stFootnotes As String, _
