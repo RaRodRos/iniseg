@@ -395,41 +395,37 @@ Function ConversionStory(dcLibro As Document, _
 	Debug.Print "2.2/" & iUltima & " - Archivo story: exportando y borrando bibliografías"
 	Iniseg.BibliografiaExportar dcStory
 
-	Debug.Print "3/" & iUltima & " - Archivo story: Títulos 1 sin mayúsculas"
-	dcStory.Styles(wdstyleheading1).Font.AllCaps = False
-	RaMacros.HeadingsChangeCase dcStory, 1, 4
-
-	Debug.Print "4/" & iUltima & " - Archivo story: títulos con 3 espacios en vez de tabulación"
+	Debug.Print "3/" & iUltima & " - Archivo story: títulos con 3 espacios en vez de tabulación"
 	Iniseg.TitulosConTresEspacios dcStory
-	Debug.Print "5.1/" & iUltima & " - Archivo story: adaptando listas para Storyline"
+	Debug.Print "4.1/" & iUltima & " - Archivo story: adaptando listas para Storyline"
 	Iniseg.ListasParaStory dcStory
-	Debug.Print "5.2/" & iUltima & " - Archivo story: convirtiendo listas y campos LISTNUM a texto"
+	Debug.Print "4.2/" & iUltima & " - Archivo story: convirtiendo listas y campos LISTNUM a texto"
 	dcStory.ConvertNumbersToText
-	Debug.Print "5.3/" & iUltima & " - Archivo story: títulos divididos para no solaparse con el logo en la diapositiva"
+	Debug.Print "4.3/" & iUltima & " - Archivo story: títulos divididos para no solaparse con el logo en la diapositiva"
 	Iniseg.TitulosDividir dcStory
 	
-	Debug.Print "6/" & iUltima & " - Archivo story: adaptando el tamaño de párrafos"
+	Debug.Print "5/" & iUltima & " - Archivo story: adaptando el tamaño de párrafos"
 	Iniseg.ParrafosConversionStory dcStory
 
 	If dcStory.Tables.Count > 0 Then
-		Debug.Print "7/" & iUltima & " - Archivo story: transformando/exportando tablas"
+		Debug.Print "6/" & iUltima & " - Archivo story: transformando/exportando tablas"
 		' RaMacros.TablesConvertToImage dcStory
 		Iniseg.TablasExportar dcStory
 	Else
-		Debug.Print "7/" & iUltima & "--- No hay tablas ---"
+		Debug.Print "6/" & iUltima & "--- No hay tablas ---"
 	End If
-	Debug.Print "8/" & iUltima & " - Archivo story: formateando imágenes"
+	Debug.Print "7/" & iUltima & " - Archivo story: formateando imágenes"
 	Iniseg.ImagenesStory dcStory
-	Debug.Print "9/" & iUltima & " - Archivo story: corrigiendo interlineado"
+	Debug.Print "8/" & iUltima & " - Archivo story: corrigiendo interlineado"
 	Iniseg.InterlineadoCorregido dcStory
 
 	If dcLibro.Footnotes.Count > 0 Then
 		If bNotasExportar Then
-			Debug.Print "10.1/" & iUltima & " - Exportando notas a archivo/s externo"
+			Debug.Print "9.1/" & iUltima & " - Exportando notas a archivo/s externo"
 			Iniseg.NotasPieExportar dcLibro, bNotasSeparadas
-			Debug.Print "10.2/" & iUltima & " - Archivo story: formateando notas"
+			Debug.Print "9.2/" & iUltima & " - Archivo story: formateando notas"
 		Else
-			Debug.Print "10/" & iUltima & " - Archivo story: formateando notas"
+			Debug.Print "9/" & iUltima & " - Archivo story: formateando notas"
 		End If
 		Iniseg.NotasPieMarcas dcStory, bNotasExportar
 	End If
@@ -450,6 +446,10 @@ Function ConversionStory(dcLibro As Document, _
 		.Replacement.Text = ""
 		.Execute Replace:=wdReplaceAll
 	End With
+
+	Debug.Print "10/" & iUltima & " - Archivo story: Títulos 1 sin mayúsculas"
+	dcStory.Styles(wdstyleheading1).Font.AllCaps = False
+	RaMacros.HeadingsChangeCase dcStory, 1, 4
 
 	If dcLibro.Sections.Count > 1 Then
 		Debug.Print iUltima & "/" & iUltima & " - Archivo story: exportando en archivos separados"
