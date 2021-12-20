@@ -2,7 +2,7 @@
 
 ## RaMacros
 
-Word macros for general use.
+Word macros to ease some common chores and tasks.
 
 ## RaUI
 
