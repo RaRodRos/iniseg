@@ -1537,6 +1537,14 @@ Function SectionsExportEachToFiles( _
 				Optional ByVal stPath As String)
 ' Exports each section of the document to a separate file
 ' ToDo: if bClose false then devolver collection con los documentos generados
+' params:
+	' bClose: if true, close the section documents after exporting them
+	' bMaintainFootnotesNumeration: if true, maintain the same footnote numeration for each section
+	' bMaintainPagesNumeration: if true, maintain the same page numeration for each section
+	' stNewDocName: name of the exported file
+	' stPrefix: prefix for stNewDocName
+	' stSuffix: suffix for stNewDocName
+	' stPath: path of the exported file
 '
 	Dim iCounter As Integer
 	Dim lStartingPage As Long, lFirstFootnote As Long
