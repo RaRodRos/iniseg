@@ -1,491 +1,402 @@
 # word-macros
 
-## RaUI
+Macros developed to ease my work with Microsoft Word.
 
-GUI implementated version of some of the macros in RaMacros
+The functions are in RaMacros.bas and RaUI.bas contains some GUI implementations.
 
-## RaMacros
+## RangeIsField
 
-Word macros to ease some common chores and tasks.
+**Returns** true if rgArg is part of a field.
 
-### RangeIsField
+## RangeGetCompleteOutlineLevel
 
-- **Type:** Function
+**Returns** the complete range from the vPara outline level.
 
-- Returns true if rgArg is part of a field
+## RangeStoryExist
 
-### RangeGetCompleteOutlineLevel
+**Returns** true if a story with iStory index exist in dcArg document.
 
-- **Type:** Function
+## StylesDeleteUnused
 
-- Returns the complete range from the vPara outline level
+Deletes unused styles using multiple loops to respect their hierarchy (avoiding the deletion of fathers without use, like in lists).
 
-### RangeStoryExist
+> **Based on:** <https://word.tips.net/T001337_Removing_Unused_Styles.html>.
 
-- **Type:** Function
-
-- Returns true if a story with iStory index exist in dcArg document
-
-### StylesDeleteUnused
-
-- **Type:** Function
-
-- Deletes unused styles using multiple loops to respect their hierarchy (avoiding the deletion of fathers without use, like in lists)
-
-> **Based on:** <https://word.tips.net/T001337_Removing_Unused_Styles.html>
->
 > **Modifications:**
 >
-> - Renamed variables
-> - It runs until no unused styles left
-> - A message with the number of styles must be turn on by the bMsgBox parameter
-> - It's now a function that returns the number of deleted styles
-> - If the style cannot be found because the NameLocal property is corrupted (eg. because of leading or trailing spaces) it gets automatically deleted
-> - It now detects textframes in shapes or inline shapes
+> - Renamed variables.
+> - It runs until no unused styles left.
+> - A message with the number of styles must be turn on by the bMsgBox parameter.
+> - It's now a function that **Returns** the number of deleted styles.
+> - If the style cannot be found because the NameLocal property is corrupted (eg. because of leading or trailing spaces) it gets automatically deleted.
+> - It now detects textframes in shapes or inline shapes.
 
-### StyleInUse
+## StyleInUse
 
-- **Type:** Function
+> **Based on:** <https://word.tips.net/T001337_Removing_Unused_Styles.html>.
 
-> Same developer of StylesDeleteUnused
+**Returns** a boolean after checking if *stStyName* is used in any of *dcArg's* stories.
 
-- Is Stryname used any of dcArg's story
+### Params
 
-### StyleInUseInRangeText
+1. **stStyName:** style to check.
+2. **dcArg:** target document.
 
-- **Type:** Function
+## StyleInUseInRangeText
 
-> Same developer of StylesDeleteUnused
+> **Based on:** <https://word.tips.net/T001337_Removing_Unused_Styles.html>.
 
-- Returns True if "stStyName" is use in rgArg
+**Returns** True if "stStyName" is use in rgArg.
 
-### StoryInUse
+## StoryInUse
 
-- **Type:** Function
+> **Based on:** <https://word.tips.net/T001337_Removing_Unused_Styles.html>.
 
-> Same developer of StylesDeleteUnused
+> **Note:** this will mark even the always-existing stories as not in use if they're empty.
 
-- **Note:** this will mark even the always-existing stories as not in use if they're empty
+## StyleExists
 
-### StyleExists
+**Returns** a boolean after checking if styObjective exists in dcArg.
 
-- **Type:** Function
+## StylesDirectFormattingReplace
 
-- Checks if styObjective exists in dcArg and returns a boolean
+Converts bold and italic direct style formatting into Strong and Emphasis.
 
-### StylesDirectFormattingReplace
+### Params
 
-- **Type:** Subroutine
+1. **rgArg:** if nothing the sub works over all the story ranges.
+1. **styUnderline:** the underlined text gets this style applied. It supersedes iUnderlineSelected.
+1. **iUnderlineSelected:** the wdUnderline to be deleted/replaced. It cannot be 0 (wdUnderlineNone).
+    - **-1:** default deletes all underline styles
+    - **-2:** no underline styles are changed
 
-- Converts bold and italic direct style formatting into Strong and Emphasis
+## StyleSubstitution
 
-#### Params
+Replace one style with another over the entire document.
 
-- **rgArg:** if nothing the sub works over all the story ranges
-- **styUnderline:** the underlined text gets this style applied. It supersedes iUnderlineSelected
-- **iUnderlineSelected:** the wdUnderline to be deleted/replaced. It cannot be 0 (wdUnderlineNone)
-  - **-1:** default deletes all underline styles
-  - **-2:** no underline styles are changed
+### Params
 
-### StyleSubstitution
+1. **vStyOriginal:** name of the style to be substituted.
+1. **vStySubstitute:** substitute style.
+1. **bDelete:** if True, vStyOriginal will be deleted.
 
-- **Type:** Function
+### Returns
 
-- Replace one style with another over the entire document.
+- **0:** all good.
+- **1:** vStyOriginal doesn't exist.
+- **2:** vStySubstitute doesn't exist.
+- **3:** neither vStyOriginal nor vStySubstitute exists.
+- **4:** vStyOriginal and vStySubstitute are the same.
 
-#### Params
+## FieldsUnlink
 
-- **vStyOriginal:** name of the style to be substituted
-- **vStySubstitute:** substitute style
-- **bDelete:** if True, vStyOriginal will be deleted
+Unlinks *included* and *embedded* fields so the images doesn't corrupt the file when it gets updated from older (or different software) versions.
 
-#### Returns
+## FileCopy
 
-- **0:** all good
-- **1:** vStyOriginal doesn't exist
-- **2:** vStySubstitute doesn't exist
-- **3:** neither vStyOriginal nor vStySubstitute exists
-- **4:** vStyOriginal and vStySubstitute are the same
+Copies dcArg adding the suffix and/or prefix passed as arguments. In case there are none, it appends a number.
 
-### FieldsUnlink
+## FileGetExtension
 
-- **Type:** Subroutine
+**Returns** the extension of the file.
 
-- Unlinks included and embed fields so the images doesn't corrupt the file when it
-- gets updated from older (or different software) versions
+## FileGetNameWithoutExt
 
-### FileCopy
+**Returns** the name of the file without its extension.
 
-- **Type:** Subroutine
+## FileSaveAsNew
 
-- Copies dcArg adding the suffix and/or prefix passed as arguments. In case
-- there are none, it appends a number
+Saves a copy of the range or document passed as an argument, maintaining the original one opened.
 
-### FileGetExtension
+### Params
 
-- **Type:** Function
+1. **stNewName:** the new document's name.
+1. **stPrefix:** string to prefix the new document's name.
+1. **stSuffix:** string to suffix the new document's name. By default it will add the current date.
+1. **stPath:** the new document's path. If empty it will copy the original's one.
+1. **bOpen:** if True the new document stays open, if false it's saved AND closed.
+1. **bCompatibility:** if True the new document will be converted to the new Word Format.
+1. **bVisible:** if false the new document will be invisible.
 
-- Returns the extension of the file
+## FindResetProperties
 
-### FileGetNameWithoutExt
+Resets find object of rgArg or Selection, if rgArg is Nothing.
 
-- **Type:** Function
+## FormatNoHighlight
 
-- Returns the name of the file without its extension
+Takes all highlighting of the document off.
 
-### FileSaveAsNew
+### Params
 
-- **Type:** Function
+1. **dcArg:** target document.
 
-- Saves a copy of the range or document passed as an argument, maintaining the original one opened
+## FormatNoShading
 
-#### Params
+Takes all shading out of the selected range (or all document if rgArg is Nothing).
 
-- **stNewName:** the new document's name
-- **stPrefix:** string to prefix the new document's name
-- **stSuffix:** string to suffix the new document's name. By default it will add the current date
-- **stPath:** the new document's path. If empty it will copy the original's one
-- **bOpen:** if True the new document stays open, if false it's saved AND closed
-- **bCompatibility:** if True the new document will be converted to the new Word Format
-- **bVisible:** if false the new document will be invisible
+### Params
 
-### FindResetProperties
+1. **rgArg:** target range. If nothing the sub will loop through the main storyranges.
+1. **dcArg:** if rgArg is Nothing the sub will loop through the storyranges of dcArg.
 
-- **Type:** Subroutine
+## HeadersFootersRemove
 
-- Resets find object of rgArg or Selection, if rgArg is Nothing
+Removes all headers and footers.
 
-### FormatNoHighlight
+## ListsNoExtraNumeration
 
-- **Type:** Subroutine
+Deletes lists' manual numerations.
 
-- Takes all highlighting of the document off
+## CleanBasic
 
-#### Params
+> CleanSpaces + CleanEmptyParagraphs.
 
-- **dcArg:** target document
+It's important to execute the subroutines in the proper order to achieve their optimal effects.
 
-### FormatNoShading
+### Params
 
-- **Type:** Subroutine
+1. **rgArg:** the range that will be cleaned. If Nothing it will iterate over all the storyranges of the document.
+1. **bTabs:** if True Tabs are substituted for a single space.
+1. **bBreakLines:** manual break lines get converted to paragraph marks.
+1. **dcArg:** the target document. Necessary in case rgArg is Nothing.
 
-- Takes all shading out of the selected range (or all document if rgArg is Nothing)
+## CleanSpaces
 
-#### Params
+**Deletes:**
 
-- **rgArg:** target range. If nothing the sub will loop through the main storyranges
-- **dcArg:** if rgArg is Nothing the sub will loop through the storyranges of dcArg
+- Tabulations.
+- More than 1 consecutive spaces.
+- Spaces just before paragraph marks, stops, parenthesis, etc.
+- Spaces just after paragraph marks.
 
-### HeadersFootersRemove
+### Params
 
-- **Type:** Subroutine
+1. **rgArg:** the range that will be cleaned. If Nothing it will iterate over all the storyranges of the document.
+1. **bTabs:** if True Tabs are substituted for a single space.
+1. **dcArg:** the target document. Necessary in case rgArg is Nothing.
 
-- Removes all headers and footers
+## CleanEmptyParagraphs
 
-### ListsNoExtraNumeration
+Deletes empty paragraphs.
 
-- **Type:** Subroutine
+### Params
 
-- Deletes lists' manual numerations
+1. **rgArg:** the range that will be cleaned. If Nothing it will iterate over all the storyranges of the document.
+1. **bBreakLines:** manual break lines get converted to paragraph marks.
+1. **dcArg:** the target document. Necessary in case rgArg is Nothing.
 
-### CleanBasic
+## HeadingsNoPunctuation
 
-- **Type:** Subroutine
+Elimina los puntos finales de los títulos.
 
-- CleanSpaces + CleanEmptyParagraphs
-- It's important to execute the subroutines in the proper order to achieve their optimal effects
+## HeadingsNoNumeration
 
-#### Params
+Deletes headings' manual numerations.
 
-- **rgArg:** the range that will be cleaned. If Nothing it will iterate over all the storyranges of the document
-- **bTabs:** if True Tabs are substituted for a single space
-- **bBreakLines:** manual break lines get converted to paragraph marks
-- **dcArg:** the target document. Necessary in case rgArg is Nothing
+## HeadingsChangeCase
 
-### CleanSpaces
+Changes the case for the heading selected. This subroutine transforms the text, it doesn't change the style option "All caps".
 
-- **Type:** Subroutine
+### Params
 
-- **Deletes:**
-  - Tabulations
-  - More than 1 consecutive spaces
-  - Spaces just before paragraph marks, stops, parenthesis, etc.
-  - Spaces just after paragraph marks
+1. **dcArg:** the document to be changed.
+1. **iHeading:** the heading style to be changed. If 0 all headings will be processed.
+1. **iCase:** the desired case for the text. It can be one of the WdCharacterCase constants.  .
+Options:
+    - **0:** wdLowerCase.
+    - **1:** wdUpperCase.
+    - **2:** wdTitleWord.
+    - **4:** wdTitleSentence.
+    - **5:** wdToggleCase.
 
-#### Params
+## HyperlinksDeleteAll
 
-- **rgArg:** the range that will be cleaned. If Nothing it will iterate over all the storyranges of the document
-- **bTabs:** if True Tabs are substituted for a single space
-- **dcArg:** the target document. Necessary in case rgArg is Nothing
+Deletes all hyperlinks.
 
-### CleanEmptyParagraphs
+## HyperlinksFormatting
 
-- **Type:** Subroutine
+It cleans and format hyperlinks.
 
-- Deletes empty paragraphs
+### Params
 
-#### Params
+1. **iPurpose:** choose what is the aim of the subroutine:
+    - **1:** Applies the hyperlink style to all hyperlinks.
+    - **2:** cleans the text showed so only the domain is left.
+    - **3:** both.
 
-- **rgArg:** the range that will be cleaned. If Nothing it will iterate over all the storyranges of the document
-- **bBreakLines:** manual break lines get converted to paragraph marks
-- **dcArg:** the target document. Necessary in case rgArg is Nothing
+## ImagesToCenteredInLine
 
-### HeadingsNoPunctuation
+Image formatting:
 
-- **Type:** Subroutine
+- From shapes to inlineshapes.
+- Centered.
+- Correct aspect ratio.
+- No bigger than the page.
 
-- Elimina los puntos finales de los títulos
+## QuotesStraightToCurly
 
-### HeadingsNoNumeration
+Changes problematic straight quote marks (" and ') to curly quotes and deletes the non configurable variables of Document.Autoformat.
 
-- **Type:** Subroutine
+## SectionBreakBeforeHeading
 
-- Deletes headings' manual numerations
+Inserts section breaks of the type assigned before each heading of the level selected.
 
-### HeadingsChangeCase
+### Params
 
-- **Type:** Subroutine
+1. **dcArg:** the document to be changed.
+1. **bRespect:** respect the original section start type before the heading.
+1. **iWdSectionStart:** the kind of section break to insert.
+1. **iHeading:** heading style that will be found.
 
-- Changes the case for the heading selected. This subroutine transforms the text, it doesn't change the style option "All caps"
+## SectionGetFirstFootnoteNumber
 
-#### Params
+**Returns** the number of the first footnote of the section or 0 if there is none.
 
-- **dcArg:** the document to be changed
-- **iHeading:** the heading style to be changed. If 0 all headings will be processed
-- **iCase:** the desired case for the text. It can be one of the WdCharacterCase constants. Options:
-  - **wdLowerCase:** 0
-  - **wdUpperCase:** 1
-  - **wdTitleWord:** 2
-  - **wdTitleSentence:** 4
-  - **wdToggleCase:** 5
+### Params
 
-### HyperlinksDeleteAll
+1. **lIndex:** the index of the section containing the footnote.
 
-- **Type:** Subroutine
+## SectionsExportEachToFiles
 
-- Deletes all hyperlinks
+Exports each section of the document to a separate file.
 
-### HyperlinksFormatting
+### Params
 
-- **Type:** Subroutine
+1. **bClose:** if true, close the section documents after exporting them.
+1. **bMaintainFootnotesNumeration:** if true, maintain the same footnote numeration for each section.
+1. **bMaintainPagesNumeration:** if true, maintain the same page numeration for each section.
+1. **stNewDocName:** name of the exported file.
+1. **stPrefix:** prefix for stNewDocName.
+1. **stSuffix:** suffix for stNewDocName.
+1. **stPath:** path of the exported file.
 
-- It cleans and format hyperlinks
+## SectionsFillBlankPages
 
-#### Params
+Puts a blank page before each even or odd section break.
 
-- **iPurpose:** choose what is the aim of the subroutine:
-  - **1:** Applies the hyperlink style to all hyperlinks
-  - **2:** cleans the text showed so only the domain is left
-  - **3:** both
+### Params
 
-### ImagesToCenteredInLine
+1. **dcArg:** the document to be changed.
+1. **stFillerText:** an optional dummy string to fill the blank page.
+1. **styFillStyle:** style for the dummy text.
 
-- **Type:** Subroutine
+## TablesConvertToImage
 
-- Image formatting
-  - From shapes to inlineshapes
-  - Centered
-  - Correct aspect ratio
-  - No bigger than the page
+Convert each table to an inline image.
 
-### QuotesStraightToCurly
+> Solution to problems with clipboard (do loop) found in [Mr Excel](https:**//www.mrexcel.com/board/threads/excel-vba-inconsistent-errors-when-trying-to-copy-and-paste-objects-from-excel-to-word.1112368/post-5485704).
 
-- **Type:** Subroutine
+### Params
 
-- Changes problematic straight quote marks (" and ') to curly quotes
-- Deletes the non configurable variables of Document.Autoformat
+1. **iPlacement:** WdOLEPlacement enum.
+    - **0:** wdInLine.
+    - **1:** wdFloatOverText.
 
-### SectionBreakBeforeHeading
+## TablesConvertToText
 
-- **Type:** Subroutine
+Converts each table in the range to text. If no range is passed as an argument, it will act on the selection.
 
-- Inserts section breaks of the type assigned before each heading of the level selected
+### Params
 
-#### Params
+1. **iSeparator:** the column separator parameter.
+    - **0:** wdSeparateByParagraphs.
+    - **1:** wdSeparateByTabs.
+    - **2:** wdSeparateByCommas.
+    - **3:** wdSeparateByDefaultListSeparator.
+2. **bNested:** the NestedTables parameter.
 
-- **dcArg:** the document to be changed
-- **bRespect:** respect the original section start type before the heading
-- **iWdSectionStart:** the kind of section break to insert
-- **iHeading:** heading style that will be found
+## TablesExportToNewFile
 
-### SectionGetFirstFootnoteNumber
+Export each table of the selected range to a new document.
 
-- **Type:** Function
+### Params
 
-- Returns the number of the first footnote of the section or 0 if there is none
+1. **rgArg:** if nothing the tables in the Content range of dcArg will be exported.
+1. **dcArg:** it will get supersede by the parent of rgArg if it isn't nothing.
+1. **bSameMarkUp:** if true the new document will be a copy of the current one, but blank.
+1. **vTemplate:** if bSameMarkUp is false the new document will be based on vTemplate.
+1. **stDocName:** name of the parent document.
+1. **stDocPrefix:** the prefix to append to the new document.
+1. **stDocSuffix:** the suffix to append to the new document.
+1. **stPath:** the new document's path.
+1. **iBreak:** WdBreakType that will follow each table. (If 0 there won't be any. Default: 7 (wdPageBreak)).
+1. **bTitles:** if true a text will precede each table with it's own text.
+1. **stTitle:** the text to insert if the table doesn't have a title.
+1. **bOverwrite :** if true the table titles will be replaced by stTitle.
+1. **vTitleStyle:** the style of the headings.
 
-#### Params
+## TablesExportToPdf
 
-- **lIndex:** the index of the section containing the footnote
+Export each table of the argument range to a PDF file.
 
-### SectionsExportEachToFiles
+### Params
 
-- **Type:** Function
+1. **stPath:** path of the documents.
+1. **stDocName:** name of the parent document.
+1. **stTableSuffix:** the suffix to append to the table title, if it hasn't any.
+1. **bDelete:** defines if the table should be replaced.
+1. **stReplacementText:** the replacement text before the table title.
+1. **bLink:** if true the replacement text will be a hyperlink pointing to the address of the pdf.
+1. **stAddress:** the path where the hyperlink will point.  .
+The name of the file will be automatically added to the argument, **BUT** if empty it will point to the destination of the exported pdf.
+1. **vStyle:** the paragraph style of the replacement text.
+1. **iSize:** the font size of the replacement text.
+1. **bFullPage:** if true the table is exported along with the rest of its page.
+1. **bExport:** if false the table will be processed but not exported.
 
-- Exports each section of the document to a separate file
+## TablesStyle
 
-#### Params
+Formats all tables within rgArg or dcArg with vStyle.
 
-- **bClose:** if true, close the section documents after exporting them
-- **bMaintainFootnotesNumeration:** if true, maintain the same footnote numeration for each section
-- **bMaintainPagesNumeration:** if true, maintain the same page numeration for each section
-- **stNewDocName:** name of the exported file
-- **stPrefix:** prefix for stNewDocName
-- **stSuffix:** suffix for stNewDocName
-- **stPath:** path of the exported file
+## FootnotesDeleteEmpty
 
-### SectionsFillBlankPages
+Deletes empty footnotes that had been incorrectly manually erased.
 
-- **Type:** Subroutine
+## FootnotesFormatting
 
-- Puts a blank page before each even or odd section break
+Applies styles to the footnotes story and the footnotes references.
 
-#### Params
+### Params
 
-- **dcArg:** the document to be changed
-- **stFillerText:** an optional dummy string to fill the blank page
-- **styFillStyle:** style for the dummy text
+1. **stFootnotes:** style for the body text. Default: wdStyleFootnoteText.
+1. **styFootnoteReferences:** style for the references. Default: stFootnoteReferences.
 
-### TablesConvertToImage
+## FootnotesHangingIndentation
 
-- **Type:** Subroutine
+Adds a tab to the beginning of each paragraph and footnote, so their indentation is hanging.
 
-- Convert each table to an inline image
-- **Solution to problems with clipboard (do loop) found in [Mr Excel](https:**//www.mrexcel.com/board/threads/excel-vba-inconsistent-errors-when-trying-to-copy-and-paste-objects-from-excel-to-word.1112368/post-5485704)
+### Params
 
-#### Params
+1. **sIndentation:** the position of the indented text in centimeters.
+1. **iFootnoteStyle:** to indicate a custom footnote style.
 
-- **iPlacement:** WdOLEPlacement enum
-  - **0:** wdInLine
-  - **1:** wdFloatOverText
+## FootnotesSameNumberingRule
 
-### TablesConvertToText
+Set the same footnotes numbering rule in all sections of the document.
 
-- **Type:** Subroutine
+### Params
 
-- Convert each table in the range to text
-- If no range is passed as an argument, it will act on the selection
+1. **iNumberingRule:**
+    - **3 (default):** it gives the numbering rule of the first section to all others.
+    - **0:** wdRestartContinuous.
+    - **1:** wdRestartSection.
+    - **2:** wdRestartPage: wdRestartPage.
+1. **iStartingNumber:** starting number of each section.
+    - **-501:** doesn't change anything.
+    - **0:** copies the starting number of the first section in all the others.
 
-#### Params
+## ClearHiddenText
 
-- **iSeparator:** the column separator parameter:
-  - wdSeparateByParagraphs 			0
-  - wdSeparateByTabs 					1
-  - wdSeparateByCommas 				2
-  - wdSeparateByDefaultListSeparator 	3
-- **bNested:** the NestedTables parameter
+Deletes or apply a warning style to all hidden text in the document.
 
-### TablesExportToNewFile
+**Returns** an array of integers of the story ranges containing hidden text.
 
-- **Type:** Function
+### Params
 
-- Export each table of the selected range to a new document
-
-#### Params
-
-- **rgArg:** if nothing the tables in the Content range of dcArg will be exported
-- **dcArg:** it will get supersede by the parent of rgArg if it isn't nothing
-- **bSameMarkUp:** if true the new document will be a copy of the current one, but blank
-- **vTemplate:** if bSameMarkUp is false the new document will be based on vTemplate
-- **stDocName:** name of the parent document
-- **stDocPrefix:** the prefix to append to the new document
-- **stDocSuffix:** the suffix to append to the new document
-- **stPath:** the new document's path
-- **iBreak:** WdBreakType that will follow each table. (If 0 there won't be any. Default: 7 (wdPageBreak))
-- **bTitles:** if true a text will precede each table with it's own text
-- **stTitle:** the text to insert if the table doesn't have a title
-- **bOverwrite :** if true the table titles will be replaced by stTitle
-- **vTitleStyle:** the style of the headings
-
-### TablesExportToPdf
-
-- **Type:** Subroutine
-
-- Export each table of the argument range to a PDF file
-
-#### Params
-
-- **stPath:** path of the documents
-- **stDocName:** name of the parent document
-- **stTableSuffix:** the suffix to append to the table title, if it hasn't any
-- **bDelete:** defines if the table should be replaced
-- **stReplacementText:** the replacement text before the table title
-- **bLink:** if true the replacement text will be a hyperlink pointing to the address of the pdf
-- **stAddress:** the path where the hyperlink will point.
-  - The name of the file will be automatically added to the argument, BUT
-  - If empty it will point to the destination of the exported pdf
-- **vStyle:** the paragraph style of the replacement text
-- **iSize:** the font size of the replacement text
-- **bFullPage:** if true the table is exported along with the rest of its page
-- **bExport:** if false the table will be processed but not exported
-
-### TablesStyle
-
-- **Type:** Subroutine
-
-- Formats all tables within rgArg or dcArg with vStyle
-
-### FootnotesDeleteEmpty
-
-- **Type:** Subroutine
-
-- Deletes empty footnotes that had been incorrectly manually erased
-
-### FootnotesFormatting
-
-- **Type:** Subroutine
-
-- Applies styles to the footnotes story and the footnotes references
-
-#### Params
-
-- **stFootnotes:** style for the body text. Default: wdStyleFootnoteText
-- **styFootnoteReferences:** style for the references. Default: stFootnoteReferences
-
-### FootnotesHangingIndentation
-
-- **Type:** Subroutine
-
-- Adds a tab to the beginning of each paragraph and footnote, so their indentation is hanging
-
-#### Params
-
-	- **sIndentation:** the position of the indented text in centimeters
-	- **iFootnoteStyle:** to indicate a custom footnote style
-
-### FootnotesSameNumberingRule
-
-- **Type:** Subroutine
-
-- Set the same footnotes numbering rule in all sections of the document
-
-#### Params
-
-- **iNumberingRule:**
-  - **3 (default):** it gives the numbering rule of the first section to all others
-  - **0:** wdRestartContinuous
-  - **1:** wdRestartSection
-  - **2:** wdRestartPage: wdRestartPage
-- **iStartingNumber:** starting number of each section
-  - **-501:** doesn't change anything
-  - **0:** copies the starting number of the first section in all the others
-
-### ClearHiddenText
-
-- **Type:** Function
-
-- Deletes or apply a warning style to all hidden text in the document.
-
-#### Returns
-
-- Array of integers of the story ranges containing hidden text
-
-#### Params
-
-- **bDelete:** true deletes all hidden text
-- **styWarning:** defines the style for the hidden text
-- **bMaintainHidden:** if true the text maintains its hidden attribute
-- **bShowHidden:** changes if the hidden text is displayed
-  - **0:** maintains the current configuration
-  - **1:** hidden
-  - **2:** visible
+1. **bDelete:** true deletes all hidden text.
+1. **styWarning:** defines the style for the hidden text.
+1. **bMaintainHidden:** if true the text maintains its hidden attribute.
+1. **bShowHidden:** changes if the hidden text is displayed.
+    - **0:** maintains the current configuration.
+    - **1:** hidden.
+    - **2:** visible.
