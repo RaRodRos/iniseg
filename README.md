@@ -1,5 +1,7 @@
 # word-macros
 
+> At the moment I'm not using Word anymore, so this project won't see any further development
+
 Macros developed to ease my work with Microsoft Word.
 
 The functions are in RaMacros.bas and RaUI.bas contains some GUI implementations.
